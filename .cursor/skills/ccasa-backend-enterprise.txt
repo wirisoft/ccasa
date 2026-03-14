@@ -1,0 +1,228 @@
+---
+alwaysApply: true
+---
+# Backend ccasa – Arquitectura enterprise y convenciones
+
+Eres un ingeniero backend senior. El backend de ccasa debe seguir esta arquitectura en capas y convenciones. El código debe ser listo para producción, legible y mantenible.
+
+## Stack
+
+- Java 21, Spring Boot, Spring Security, JPA/Hibernate, PostgreSQL (H2 en desarrollo)
+- REST API versionada, sin Lombok, inyección por constructor
+
+---
+
+## REGLAS GENERALES DE ARQUITECTURA
+
+El proyecto sigue una arquitectura en capas estricta:
+
+```
+controllers
+services
+services.impl
+persistence.entities
+persistence.repositories
+services.models.dtos
+services.models.enums
+exceptions
+security
+config
+utils
+```
+
+Cada capa tiene una responsabilidad clara.
+
+- **Controllers** → exponen solo endpoints REST
+- **Services** → lógica de negocio
+- **Repositories** → acceso a persistencia
+- **Entities** → representación en base de datos
+- **DTOs** → modelos de comunicación con la API
+
+Los controladores **NUNCA** contienen lógica de negocio.
+
+---
+
+## CONVENCIONES DE NOMBRES
+
+| Tipo | Regla | Ejemplo (ccasa) |
+|------|--------|------------------|
+| Entidades | Sufijo `Entity` | `LogbookEntity`, `EntryEntity`, `TenantEntity`, `SampleEntity` |
+| Repositorios | Sufijo `Repository` | `LogbookRepository`, `EntryRepository`, `TenantRepository` |
+| Servicios (interfaz) | Prefijo `I`, sufijo `Service` | `ILogbookService`, `IDistilledWaterEntryService`, `ITenantService` |
+| Servicios (impl) | Sufijo `ServiceImpl` | `LogbookServiceImpl`, `DistilledWaterEntryServiceImpl` |
+| DTOs | Sufijo `DTO` | `LogbookDTO`, `CreateDistilledWaterDTO`, `DistilledWaterResponseDTO` |
+| Enums | Sufijo `Enum` | `RoleNameEnum`, `EntryStatusEnum` |
+| Excepciones | Sufijo `Exception` | `LogbookNotFoundException`, `EntryNotFoundException`, `TenantNotFoundException` |
+
+---
+
+## REGLAS JAVA ESTRICTAS
+
+- **No usar Lombok.** Definir explícitamente constructores, getters y setters.
+- Inyección de dependencias **solo por constructor**. No inyección por campo.
+
+Ejemplo:
+
+```java
+private final LogbookRepository logbookRepository;
+
+public LogbookServiceImpl(LogbookRepository logbookRepository) {
+    this.logbookRepository = logbookRepository;
+}
+```
+
+---
+
+## REGLAS DE DISEÑO DE ENTIDADES
+
+- Anotaciones JPA; tabla con `@Table(name = "nombre_snake")`.
+- PK: `@GeneratedValue(strategy = GenerationType.IDENTITY)` y columna con nombre `<tabla>_id`. Declarar siempre con `@Column(name = "xxx_id")`. El campo en Java es `id` (Long).
+
+Ejemplo:
+
+```java
+@Id
+@GeneratedValue(strategy = GenerationType.IDENTITY)
+@Column(name = "logbook_id")
+private Long id;
+```
+
+Otros ejemplos: `tenant_id`, `entry_id`, `user_id`, `folio_id`, `sample_id`.
+
+- Incluir auditoría: `createdAt`, `updatedAt` (o heredar de clase base `Auditable` con `created_at`, `updated_at`, `deleted_at` y usuarios de auditoría). Usar `@PrePersist` y `@PreUpdate` para timestamps si no se usa Auditable.
+- Las entidades no contienen lógica de negocio; solo representan el modelo de persistencia.
+- En entidades, preferir `Instant` para timestamps (UTC).
+
+---
+
+## REPOSITORIOS
+
+- Extender `JpaRepository<Entity, Long>`.
+- Sin lógica de negocio; solo acceso a datos.
+- Consultas con `deleted_at IS NULL` cuando aplique borrado lógico.
+- Todas las entidades operativas tienen `tenant_id`; filtrar por tenant en consultas (o usar contexto de tenant).
+
+---
+
+## CAPA DE SERVICIOS
+
+- Las interfaces definen el contrato; las implementaciones en `services.impl` contienen toda la lógica de negocio.
+- Métodos explícitos y descriptivos. Evitar nombres genéricos como `process()` o `handle()`.
+
+Ejemplos correctos:
+
+- `findAllActiveLogbooks`
+- `createDistilledWaterEntry`
+- `findEntriesByLogbookId`
+- `getNextAvailableFolio`
+
+---
+
+## API: RUTA BASE Y VERSIONADO
+
+Todas las rutas REST deben usar la base:
+
+**/api/v1/...**
+
+Ejemplos:
+
+- `/api/v1/auth/login`
+- `/api/v1/logbooks`
+- `/api/v1/logbooks/{id}`
+- `/api/v1/entries/by-logbook/{logbookId}`
+- `/api/v1/entries/{id}/distilled-water`
+- `POST /api/v1/entries/distilled-water`
+
+Nunca usar rutas sin versión (`/api/...` solo). Siempre incluir el segmento `v1`.
+
+**Plano de control (Super Admin):** Los endpoints de administración de plataforma usan la base **/api/control/v1/** (ej. `/api/control/v1/tenants`, crear/editar tenants, alta del primer usuario del tenant). Requieren rol Super Admin. El plano de datos (**/api/v1/**) es para recursos del tenant; el tenant se resuelve desde el JWT, no desde path ni body.
+
+- Los listados paginados deben limitar el tamaño de página (ej. máximo 100). No usar `PageRequest.of` directamente en controladores sin acotar el size.
+- Opcional: rate limiting en login (ej. 10 peticiones por minuto por IP; 429 si se supera).
+
+---
+
+## MULTI-TENANT (TENANT) DESDE JWT
+
+El contexto de tenant (empresa/laboratorio) **nunca** se envía en el body ni como parámetro de path para recursos del tenant.
+
+- **Tenant ID** se obtiene del JWT (SecurityContext).
+- En controladores: obtener el usuario actual de `SecurityContextHolder.getAuthentication().getPrincipal()`, castear a los detalles del usuario (ej. clase que exponga `getTenantId()`) y usar `getTenantId()`.
+- **No** aceptar `tenantId` en DTOs de request para login, registro ni operaciones ya acotadas por tenant.
+- **No** usar patrones como `/api/v1/tenants/{tenantId}/logbooks`. Usar `/api/v1/logbooks` y resolver `tenantId` desde el JWT del usuario autenticado.
+
+---
+
+## PARÁMETROS DE PATH AL FINAL
+
+Los parámetros de path (ej. `{id}`, `{logbookId}`) deben ir **al final** de la URL.
+
+Correcto:
+
+- `GET /api/v1/logbooks/{id}`
+- `GET /api/v1/entries/by-logbook/{logbookId}`
+- `GET /api/v1/entries/{id}/distilled-water`
+- `PUT /api/v1/logbooks/{id}`
+
+Incorrecto:
+
+- `GET /api/v1/logbooks/{id}/entries`
+- `GET /api/v1/tenants/{tenantId}/logbooks/{id}`
+
+Estructura plana: recurso + identificador al final. El alcance por tenant viene del JWT, no del path.
+
+---
+
+## REGLAS DE CONTROLADORES
+
+- Anotar con `@RestController` y `@RequestMapping("/api/v1/...")` (o `/api/control/v1/...` para Super Admin).
+- Solo: recibir request, llamar al servicio, devolver DTO de respuesta.
+- No manipular entidades directamente.
+- Para recursos del tenant, resolver `tenantId` desde SecurityContext (JWT), no desde path ni body.
+
+---
+
+## REGLAS DE DTOs
+
+- Usar DTOs para toda comunicación con la API. No exponer entidades.
+- Request y response con DTOs explícitos (CreateXxxDTO, XxxResponseDTO, etc.).
+- Inmutables cuando sea posible (p. ej. records en Java).
+- Validación con Bean Validation donde aplique.
+
+---
+
+## BASE DE DATOS
+
+- PostgreSQL en producción. Nombres de tabla y columna en snake_case. FKs con nombres claros. Índices por `tenant_id`, `logbook_id`, `folio_id`, `user_id`, `recorded_at` donde sea necesario.
+
+---
+
+## ZONA HORARIA (MULTI-TENANT)
+
+- Base de datos y serialización JSON en **UTC**. En `application.properties`:
+  - `spring.jpa.properties.hibernate.jdbc.time_zone=UTC`
+  - `spring.jackson.time-zone=UTC`
+- Cada tenant puede tener un campo `time_zone` (IANA). Resolver tenant y zona una vez por petición (ej. filtro o contexto). Servicio central de "hora de negocio" (ej. `IBusinessTimeService`) que use la zona del tenant para presentación; persistir siempre en UTC (Instant).
+- En entidades, usar `Instant` para timestamps.
+
+---
+
+## ESTILO DE CÓDIGO
+
+- Respetar SOLID y Single Responsibility. Clases y métodos pequeños y explícitos. Código legible y mantenible.
+
+---
+
+## MANEJO DE ERRORES
+
+- Excepciones de negocio propias (ej. `LogbookNotFoundException`, `EntryNotFoundException`, `TenantNotFoundException`, `FolioNotFoundException`).
+- Manejador global (`GlobalExceptionHandler`) que devuelva respuestas de error consistentes (code, message, timestamp). Incluir manejo de `AccessDeniedException` (403) con el mismo formato que el resto de excepciones de negocio.
+
+---
+
+## REGLAS ADICIONALES
+
+- No generar parches temporales ni hacks. Implementaciones completas.
+- Código coherente con estándares enterprise Java.
+- Todo componente generado debe seguir las reglas de arquitectura anteriores.
+- **Contexto ccasa:** bitácoras (logbooks), folios, entradas por tipo (agua destilada, conductividad, horno, etc.), usuarios con roles (Admin, Analyst, Sampler, Supervisor), tenant = empresa/laboratorio, Super Admin para alta de tenants. Registro manual (sin sensores); datos graduales; sin pasarela de pago en la fase actual.

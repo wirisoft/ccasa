@@ -1,0 +1,20 @@
+# ===========================================
+# ccasa monorepo - normalización de line endings y binarios
+# ===========================================
+
+# Scripts y wrappers: LF
+ccasaBackend/gradlew text eol=lf
+*.sh text eol=lf
+
+# Windows batch: CRLF
+*.bat text eol=crlf
+
+# Binarios
+*.jar binary
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.woff binary
+*.woff2 binary

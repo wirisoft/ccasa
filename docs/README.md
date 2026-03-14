@@ -1,0 +1,10 @@
+# Documentación del proyecto ccasa
+
+- **[ANALISIS_Y_PROPUESTA_CCASA.md](ANALISIS_Y_PROPUESTA_CCASA.md)** — Análisis del MER, funcionalidad por tipo de archivo, propuesta de software modular (stack, arquitectura, frontend, BD) y próximos pasos.
+- **[EXCEL_ESPECIFICACIONES.md](EXCEL_ESPECIFICACIONES.md)** — Especificaciones de plantillas Excel (hojas, columnas, mapeo a entidades) para importación/exportación y trazabilidad.
+- **[ANALISIS_RESULTADOS_A_SOFTWARE.md](ANALISIS_RESULTADOS_A_SOFTWARE.md)** — Por qué el diseño es así (trazabilidad con documentos/Excel) y cómo llevar toda la información a software funcional y escalable (roadmap por módulos).
+- **[PROPUESTA_SOFTWARE_MODULAR_ESCALABLE.md](PROPUESTA_SOFTWARE_MODULAR_ESCALABLE.md)** — Arquitectura modular, matriz archivos→funcionalidades (qué debe hacer el software para cubrir MER, Excel, flujo), buenas prácticas y fases de implementación. **SaaS multi-tenant:** Super Admin da de alta empresa/laboratorio (tenant) + primer usuario; ese usuario administra configuración (hora, empresa, empleados) y todos los datos; onboarding manual, datos graduales; **sin pasarela de pago**. **Contexto:** uso en la escuela; registros manuales, sin sensores ni equipos externos. **Evolución hacia mini-LIMS:** visión de evolución (ELN + bitácora → mini-LIMS); 6 dominios LIMS y estado actual; mejoras corto/mediano plazo (muestras, resultados de análisis, métodos, Shewhart, inventario, equipos, auditoría, incidencias, reportes); innovaciones SaaS (dashboard científico, timeline, formularios dinámicos); roadmap por meses; todo adaptado a registro manual.
+
+El listado hoja por hoja de los 28 Excel analizados está en la raíz del proyecto: `excel_analysis_summary.md` (generado con `analyze_excel.py` y `excel_summary.py`).
+
+**API REST:** Todas las rutas del backend están versionadas bajo `/api/v1/` (ej.: `GET /api/v1/logbooks`, `GET /api/v1/entries/by-logbook/{logbookId}`). La arquitectura y convenciones del backend están definidas en `.cursor/rules/ccasa-backend-architecture.mdc`.

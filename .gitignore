@@ -1,0 +1,66 @@
+# ===========================================
+# ccasa monorepo - Backend (Gradle/Java) + Frontend (Next.js/Node)
+# ===========================================
+
+# ----- Backend (ccasaBackend) -----
+HELP.md
+.gradle
+build/
+!gradle/wrapper/gradle-wrapper.jar
+!**/src/main/**/build/
+!**/src/test/**/build/
+
+### STS ###
+.apt_generated
+.classpath
+.factorypath
+.project
+.settings
+.springBeans
+.sts4-cache
+bin/
+!**/src/main/**/bin/
+!**/src/test/**/bin/
+
+### IntelliJ IDEA ###
+.idea
+*.iws
+*.iml
+*.ipr
+out/
+!**/src/main/**/out/
+!**/src/test/**/out/
+
+### NetBeans ###
+/nbproject/private/
+/nbbuild/
+/dist/
+/nbdist/
+/.nb-gradle/
+
+# ----- Frontend (ccasaFrontend) -----
+node_modules/
+.next/
+out/
+*.tsbuildinfo
+.next/
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+.DS_Store
+*.pem
+pnpm-debug.log*
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# ----- Común / IDE -----
+.vscode/
+
+# ----- Cursor skills (GitHub no permite subir .mdc; la copia .txt sí se sube) -----
+.cursor/skills/*.mdc
+
+# ----- Archivos de proyecto (Excel, PDF, etc.; solo uso local) -----
+filesproyect/

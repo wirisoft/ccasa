@@ -1,0 +1,95 @@
+---
+description: Arquitectura y convenciones del backend ccasa (Java, Spring Boot, JPA, PostgreSQL). Aplicar siempre en ccasaBackend.
+globs: ccasaBackend/**/*
+alwaysApply: true
+---
+
+# Backend ccasa – Arquitectura y convenciones
+
+Eres un ingeniero backend senior. El backend de ccasa (Sistema de Gestión Digital de Bitácoras de Laboratorio) debe seguir esta arquitectura en capas y convenciones de nombres.
+
+## Stack
+
+- Java 21, Spring Boot, Spring Security, JPA/Hibernate, PostgreSQL (H2 en desarrollo)
+- REST API versionada, sin Lombok, inyección por constructor
+
+## Estructura de paquetes (ccasaBackend)
+
+```
+com.backend.ccasa/
+  controllers          → REST solo; base path /api/v1
+  services             → interfaces (contrato)
+  services.impl        → lógica de negocio
+  persistence.entities → entidades JPA (y audit, entry)
+  persistence.repositories → JpaRepository
+  services.models.dtos → DTOs request/response
+  services.models.enums → enums de dominio
+  exceptions           → excepciones de negocio + manejador global
+  security             → configuración Spring Security
+  config               → DataLoader, etc.
+  utils                → helpers si aplica
+```
+
+Cada capa tiene una responsabilidad clara. Los controladores **nunca** contienen lógica de negocio.
+
+## Convenciones de nombres
+
+| Tipo | Regla | Ejemplo |
+|------|--------|---------|
+| Entidades | Sufijo `Entity` | `RoleEntity`, `LogbookEntity`, `EntryDistilledWaterEntity` |
+| Repositorios | Sufijo `Repository` | `LogbookRepository`, `EntryRepository` |
+| Servicios (interfaz) | Prefijo `I`, sufijo `Service` | `ILogbookService`, `IDistilledWaterEntryService` |
+| Servicios (impl) | Sufijo `ServiceImpl` | `LogbookServiceImpl`, `DistilledWaterEntryServiceImpl` |
+| DTOs | Sufijo `DTO` | `LogbookDTO`, `CreateDistilledWaterDTO`, `DistilledWaterResponseDTO` |
+| Enums | Sufijo `Enum` | `RoleNameEnum`, `EntryStatusEnum` |
+| Excepciones | Sufijo `Exception` | `LogbookNotFoundException`, `EntryNotFoundException` |
+
+## Reglas Java estrictas
+
+- **No usar Lombok.** Definir explícitamente constructores, getters y setters.
+- Inyección de dependencias **solo por constructor** (no field injection).
+- Métodos de servicio con nombres explícitos: `findAllActiveLogbooks`, `createDistilledWaterEntry`, `findEntriesByLogbookId`. Evitar nombres genéricos como `process()` o `handle()`.
+
+## Entidades (persistence.entities)
+
+- Anotaciones JPA; tabla con `@Table(name = "nombre_snake")`.
+- PK: `@GeneratedValue(strategy = GenerationType.IDENTITY)` y columna con nombre `<tabla>_id`, por ejemplo `@Column(name = "logbook_id")`; el campo en Java sigue siendo `id` (Long).
+- Incluir auditoría: `createdAt`, `updatedAt` (o heredar de clase base `Auditable` con `created_at`, `updated_at`, `deleted_at` y usuarios de auditoría). Usar `@PrePersist` y `@PreUpdate` para timestamps si no se usa Auditable.
+- Las entidades no contienen lógica de negocio; solo representan el modelo de persistencia.
+
+## Repositorios (persistence.repositories)
+
+- Extender `JpaRepository<Entity, Long>`.
+- Sin lógica de negocio; solo acceso a datos. Consultas con `deleted_at IS NULL` cuando aplique borrado lógico.
+
+## Servicios
+
+- Las interfaces definen el contrato; las implementaciones en `services.impl` contienen toda la lógica de negocio.
+- Los controladores solo llaman a servicios y devuelven DTOs.
+
+## API REST
+
+- **Base path obligatorio:** `/api/v1/...` (siempre versionado).
+- Ejemplos: `/api/v1/logbooks`, `/api/v1/logbooks/{id}`, `/api/v1/entries/{id}/distilled-water`, `POST /api/v1/entries/distilled-water`.
+- Los parámetros de path (p. ej. `{id}`) deben ir **al final** de la URL.
+- No exponer entidades; usar siempre DTOs para request y response.
+
+## DTOs
+
+- Usar para toda comunicación con la API. Nombres explícitos (CreateXxxDTO, XxxResponseDTO, etc.).
+- Inmutables cuando sea posible (p. ej. records en Java).
+
+## Base de datos
+
+- PostgreSQL en producción. Nombres de tabla y columna en snake_case. FKs con nombres claros. Índices donde sea necesario para consultas por logbook_id, folio_id, user_id, recorded_at.
+- Zona horaria: UTC para BD y serialización JSON (`spring.jpa.properties.hibernate.jdbc.time_zone=UTC`, `spring.jackson.time-zone=UTC`). En entidades usar `Instant` para timestamps.
+
+## Manejo de errores
+
+- Excepciones de negocio propias (p. ej. `LogbookNotFoundException`, `EntryNotFoundException`).
+- Manejador global que devuelva respuestas de error consistentes (código, mensaje, etc.). Incluir manejo de `AccessDeniedException` (403) con el mismo formato de respuesta.
+
+## Principios
+
+- SOLID y Single Responsibility. Clases y métodos pequeños y legibles. Código listo para producción, mantenible y alineado con estándares enterprise Java.
+- Contexto del dominio: bitácoras (logbooks), folios, entradas por tipo (agua destilada, conductividad, horno, etc.), usuarios con roles (Admin, Analyst, Sampler, Supervisor), firmas dobles y auditoría. No hay multi-tenant por academia; el sistema es single-tenant (un laboratorio).
