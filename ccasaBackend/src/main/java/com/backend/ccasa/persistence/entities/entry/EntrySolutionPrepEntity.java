@@ -20,7 +20,7 @@ public class EntrySolutionPrepEntity extends Auditable {
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	@jakarta.persistence.Column(name = "solution_prep_entry_id")
-	private Long solutionPrepEntryId;
+	private Long id;
 
 	@ManyToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name = "entry_id", nullable = false)
@@ -38,8 +38,8 @@ public class EntrySolutionPrepEntity extends Auditable {
 	@JoinColumn(name = "analyst_user_id")
 	private UserEntity analystUser;
 
-	public Long getSolutionPrepEntryId() { return solutionPrepEntryId; }
-	public void setSolutionPrepEntryId(Long id) { this.solutionPrepEntryId = id; }
+	public Long getId() { return id; }
+	public void setId(Long id) { this.id = id; }
 	public EntryEntity getEntry() { return entry; }
 	public void setEntry(EntryEntity entry) { this.entry = entry; }
 	public SolutionEntity getSolution() { return solution; }

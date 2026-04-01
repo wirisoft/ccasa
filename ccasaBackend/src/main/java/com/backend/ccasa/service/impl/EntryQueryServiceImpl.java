@@ -24,7 +24,7 @@ public class EntryQueryServiceImpl implements IEntryQueryService {
 	@Override
 	@Transactional(readOnly = true)
 	public List<EntrySummaryDTO> findByLogbookId(Long logbookId) {
-		var logbook = logbookRepository.findById(logbookId).orElseThrow(() -> new LogbookNotFoundException(logbookId));
+		var logbook = logbookRepository.findByIdAndDeletedAtIsNull(logbookId).orElseThrow(() -> new LogbookNotFoundException(logbookId));
 		return entryRepository.findByLogbook(logbook).stream()
 			.map(this::toSummaryDto)
 			.toList();

@@ -4,10 +4,9 @@ import com.backend.ccasa.persistence.entities.EntryEntity;
 import com.backend.ccasa.persistence.entities.FolioEntity;
 import com.backend.ccasa.persistence.entities.LogbookEntity;
 import java.util.List;
-import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 
-public interface EntryRepository extends JpaRepository<EntryEntity, Long> {
+public interface EntryRepository extends ActiveRepository<EntryEntity, Long> {
 
 	@Query("select e from EntryEntity e where e.deletedAt is null and e.folio = :folio order by e.recordedAt desc nulls last, e.id desc")
 	List<EntryEntity> findByFolio(FolioEntity folio);

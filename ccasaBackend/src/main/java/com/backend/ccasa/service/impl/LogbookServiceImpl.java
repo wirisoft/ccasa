@@ -29,7 +29,7 @@ public class LogbookServiceImpl implements ILogbookService {
 	@Override
 	@Transactional(readOnly = true)
 	public LogbookDTO getById(Long id) {
-		LogbookEntity l = logbookRepository.findById(id).orElseThrow(() -> new LogbookNotFoundException(id));
+		LogbookEntity l = logbookRepository.findByIdAndDeletedAtIsNull(id).orElseThrow(() -> new LogbookNotFoundException(id));
 		return toDto(l);
 	}
 

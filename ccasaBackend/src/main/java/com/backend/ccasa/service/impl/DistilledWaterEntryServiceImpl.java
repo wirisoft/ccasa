@@ -56,7 +56,7 @@ public class DistilledWaterEntryServiceImpl implements IDistilledWaterEntryServi
 	@Override
 	@Transactional(readOnly = true)
 	public DistilledWaterResponseDTO getByEntryId(Long entryId) {
-		EntryEntity entry = entryRepository.findById(entryId).orElseThrow(() -> new EntryNotFoundException(entryId));
+		EntryEntity entry = entryRepository.findByIdAndDeletedAtIsNull(entryId).orElseThrow(() -> new EntryNotFoundException(entryId));
 		EntryDistilledWaterEntity dw = distilledWaterRepository.findByEntry(entry)
 			.orElseThrow(() -> new EntryNotFoundException(entryId));
 		return toResponseDto(entry, dw);
@@ -65,9 +65,9 @@ public class DistilledWaterEntryServiceImpl implements IDistilledWaterEntryServi
 	@Override
 	@Transactional
 	public DistilledWaterResponseDTO create(DistilledWaterRequestDTO dto) {
-		FolioEntity folio = folioRepository.findById(dto.folioId()).orElseThrow(() -> new FolioNotFoundException(dto.folioId()));
-		LogbookEntity logbook = logbookRepository.findById(dto.logbookId()).orElseThrow(() -> new LogbookNotFoundException(dto.logbookId()));
-		UserEntity user = userRepository.findById(dto.userId()).orElseThrow(() -> new UserNotFoundException(dto.userId()));
+		FolioEntity folio = folioRepository.findByIdAndDeletedAtIsNull(dto.folioId()).orElseThrow(() -> new FolioNotFoundException(dto.folioId()));
+		LogbookEntity logbook = logbookRepository.findByIdAndDeletedAtIsNull(dto.logbookId()).orElseThrow(() -> new LogbookNotFoundException(dto.logbookId()));
+		UserEntity user = userRepository.findByIdAndDeletedAtIsNull(dto.userId()).orElseThrow(() -> new UserNotFoundException(dto.userId()));
 
 		EntryEntity entry = new EntryEntity();
 		entry.setFolio(folio);
@@ -88,7 +88,7 @@ public class DistilledWaterEntryServiceImpl implements IDistilledWaterEntryServi
 		dw.setReferenceDifference(dto.referenceDifference());
 		dw.setControlStandardPct(dto.controlStandardPct());
 		if (dto.waterBatchId() != null) {
-			BatchEntity batch = batchRepository.findById(dto.waterBatchId()).orElse(null);
+			BatchEntity batch = batchRepository.findByIdAndDeletedAtIsNull(dto.waterBatchId()).orElse(null);
 			dw.setWaterBatch(batch);
 		}
 		computeAveragesAndAcceptable(dw);
