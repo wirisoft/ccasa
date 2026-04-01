@@ -16,6 +16,9 @@ import UserDropdown from '@components/layout/shared/UserDropdown'
 // Util Imports
 import { verticalLayoutClasses } from '@layouts/utils/layoutClasses'
 
+// Config Imports
+import { NEXT_PUBLIC_REPO_NAME } from '@configs/publicEnv'
+
 const NavbarContent = () => {
   return (
     <div className={classnames(verticalLayoutClasses.navbarContent, 'flex items-center justify-between gap-4 is-full')}>
@@ -26,13 +29,13 @@ const NavbarContent = () => {
       <div className='flex items-center'>
         <Link
           className='flex mie-2'
-          href={`https://github.com/themeselection/${process.env.NEXT_PUBLIC_REPO_NAME}`}
+          href={`https://github.com/themeselection/${NEXT_PUBLIC_REPO_NAME}`}
           target='_blank'
         >
           <img
             height={24}
             alt='GitHub Repo stars'
-            src={`https://img.shields.io/github/stars/themeselection/${process.env.NEXT_PUBLIC_REPO_NAME}`}
+            src={`https://img.shields.io/github/stars/themeselection/${NEXT_PUBLIC_REPO_NAME}`}
           />
         </Link>
         <ModeDropdown />

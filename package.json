@@ -1,0 +1,11 @@
+{
+  "name": "ccasa",
+  "private": true,
+  "description": "Monorepo: frontend Next.js en ccasaFrontend, backend Spring en ccasaBackend",
+  "scripts": {
+    "dev": "npm run dev --prefix ccasaFrontend",
+    "dev:frontend": "npm run dev --prefix ccasaFrontend",
+    "build:frontend": "npm run build --prefix ccasaFrontend",
+    "install:frontend": "npm install --prefix ccasaFrontend"
+  }
+}

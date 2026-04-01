@@ -10,10 +10,12 @@ import '@/app/globals.css'
 // Generated Icon CSS Imports
 import '@assets/iconify-icons/generated-icons.css'
 
+// Component Imports
+import AuthRootProvider from '@components/ccasa/AuthRootProvider'
+
 export const metadata = {
-  title: 'Demo: Materio - NextJS Dashboard Free',
-  description:
-    'Develop next-level web apps with Materio Dashboard Free - NextJS. Now, updated with lightning-fast routing powered by MUI and App router.'
+  title: 'ccasa — Bitácoras de laboratorio',
+  description: 'Sistema de gestión digital de bitácoras de laboratorio (ccasa).'
 }
 
 const RootLayout = ({ children }: ChildrenType) => {
@@ -22,7 +24,9 @@ const RootLayout = ({ children }: ChildrenType) => {
 
   return (
     <html id='__next' dir={direction}>
-      <body className='flex is-full min-bs-full flex-auto flex-col'>{children}</body>
+      <body className='flex is-full min-bs-full flex-auto flex-col'>
+        <AuthRootProvider>{children}</AuthRootProvider>
+      </body>
     </html>
   )
 }

@@ -12,6 +12,7 @@ import classnames from 'classnames'
 
 // Config Imports
 import themeConfig from '@configs/themeConfig'
+import { NEXT_PUBLIC_PRO_URL } from '@configs/publicEnv'
 
 // Style Imports
 import styles from './styles.module.css'
@@ -34,7 +35,7 @@ const TooltipContent = () => {
         <Typography color='textSecondary'>Click on below button to explore the PRO version.</Typography>
       </CardContent>
       <CardActions>
-        <Button variant='contained' href={process.env.NEXT_PUBLIC_PRO_URL as string} target='_blank'>
+        <Button variant='contained' href={NEXT_PUBLIC_PRO_URL} target='_blank'>
           Demo
         </Button>
         <Button

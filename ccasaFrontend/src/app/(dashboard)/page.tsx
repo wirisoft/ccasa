@@ -1,76 +1,80 @@
+// Next Imports
+import Link from 'next/link'
+
 // MUI Imports
 import Grid from '@mui/material/Grid'
+import Card from '@mui/material/Card'
+import CardContent from '@mui/material/CardContent'
+import Typography from '@mui/material/Typography'
+import Button from '@mui/material/Button'
 
-// Components Imports
-import Award from '@views/dashboard/Award'
-import Transactions from '@views/dashboard/Transactions'
-import WeeklyOverview from '@views/dashboard/WeeklyOverview'
-import TotalEarning from '@views/dashboard/TotalEarning'
-import LineChart from '@views/dashboard/LineChart'
-import DistributedColumnChart from '@views/dashboard/DistributedColumnChart'
-import DepositWithdraw from '@views/dashboard/DepositWithdraw'
-import SalesByCountries from '@views/dashboard/SalesByCountries'
-import CardStatVertical from '@components/card-statistics/Vertical'
-import Table from '@views/dashboard/Table'
+// Component Imports
+import LogbooksPanel from '@components/ccasa/LogbooksPanel'
 
-const DashboardAnalytics = () => {
+// Config Imports
+import { DOC_UI_ROUTES } from '@configs/ccasaDocumentation'
+
+const docsEnApp = [
+  {
+    titulo: 'Excel — especificaciones',
+    descripcion:
+      'Hojas, columnas y mapeo a entidades para import/export y DTOs (docs/EXCEL_ESPECIFICACIONES.md).',
+    href: DOC_UI_ROUTES.excelEspecificaciones,
+    icon: 'ri-file-excel-2-line'
+  },
+  {
+    titulo: 'Análisis → software',
+    descripcion: 'Trazabilidad MER/Excel y roadmap por módulos (docs/ANALISIS_RESULTADOS_A_SOFTWARE.md).',
+    href: DOC_UI_ROUTES.analisisResultados,
+    icon: 'ri-git-repository-line'
+  }
+]
+
+const DashboardCcasa = () => {
   return (
     <Grid container spacing={6}>
-      <Grid item xs={12} md={4}>
-        <Award />
-      </Grid>
-      <Grid item xs={12} md={8} lg={8}>
-        <Transactions />
-      </Grid>
-      <Grid item xs={12} md={6} lg={4}>
-        <WeeklyOverview />
-      </Grid>
-      <Grid item xs={12} md={6} lg={4}>
-        <TotalEarning />
-      </Grid>
-      <Grid item xs={12} md={6} lg={4}>
-        <Grid container spacing={6}>
-          <Grid item xs={12} sm={6}>
-            <LineChart />
-          </Grid>
-          <Grid item xs={12} sm={6}>
-            <CardStatVertical
-              title='Total Profit'
-              stats='$25.6k'
-              avatarIcon='ri-pie-chart-2-line'
-              avatarColor='secondary'
-              subtitle='Weekly Profit'
-              trendNumber='42%'
-              trend='positive'
-            />
-          </Grid>
-          <Grid item xs={12} sm={6}>
-            <CardStatVertical
-              stats='862'
-              trend='negative'
-              trendNumber='18%'
-              title='New Project'
-              subtitle='Yearly Project'
-              avatarColor='primary'
-              avatarIcon='ri-file-word-2-line'
-            />
-          </Grid>
-          <Grid item xs={12} sm={6}>
-            <DistributedColumnChart />
-          </Grid>
-        </Grid>
-      </Grid>
-      <Grid item xs={12} md={6} lg={4}>
-        <SalesByCountries />
-      </Grid>
-      <Grid item xs={12} lg={8}>
-        <DepositWithdraw />
-      </Grid>
       <Grid item xs={12}>
-        <Table />
+        <Typography variant='h4' className='mbe-2'>
+          ccasa — Panel
+        </Typography>
+        <Typography color='text.secondary' className='mbe-6'>
+          Datos en vivo desde el backend (<code className='text-sm'>NEXT_PUBLIC_API_BASE_URL</code>, por defecto{' '}
+          <code className='text-sm'>http://localhost:8080</code>). Usuario de prueba tras arrancar el backend:{' '}
+          <code className='text-sm'>admin@ccasa.local</code> / <code className='text-sm'>change-me</code>.
+        </Typography>
+      </Grid>
+
+      <Grid item xs={12}>
+        <LogbooksPanel title='Bitácoras (UI-01)' />
+      </Grid>
+
+      <Grid item xs={12}>
+        <Typography variant='h6' className='mbe-4'>
+          Documentación en la app
+        </Typography>
+        <Grid container spacing={4}>
+          {docsEnApp.map(item => (
+            <Grid item xs={12} md={6} key={item.href}>
+              <Card variant='outlined' className='bs-full'>
+                <CardContent className='flex flex-col gap-3'>
+                  <div className='flex items-center gap-2'>
+                    <i className={`${item.icon} text-2xl text-primary`} />
+                    <Typography variant='h6'>{item.titulo}</Typography>
+                  </div>
+                  <Typography variant='body2' color='text.secondary'>
+                    {item.descripcion}
+                  </Typography>
+                  <Button component={Link} href={item.href} variant='outlined' size='small'>
+                    Abrir resumen
+                  </Button>
+                </CardContent>
+              </Card>
+            </Grid>
+          ))}
+        </Grid>
       </Grid>
     </Grid>
   )
 }
 
-export default DashboardAnalytics
+export default DashboardCcasa

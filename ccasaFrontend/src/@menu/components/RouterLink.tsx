@@ -19,6 +19,14 @@ export const RouterLink = forwardRef((props: RouterLinkProps, ref: any) => {
   // Props
   const { href, className, ...other } = props
 
+  if (href == null || href === '') {
+    return (
+      <a ref={ref} className={className} {...other}>
+        {props.children}
+      </a>
+    )
+  }
+
   return (
     <Link ref={ref} href={href} className={className} {...other}>
       {props.children}

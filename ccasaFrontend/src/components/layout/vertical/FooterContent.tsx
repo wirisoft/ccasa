@@ -12,6 +12,9 @@ import useVerticalNav from '@menu/hooks/useVerticalNav'
 // Util Imports
 import { verticalLayoutClasses } from '@layouts/utils/layoutClasses'
 
+// Config Imports
+import { NEXT_PUBLIC_DOCS_URL, NEXT_PUBLIC_REPO_NAME } from '@configs/publicEnv'
+
 const FooterContent = () => {
   // Hooks
   const { isBreakpointReached } = useVerticalNav()
@@ -36,11 +39,11 @@ const FooterContent = () => {
           <Link href='https://themeselection.com' target='_blank' className='text-primary'>
             More Themes
           </Link>
-          <Link href={process.env.NEXT_PUBLIC_DOCS_URL as string} target='_blank' className='text-primary'>
+          <Link href={NEXT_PUBLIC_DOCS_URL} target='_blank' className='text-primary'>
             Documentation
           </Link>
           <Link
-            href={`https://github.com/themeselection/${process.env.NEXT_PUBLIC_REPO_NAME}/issues`}
+            href={`https://github.com/themeselection/${NEXT_PUBLIC_REPO_NAME}/issues`}
             target='_blank'
             className='text-primary'
           >
