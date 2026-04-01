@@ -2,9 +2,9 @@ package com.backend.ccasa.controllers;
 
 import com.backend.ccasa.service.ILogbookService;
 import com.backend.ccasa.service.impl.LogbookCrudService;
-import com.backend.ccasa.services.models.dtos.CrudRequestDTO;
-import com.backend.ccasa.services.models.dtos.CrudResponseDTO;
-import com.backend.ccasa.services.models.dtos.LogbookDTO;
+import com.backend.ccasa.service.models.dtos.CrudRequestDTO;
+import com.backend.ccasa.service.models.dtos.CrudResponseDTO;
+import com.backend.ccasa.service.models.dtos.LogbookDTO;
 import java.util.List;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -17,7 +17,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
- * API de bitácoras (UI-01: dashboard 15 bitácoras).
+ * API de bitÃ¡coras (UI-01: dashboard 15 bitÃ¡coras).
  */
 @RestController
 @RequestMapping("/api/v1/logbooks")
@@ -57,3 +57,4 @@ public class LogbookController {
 		return ResponseEntity.noContent().build();
 	}
 }
+

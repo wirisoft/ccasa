@@ -1,6 +1,6 @@
 package com.backend.ccasa.service;
 
-import com.backend.ccasa.services.models.dtos.EntrySummaryDTO;
+import com.backend.ccasa.service.models.dtos.EntrySummaryDTO;
 import java.util.List;
 
 /**
@@ -10,3 +10,4 @@ public interface IEntryQueryService {
 
 	List<EntrySummaryDTO> findByLogbookId(Long logbookId);
 }
+

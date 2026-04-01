@@ -1,14 +1,20 @@
 package com.backend.ccasa.service.impl;
 
-import com.backend.ccasa.exceptions.ResourceNotFoundException;
 import com.backend.ccasa.persistence.entities.UserEntity;
+import com.backend.ccasa.persistence.repositories.UserRepository;
+import com.backend.ccasa.service.IUserCrudService;
 import jakarta.persistence.EntityManager;
 import org.springframework.stereotype.Service;
 
 @Service
-public class UserCrudService extends AbstractEntityCrudService<UserEntity> {
+public class UserCrudService extends AbstractEntityCrudService<UserEntity> implements IUserCrudService {
 
-	public UserCrudService(EntityManager entityManager) {
-		super(entityManager, UserEntity.class, id -> new ResourceNotFoundException("USER", id));
+	public UserCrudService(UserRepository repository, EntityManager entityManager) {
+		super(repository, entityManager, UserEntity.class, "U_SE_R");
+	}
+
+	@Override
+	protected UserEntity newEntity() {
+		return new UserEntity();
 	}
 }

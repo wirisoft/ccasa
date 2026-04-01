@@ -3,7 +3,7 @@ package com.backend.ccasa.service.impl;
 import com.backend.ccasa.persistence.entities.LogbookEntity;
 import com.backend.ccasa.persistence.repositories.LogbookRepository;
 import com.backend.ccasa.service.ILogbookService;
-import com.backend.ccasa.services.models.dtos.LogbookDTO;
+import com.backend.ccasa.service.models.dtos.LogbookDTO;
 import com.backend.ccasa.exceptions.LogbookNotFoundException;
 import java.util.List;
 import org.springframework.stereotype.Service;
@@ -37,3 +37,4 @@ public class LogbookServiceImpl implements ILogbookService {
 		return new LogbookDTO(l.getId(), l.getCode(), l.getName(), l.getDescription(), l.getMaxEntries());
 	}
 }
+

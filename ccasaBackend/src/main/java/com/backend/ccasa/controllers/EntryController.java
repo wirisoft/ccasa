@@ -1,7 +1,7 @@
 package com.backend.ccasa.controllers;
 
 import com.backend.ccasa.service.IEntryQueryService;
-import com.backend.ccasa.services.models.dtos.EntrySummaryDTO;
+import com.backend.ccasa.service.models.dtos.EntrySummaryDTO;
 import java.util.List;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -10,7 +10,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
- * API de entradas por bitácora. Parámetro de path al final (convención REST).
+ * API de entradas por bitÃ¡cora. ParÃ¡metro de path al final (convenciÃ³n REST).
  */
 @RestController
 @RequestMapping("/api/v1/entries")
@@ -27,3 +27,4 @@ public class EntryController {
 		return ResponseEntity.ok(entryQueryService.findByLogbookId(logbookId));
 	}
 }
+

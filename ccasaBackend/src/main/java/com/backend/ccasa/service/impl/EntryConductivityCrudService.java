@@ -1,14 +1,20 @@
 package com.backend.ccasa.service.impl;
 
-import com.backend.ccasa.exceptions.ResourceNotFoundException;
 import com.backend.ccasa.persistence.entities.entry.EntryConductivityEntity;
+import com.backend.ccasa.persistence.repositories.EntryConductivityRepository;
+import com.backend.ccasa.service.IEntryConductivityCrudService;
 import jakarta.persistence.EntityManager;
 import org.springframework.stereotype.Service;
 
 @Service
-public class EntryConductivityCrudService extends AbstractEntityCrudService<EntryConductivityEntity> {
+public class EntryConductivityCrudService extends AbstractEntityCrudService<EntryConductivityEntity> implements IEntryConductivityCrudService {
 
-	public EntryConductivityCrudService(EntityManager entityManager) {
-		super(entityManager, EntryConductivityEntity.class, id -> new ResourceNotFoundException("ENTRY_CONDUCTIVITY", id));
+	public EntryConductivityCrudService(EntryConductivityRepository repository, EntityManager entityManager) {
+		super(repository, entityManager, EntryConductivityEntity.class, "E_NT_RY_CO_ND_UC_TI_VI_TY");
+	}
+
+	@Override
+	protected EntryConductivityEntity newEntity() {
+		return new EntryConductivityEntity();
 	}
 }

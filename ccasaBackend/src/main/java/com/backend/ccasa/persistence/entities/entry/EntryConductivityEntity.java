@@ -2,7 +2,7 @@ package com.backend.ccasa.persistence.entities.entry;
 
 import com.backend.ccasa.persistence.entities.EntryEntity;
 import com.backend.ccasa.persistence.entities.audit.Auditable;
-import com.backend.ccasa.services.models.enums.ConductivityTypeEnum;
+import com.backend.ccasa.service.models.enums.ConductivityTypeEnum;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -18,7 +18,7 @@ import java.math.BigDecimal;
 import java.time.Instant;
 
 /**
- * Entrada de conductividad (RF-05: alta 0.7440–0.7490, baja 0.0744–0.0790).
+ * Entrada de conductividad (RF-05: alta 0.7440â€“0.7490, baja 0.0744â€“0.0790).
  */
 @Entity
 @Table(name = "entry_conductivity")
@@ -69,3 +69,4 @@ public class EntryConductivityEntity extends Auditable {
 	public Instant getAutoDate() { return autoDate; }
 	public void setAutoDate(Instant autoDate) { this.autoDate = autoDate; }
 }
+

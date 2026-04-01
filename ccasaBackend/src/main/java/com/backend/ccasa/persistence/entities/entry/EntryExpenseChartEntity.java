@@ -4,7 +4,7 @@ import com.backend.ccasa.persistence.entities.BatchEntity;
 import com.backend.ccasa.persistence.entities.EntryEntity;
 import com.backend.ccasa.persistence.entities.ReagentJarEntity;
 import com.backend.ccasa.persistence.entities.audit.Auditable;
-import com.backend.ccasa.services.models.enums.WaterTypeEnum;
+import com.backend.ccasa.service.models.enums.WaterTypeEnum;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -77,3 +77,4 @@ public class EntryExpenseChartEntity extends Auditable {
 	public BigDecimal getKclUsedG() { return kclUsedG; }
 	public void setKclUsedG(BigDecimal kclUsedG) { this.kclUsedG = kclUsedG; }
 }
+

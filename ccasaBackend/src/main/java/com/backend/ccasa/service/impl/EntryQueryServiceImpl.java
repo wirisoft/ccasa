@@ -4,7 +4,7 @@ import com.backend.ccasa.persistence.entities.EntryEntity;
 import com.backend.ccasa.persistence.repositories.EntryRepository;
 import com.backend.ccasa.persistence.repositories.LogbookRepository;
 import com.backend.ccasa.service.IEntryQueryService;
-import com.backend.ccasa.services.models.dtos.EntrySummaryDTO;
+import com.backend.ccasa.service.models.dtos.EntrySummaryDTO;
 import com.backend.ccasa.exceptions.LogbookNotFoundException;
 import java.util.List;
 import org.springframework.stereotype.Service;
@@ -44,3 +44,4 @@ public class EntryQueryServiceImpl implements IEntryQueryService {
 		);
 	}
 }
+

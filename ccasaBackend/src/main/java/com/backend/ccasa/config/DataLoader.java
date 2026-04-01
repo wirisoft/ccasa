@@ -6,14 +6,15 @@ import com.backend.ccasa.persistence.entities.UserEntity;
 import com.backend.ccasa.persistence.repositories.LogbookRepository;
 import com.backend.ccasa.persistence.repositories.RoleRepository;
 import com.backend.ccasa.persistence.repositories.UserRepository;
-import com.backend.ccasa.services.models.enums.RoleNameEnum;
+import com.backend.ccasa.service.models.enums.RoleNameEnum;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.annotation.Order;
 
 /**
- * Carga inicial: 15 bitácoras (UI-01), rol Admin y usuario de prueba.
+ * Carga inicial: 15 bitÃ¡coras (UI-01), rol Admin y usuario de prueba.
  */
 @Configuration
 public class DataLoader {
@@ -26,8 +27,8 @@ public class DataLoader {
 			for (int code = 1; code <= 15; code++) {
 				LogbookEntity l = new LogbookEntity();
 				l.setCode(code);
-				l.setName("Bitácora " + code);
-				l.setDescription("Bitácora de laboratorio código " + code);
+				l.setName("BitÃ¡cora " + code);
+				l.setDescription("BitÃ¡cora de laboratorio cÃ³digo " + code);
 				l.setMaxEntries(200);
 				repo.save(l);
 			}
@@ -36,22 +37,26 @@ public class DataLoader {
 
 	@Bean
 	@Order(2)
-	public ApplicationRunner loadRolesAndUser(RoleRepository roleRepo, UserRepository userRepo) {
+	public ApplicationRunner loadRolesAndUser(RoleRepository roleRepo, UserRepository userRepo, PasswordEncoder passwordEncoder) {
 		return args -> {
-			if (roleRepo.count() > 0) return;
-			RoleEntity admin = new RoleEntity();
-			admin.setName(RoleNameEnum.Admin);
-			admin.setDescription("Administrador del sistema");
-			admin = roleRepo.save(admin);
+			RoleEntity adminRole = roleRepo.findByName(RoleNameEnum.Admin).orElseGet(() -> {
+				RoleEntity role = new RoleEntity();
+				role.setName(RoleNameEnum.Admin);
+				role.setDescription("Administrador del sistema");
+				return roleRepo.save(role);
+			});
 
-			UserEntity u = new UserEntity();
-			u.setFirstName("Admin");
-			u.setLastName("Sistema");
-			u.setEmail("admin@ccasa.local");
-			u.setPasswordHash("{noop}change-me");
-			u.setRole(admin);
-			u.setActive(true);
-			userRepo.save(u);
+			userRepo.findByEmail("admin@ccasa.local").orElseGet(() -> {
+				UserEntity user = new UserEntity();
+				user.setFirstName("Admin");
+				user.setLastName("Sistema");
+				user.setEmail("admin@ccasa.local");
+				user.setPasswordHash(passwordEncoder.encode("change-me"));
+				user.setRole(adminRole);
+				user.setActive(true);
+				return userRepo.save(user);
+			});
 		};
 	}
 }
+

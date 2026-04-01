@@ -3,7 +3,7 @@ package com.backend.ccasa.persistence.entities.entry;
 import com.backend.ccasa.persistence.entities.EntryEntity;
 import com.backend.ccasa.persistence.entities.UserEntity;
 import com.backend.ccasa.persistence.entities.audit.Auditable;
-import com.backend.ccasa.services.models.enums.PieceTypeEnum;
+import com.backend.ccasa.service.models.enums.PieceTypeEnum;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -18,7 +18,7 @@ import jakarta.persistence.Table;
 import java.time.LocalDate;
 
 /**
- * Lavado de material (RF-09: Carboy/Flask, máx 12 entradas por folio).
+ * Lavado de material (RF-09: Carboy/Flask, mÃ¡x 12 entradas por folio).
  */
 @Entity
 @Table(name = "entry_material_wash")
@@ -73,3 +73,4 @@ public class EntryMaterialWashEntity extends Auditable {
 	public UserEntity getSupervisorUser() { return supervisorUser; }
 	public void setSupervisorUser(UserEntity supervisorUser) { this.supervisorUser = supervisorUser; }
 }
+

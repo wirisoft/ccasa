@@ -1,8 +1,8 @@
 package com.backend.ccasa.controllers;
 
 import com.backend.ccasa.service.IDistilledWaterEntryService;
-import com.backend.ccasa.services.models.dtos.DistilledWaterRequestDTO;
-import com.backend.ccasa.services.models.dtos.DistilledWaterResponseDTO;
+import com.backend.ccasa.service.models.dtos.DistilledWaterRequestDTO;
+import com.backend.ccasa.service.models.dtos.DistilledWaterResponseDTO;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -35,3 +35,4 @@ public class DistilledWaterController {
 		return ResponseEntity.ok(distilledWaterEntryService.create(dto));
 	}
 }
+

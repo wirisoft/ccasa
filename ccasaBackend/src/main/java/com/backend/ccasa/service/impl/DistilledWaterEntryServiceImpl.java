@@ -13,9 +13,9 @@ import com.backend.ccasa.persistence.repositories.FolioRepository;
 import com.backend.ccasa.persistence.repositories.LogbookRepository;
 import com.backend.ccasa.persistence.repositories.UserRepository;
 import com.backend.ccasa.service.IDistilledWaterEntryService;
-import com.backend.ccasa.services.models.dtos.DistilledWaterRequestDTO;
-import com.backend.ccasa.services.models.dtos.DistilledWaterResponseDTO;
-import com.backend.ccasa.services.models.enums.EntryStatusEnum;
+import com.backend.ccasa.service.models.dtos.DistilledWaterRequestDTO;
+import com.backend.ccasa.service.models.dtos.DistilledWaterResponseDTO;
+import com.backend.ccasa.service.models.enums.EntryStatusEnum;
 import com.backend.ccasa.exceptions.EntryNotFoundException;
 import com.backend.ccasa.exceptions.FolioNotFoundException;
 import com.backend.ccasa.exceptions.LogbookNotFoundException;
@@ -27,7 +27,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
- * Servicio para entradas de agua destilada (RF-08: 3 lecturas → promedios, is_acceptable).
+ * Servicio para entradas de agua destilada (RF-08: 3 lecturas â†’ promedios, is_acceptable).
  */
 @Service
 public class DistilledWaterEntryServiceImpl implements IDistilledWaterEntryService {
@@ -134,3 +134,4 @@ public class DistilledWaterEntryServiceImpl implements IDistilledWaterEntryServi
 		);
 	}
 }
+

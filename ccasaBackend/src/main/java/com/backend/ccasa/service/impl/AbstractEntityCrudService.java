@@ -1,53 +1,52 @@
 package com.backend.ccasa.service.impl;
 
+import com.backend.ccasa.exceptions.ResourceNotFoundException;
 import com.backend.ccasa.persistence.entities.audit.Auditable;
-import com.backend.ccasa.service.IResourceCrudService;
-import com.backend.ccasa.services.models.dtos.CrudRequestDTO;
-import com.backend.ccasa.services.models.dtos.CrudResponseDTO;
+import com.backend.ccasa.persistence.repositories.ActiveRepository;
+import com.backend.ccasa.service.ITypedCrudService;
+import com.backend.ccasa.service.impl.support.CrudEntityMapper;
+import com.backend.ccasa.service.models.dtos.CrudRequestDTO;
+import com.backend.ccasa.service.models.dtos.CrudResponseDTO;
 import jakarta.persistence.EntityManager;
-import jakarta.persistence.TypedQuery;
-import java.lang.reflect.Field;
-import java.math.BigDecimal;
 import java.time.Instant;
-import java.time.LocalDate;
-import java.time.LocalTime;
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.function.Function;
 import org.springframework.transaction.annotation.Transactional;
 
 @Transactional
-public abstract class AbstractEntityCrudService<E extends Auditable> implements IResourceCrudService {
+public abstract class AbstractEntityCrudService<E extends Auditable> implements ITypedCrudService {
 
+	private final ActiveRepository<E, Long> repository;
 	private final EntityManager entityManager;
 	private final Class<E> entityClass;
-	private final Function<Long, RuntimeException> notFoundFactory;
+	private final String resourceCode;
 
-	protected AbstractEntityCrudService(EntityManager entityManager, Class<E> entityClass, Function<Long, RuntimeException> notFoundFactory) {
+	protected AbstractEntityCrudService(
+		ActiveRepository<E, Long> repository,
+		EntityManager entityManager,
+		Class<E> entityClass,
+		String resourceCode
+	) {
+		this.repository = repository;
 		this.entityManager = entityManager;
 		this.entityClass = entityClass;
-		this.notFoundFactory = notFoundFactory;
+		this.resourceCode = toResourceCode(entityClass);
 	}
+
+	protected abstract E newEntity();
 
 	@Override
 	public CrudResponseDTO create(CrudRequestDTO request) {
-		E entity = newEntityInstance();
-		applyRequest(entity, request.values());
-		entityManager.persist(entity);
-		entityManager.flush();
-		return toDto(entity);
+		E entity = newEntity();
+		CrudEntityMapper.apply(entityClass, entity, values(request), entityManager);
+		E saved = repository.save(entity);
+		return toDto(saved);
 	}
 
 	@Override
 	@Transactional(readOnly = true)
 	public List<CrudResponseDTO> findAllActive() {
-		TypedQuery<E> query = entityManager.createQuery(
-			"select e from " + entityClass.getSimpleName() + " e where e.deletedAt is null",
-			entityClass
-		);
-		return query.getResultList().stream().map(this::toDto).toList();
+		return repository.findAllByDeletedAtIsNull().stream().map(this::toDto).toList();
 	}
 
 	@Override
@@ -59,190 +58,60 @@ public abstract class AbstractEntityCrudService<E extends Auditable> implements 
 	@Override
 	public CrudResponseDTO update(Long id, CrudRequestDTO request) {
 		E entity = requireActive(id);
-		applyRequest(entity, request.values());
+		CrudEntityMapper.apply(entityClass, entity, values(request), entityManager);
 		entity.setUpdatedAt(Instant.now());
-		entityManager.flush();
-		return toDto(entity);
+		E saved = repository.save(entity);
+		return toDto(saved);
 	}
 
 	@Override
 	public void delete(Long id) {
 		E entity = requireActive(id);
 		entity.setDeletedAt(Instant.now());
-		entityManager.flush();
+		repository.save(entity);
 	}
 
 	private E requireActive(Long id) {
-		TypedQuery<E> query = entityManager.createQuery(
-			"select e from " + entityClass.getSimpleName() + " e where e.id = :id and e.deletedAt is null",
-			entityClass
-		);
-		query.setParameter("id", id);
-		List<E> result = query.getResultList();
-		if (result.isEmpty()) {
-			throw notFoundFactory.apply(id);
-		}
-		return result.getFirst();
-	}
-
-	private E newEntityInstance() {
-		try {
-			return entityClass.getDeclaredConstructor().newInstance();
-		}
-		catch (Exception ex) {
-			throw new IllegalStateException("Cannot instantiate " + entityClass.getSimpleName(), ex);
-		}
-	}
-
-	private void applyRequest(E entity, Map<String, Object> values) {
-		if (values == null) {
-			return;
-		}
-		for (Field field : allFields(entityClass)) {
-			field.setAccessible(true);
-			String name = field.getName();
-			if ("id".equals(name) || "createdAt".equals(name) || "updatedAt".equals(name) || "deletedAt".equals(name)) {
-				continue;
-			}
-			if (isRelationField(field)) {
-				String relationKey = name + "Id";
-				if (values.containsKey(relationKey)) {
-					Object relationIdValue = values.get(relationKey);
-					setField(entity, field, relationIdValue == null ? null : findActiveRelation(field.getType(), Long.valueOf(String.valueOf(relationIdValue))));
-				}
-				continue;
-			}
-			if (values.containsKey(name)) {
-				setField(entity, field, convertValue(values.get(name), field.getType()));
-			}
-		}
-	}
-
-	private Object findActiveRelation(Class<?> relationType, Long id) {
-		List<?> result = entityManager.createQuery(
-				"select e from " + relationType.getSimpleName() + " e where e.id = :id and e.deletedAt is null",
-				relationType
-			)
-			.setParameter("id", id)
-			.getResultList();
-		if (result.isEmpty()) {
-			throw new IllegalArgumentException("Related entity not found: " + relationType.getSimpleName() + " id=" + id);
-		}
-		return result.getFirst();
+		return repository.findByIdAndDeletedAtIsNull(id).orElseThrow(() -> new ResourceNotFoundException(resourceCode, id));
 	}
 
 	private CrudResponseDTO toDto(E entity) {
-		Map<String, Object> payload = new LinkedHashMap<>();
-		for (Field field : allFields(entityClass)) {
-			field.setAccessible(true);
-			if ("id".equals(field.getName())) {
-				continue;
-			}
-			Object value = getField(entity, field);
-			if (isRelationField(field)) {
-				payload.put(field.getName() + "Id", relationId(value));
-			}
-			else {
-				payload.put(field.getName(), value);
-			}
-		}
-		return new CrudResponseDTO((Long) getField(entity, getIdField()), payload);
+		return new CrudResponseDTO(extractId(entity), CrudEntityMapper.toValues(entityClass, entity));
 	}
 
-	private List<Field> allFields(Class<?> type) {
-		List<Field> fields = new ArrayList<>();
-		Class<?> current = type;
-		while (current != null && current != Object.class) {
-			for (Field field : current.getDeclaredFields()) {
-				fields.add(field);
-			}
-			current = current.getSuperclass();
-		}
-		return fields;
+	private Long extractId(E entity) {
+		if (entity instanceof com.backend.ccasa.persistence.entities.RoleEntity e) return e.getId();
+		if (entity instanceof com.backend.ccasa.persistence.entities.UserEntity e) return e.getId();
+		if (entity instanceof com.backend.ccasa.persistence.entities.LogbookEntity e) return e.getId();
+		if (entity instanceof com.backend.ccasa.persistence.entities.FolioBlockEntity e) return e.getId();
+		if (entity instanceof com.backend.ccasa.persistence.entities.FolioEntity e) return e.getId();
+		if (entity instanceof com.backend.ccasa.persistence.entities.EntryEntity e) return e.getId();
+		if (entity instanceof com.backend.ccasa.persistence.entities.AlertEntity e) return e.getId();
+		if (entity instanceof com.backend.ccasa.persistence.entities.SignatureEntity e) return e.getId();
+		if (entity instanceof com.backend.ccasa.persistence.entities.ReagentEntity e) return e.getId();
+		if (entity instanceof com.backend.ccasa.persistence.entities.BatchEntity e) return e.getId();
+		if (entity instanceof com.backend.ccasa.persistence.entities.ReagentJarEntity e) return e.getId();
+		if (entity instanceof com.backend.ccasa.persistence.entities.SolutionEntity e) return e.getId();
+		if (entity instanceof com.backend.ccasa.persistence.entities.SupplyEntity e) return e.getId();
+		if (entity instanceof com.backend.ccasa.persistence.entities.entry.EntryConductivityEntity e) return e.getId();
+		if (entity instanceof com.backend.ccasa.persistence.entities.entry.EntryDistilledWaterEntity e) return e.getId();
+		if (entity instanceof com.backend.ccasa.persistence.entities.entry.EntryOvenTempEntity e) return e.getId();
+		if (entity instanceof com.backend.ccasa.persistence.entities.entry.EntryWeighingEntity e) return e.getId();
+		if (entity instanceof com.backend.ccasa.persistence.entities.entry.EntryMaterialWashEntity e) return e.getId();
+		if (entity instanceof com.backend.ccasa.persistence.entities.entry.EntrySolutionPrepEntity e) return e.getId();
+		if (entity instanceof com.backend.ccasa.persistence.entities.entry.EntryDryingOvenEntity e) return e.getId();
+		if (entity instanceof com.backend.ccasa.persistence.entities.entry.EntryAccuracyEntity e) return e.getId();
+		if (entity instanceof com.backend.ccasa.persistence.entities.entry.EntryExpenseChartEntity e) return e.getId();
+		if (entity instanceof com.backend.ccasa.persistence.entities.entry.EntryFlaskTreatmentEntity e) return e.getId();
+		return null;
 	}
 
-	private Field getIdField() {
-		try {
-			return entityClass.getDeclaredField("id");
-		}
-		catch (NoSuchFieldException ex) {
-			throw new IllegalStateException("Entity without id field: " + entityClass.getSimpleName(), ex);
-		}
+	private Map<String, Object> values(CrudRequestDTO request) {
+		return request == null || request.values() == null ? Map.of() : request.values();
 	}
 
-	private Object getField(Object target, Field field) {
-		try {
-			field.setAccessible(true);
-			return field.get(target);
-		}
-		catch (IllegalAccessException ex) {
-			throw new IllegalStateException("Cannot read field " + field.getName(), ex);
-		}
-	}
-
-	private void setField(Object target, Field field, Object value) {
-		try {
-			field.setAccessible(true);
-			field.set(target, value);
-		}
-		catch (IllegalAccessException ex) {
-			throw new IllegalStateException("Cannot write field " + field.getName(), ex);
-		}
-	}
-
-	private boolean isRelationField(Field field) {
-		String pkg = field.getType().getPackageName();
-		return pkg.startsWith("com.backend.ccasa.persistence.entities");
-	}
-
-	private Long relationId(Object relation) {
-		if (relation == null) {
-			return null;
-		}
-		try {
-			return (Long) relation.getClass().getMethod("getId").invoke(relation);
-		}
-		catch (Exception ex) {
-			return null;
-		}
-	}
-
-	private Object convertValue(Object raw, Class<?> targetType) {
-		if (raw == null) {
-			return null;
-		}
-		if (targetType.isAssignableFrom(raw.getClass())) {
-			return raw;
-		}
-		if (targetType == String.class) {
-			return String.valueOf(raw);
-		}
-		if (targetType == Integer.class || targetType == int.class) {
-			return Integer.valueOf(String.valueOf(raw));
-		}
-		if (targetType == Long.class || targetType == long.class) {
-			return Long.valueOf(String.valueOf(raw));
-		}
-		if (targetType == Boolean.class || targetType == boolean.class) {
-			return Boolean.valueOf(String.valueOf(raw));
-		}
-		if (targetType == BigDecimal.class) {
-			return new BigDecimal(String.valueOf(raw));
-		}
-		if (targetType == Instant.class) {
-			return Instant.parse(String.valueOf(raw));
-		}
-		if (targetType == LocalDate.class) {
-			return LocalDate.parse(String.valueOf(raw));
-		}
-		if (targetType == LocalTime.class) {
-			return LocalTime.parse(String.valueOf(raw));
-		}
-		if (targetType.isEnum()) {
-			@SuppressWarnings({"unchecked", "rawtypes"})
-			Class<? extends Enum> enumType = (Class<? extends Enum>) targetType;
-			return Enum.valueOf(enumType, String.valueOf(raw));
-		}
-		return raw;
+	private String toResourceCode(Class<E> type) {
+		String base = type.getSimpleName().replace("Entity", "");
+		return base.replaceAll("([a-z])([A-Z])", "$1_$2").toUpperCase();
 	}
 }

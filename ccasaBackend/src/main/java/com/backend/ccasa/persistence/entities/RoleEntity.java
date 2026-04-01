@@ -1,7 +1,7 @@
 package com.backend.ccasa.persistence.entities;
 
 import com.backend.ccasa.persistence.entities.audit.Auditable;
-import com.backend.ccasa.services.models.enums.RoleNameEnum;
+import com.backend.ccasa.service.models.enums.RoleNameEnum;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -37,3 +37,4 @@ public class RoleEntity extends Auditable {
 	public String getDescription() { return description; }
 	public void setDescription(String description) { this.description = description; }
 }
+

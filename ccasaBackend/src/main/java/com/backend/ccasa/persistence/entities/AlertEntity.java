@@ -1,7 +1,7 @@
 package com.backend.ccasa.persistence.entities;
 
 import com.backend.ccasa.persistence.entities.audit.Auditable;
-import com.backend.ccasa.services.models.enums.AlertStatusEnum;
+import com.backend.ccasa.service.models.enums.AlertStatusEnum;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -57,3 +57,4 @@ public class AlertEntity extends Auditable {
 	public AlertStatusEnum getStatus() { return status; }
 	public void setStatus(AlertStatusEnum status) { this.status = status; }
 }
+

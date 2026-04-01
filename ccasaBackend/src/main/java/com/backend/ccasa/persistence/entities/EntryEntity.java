@@ -1,7 +1,7 @@
 package com.backend.ccasa.persistence.entities;
 
 import com.backend.ccasa.persistence.entities.audit.Auditable;
-import com.backend.ccasa.services.models.enums.EntryStatusEnum;
+import com.backend.ccasa.service.models.enums.EntryStatusEnum;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -16,7 +16,7 @@ import jakarta.persistence.Table;
 import java.time.Instant;
 
 /**
- * Entrada genérica de bitácora (RNF-01: Draft → Signed → Locked).
+ * Entrada genÃ©rica de bitÃ¡cora (RNF-01: Draft â†’ Signed â†’ Locked).
  */
 @Entity
 @Table(name = "entry")
@@ -59,3 +59,4 @@ public class EntryEntity extends Auditable {
 	public EntryStatusEnum getStatus() { return status; }
 	public void setStatus(EntryStatusEnum status) { this.status = status; }
 }
+

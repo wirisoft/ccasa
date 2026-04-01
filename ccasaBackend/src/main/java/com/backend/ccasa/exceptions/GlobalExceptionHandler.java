@@ -40,6 +40,17 @@ public class GlobalExceptionHandler {
 		return ResponseEntity.status(HttpStatus.NOT_FOUND).body(errorBody(ex.getCode(), ex.getMessage()));
 	}
 
+	@ExceptionHandler(AuthException.class)
+	public ResponseEntity<Map<String, Object>> handleAuthException(AuthException ex) {
+		HttpStatus status = "AUTH_INVALID_CREDENTIALS".equals(ex.getCode()) ? HttpStatus.UNAUTHORIZED : HttpStatus.BAD_REQUEST;
+		return ResponseEntity.status(status).body(errorBody(ex.getCode(), ex.getMessage()));
+	}
+
+	@ExceptionHandler(IllegalArgumentException.class)
+	public ResponseEntity<Map<String, Object>> handleInvalidRequest(IllegalArgumentException ex) {
+		return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorBody("INVALID_REQUEST", ex.getMessage()));
+	}
+
 	@ExceptionHandler(AccessDeniedException.class)
 	public ResponseEntity<Map<String, Object>> handleAccessDenied(AccessDeniedException ex) {
 		return ResponseEntity.status(HttpStatus.FORBIDDEN).body(errorBody("ACCESS_DENIED", ex.getMessage()));

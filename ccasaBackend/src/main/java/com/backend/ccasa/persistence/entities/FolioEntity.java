@@ -1,7 +1,7 @@
 package com.backend.ccasa.persistence.entities;
 
 import com.backend.ccasa.persistence.entities.audit.Auditable;
-import com.backend.ccasa.services.models.enums.FolioStatusEnum;
+import com.backend.ccasa.service.models.enums.FolioStatusEnum;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -49,3 +49,4 @@ public class FolioEntity extends Auditable {
 	public FolioStatusEnum getStatus() { return status; }
 	public void setStatus(FolioStatusEnum status) { this.status = status; }
 }
+

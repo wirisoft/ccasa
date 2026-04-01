@@ -1,7 +1,7 @@
 package com.backend.ccasa.persistence.entities;
 
 import com.backend.ccasa.persistence.entities.audit.Auditable;
-import com.backend.ccasa.services.models.enums.SignatureTypeEnum;
+import com.backend.ccasa.service.models.enums.SignatureTypeEnum;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -53,3 +53,4 @@ public class SignatureEntity extends Auditable {
 	public SignatureTypeEnum getSignatureType() { return signatureType; }
 	public void setSignatureType(SignatureTypeEnum signatureType) { this.signatureType = signatureType; }
 }
+
