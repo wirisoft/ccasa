@@ -1,5 +1,7 @@
 # Documentación del proyecto ccasa
 
+- **[ARQUITECTURA_Y_MODELO_DATOS_CCASA.md](ARQUITECTURA_Y_MODELO_DATOS_CCASA.md)** — Presentación para cliente/stakeholders: arquitectura del backend (alto y bajo nivel), flujos, modelo de datos con diagramas Mermaid y enlace al DDL PostgreSQL.
+- **[sql/ccasa_schema_postgresql.sql](sql/ccasa_schema_postgresql.sql)** — Script `CREATE TABLE` PostgreSQL alineado con las entidades JPA actuales (FKs, índices, comentarios).
 - **[ANALISIS_Y_PROPUESTA_CCASA.md](ANALISIS_Y_PROPUESTA_CCASA.md)** — Análisis del MER, funcionalidad por tipo de archivo, propuesta de software modular (stack, arquitectura, frontend, BD) y próximos pasos.
 - **[EXCEL_ESPECIFICACIONES.md](EXCEL_ESPECIFICACIONES.md)** — Especificaciones de plantillas Excel (hojas, columnas, mapeo a entidades) para importación/exportación y trazabilidad.
 - **[ANALISIS_RESULTADOS_A_SOFTWARE.md](ANALISIS_RESULTADOS_A_SOFTWARE.md)** — Por qué el diseño es así (trazabilidad con documentos/Excel) y cómo llevar toda la información a software funcional y escalable (roadmap por módulos).
