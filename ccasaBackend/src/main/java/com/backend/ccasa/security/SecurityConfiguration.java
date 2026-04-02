@@ -54,6 +54,7 @@ public class SecurityConfiguration {
 						.anyRequest().authenticated())
 				.sessionManagement(session ->
 						session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+				.addFilterBefore(apiPathRewriteFilter(), RateLimitingFilter.class)
 				.addFilterBefore(jwtAuthorizationFilter(), UsernamePasswordAuthenticationFilter.class)
 				.addFilterBefore(rateLimitingFilter, JWTAuthorizationFilter.class)
 				.exceptionHandling(ex -> ex
@@ -100,6 +101,11 @@ public class SecurityConfiguration {
 		UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
 		source.registerCorsConfiguration("/**", configuration);
 		return source;
+	}
+
+	@Bean
+	public ApiPathRewriteFilter apiPathRewriteFilter() {
+		return new ApiPathRewriteFilter();
 	}
 
 	@Bean
