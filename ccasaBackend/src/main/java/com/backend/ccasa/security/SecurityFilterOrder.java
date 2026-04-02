@@ -1,10 +1,9 @@
 package com.backend.ccasa.security;
 
 /**
- * Órdenes registrados para filtros propios en Spring Security 7.
- * Valores menores se ejecutan antes en la cadena (petición entrante).
- * Deben quedar por debajo del orden del {@link org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter}
- * (típicamente 1100).
+ * Orden del pipeline previo a la autenticación por formulario.
+ * Debe quedar antes de {@link org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter}
+ * (orden típico 1100 en Spring Security 7).
  */
 public final class SecurityFilterOrder {
 
@@ -13,9 +12,6 @@ public final class SecurityFilterOrder {
 
 	private static final int USERNAME_PASSWORD_AUTH_FILTER = 1100;
 
-	public static final int API_PATH_REWRITE = USERNAME_PASSWORD_AUTH_FILTER - 30;
-
-	public static final int RATE_LIMITING = USERNAME_PASSWORD_AUTH_FILTER - 20;
-
-	public static final int JWT_AUTHORIZATION = USERNAME_PASSWORD_AUTH_FILTER - 10;
+	/** Filtro compuesto: reescritura de ruta, rate limit y JWT. */
+	public static final int PRE_AUTHENTICATION_PIPELINE = USERNAME_PASSWORD_AUTH_FILTER - 10;
 }

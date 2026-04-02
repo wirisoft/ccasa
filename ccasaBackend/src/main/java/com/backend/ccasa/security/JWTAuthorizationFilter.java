@@ -11,7 +11,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
-import org.springframework.core.Ordered;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.filter.OncePerRequestFilter;
 
@@ -27,7 +26,7 @@ import java.util.List;
  * Filtro que valida el JWT en cada petición y establece el SecurityContext
  * con CcasaUserDetails (userId, email, tenantId, roles).
  */
-public class JWTAuthorizationFilter extends OncePerRequestFilter implements Ordered {
+public class JWTAuthorizationFilter extends OncePerRequestFilter {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(JWTAuthorizationFilter.class);
 
@@ -35,11 +34,6 @@ public class JWTAuthorizationFilter extends OncePerRequestFilter implements Orde
 
 	public JWTAuthorizationFilter(IJWTUtilityService jwtUtilityService) {
 		this.jwtUtilityService = jwtUtilityService;
-	}
-
-	@Override
-	public int getOrder() {
-		return SecurityFilterOrder.JWT_AUTHORIZATION;
 	}
 
 	@Override

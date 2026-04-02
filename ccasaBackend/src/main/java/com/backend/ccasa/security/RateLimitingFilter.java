@@ -6,7 +6,6 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import org.springframework.core.Ordered;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
@@ -22,12 +21,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  * Rate limits requests to public auth endpoints (login, register, forgot-password) per client IP.
  */
 @Component
-public class RateLimitingFilter extends OncePerRequestFilter implements Ordered {
-
-	@Override
-	public int getOrder() {
-		return SecurityFilterOrder.RATE_LIMITING;
-	}
+public class RateLimitingFilter extends OncePerRequestFilter {
 
 	private static final int MAX_REQUESTS_PER_MINUTE = 10;
 	private static final List<String> RATE_LIMITED_PATHS = List.of(

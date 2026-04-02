@@ -30,16 +30,14 @@ public class SecurityConfiguration {
 	private static final Logger LOGGER = LoggerFactory.getLogger(SecurityConfiguration.class);
 
 	private final IJWTUtilityService jwtUtilityService;
-	private final RateLimitingFilter rateLimitingFilter;
 
-	public SecurityConfiguration(IJWTUtilityService jwtUtilityService,
-			RateLimitingFilter rateLimitingFilter) {
+	public SecurityConfiguration(IJWTUtilityService jwtUtilityService) {
 		this.jwtUtilityService = jwtUtilityService;
-		this.rateLimitingFilter = rateLimitingFilter;
 	}
 
 	@Bean
-	public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+	public SecurityFilterChain securityFilterChain(HttpSecurity http,
+			CcasaSecurityPipelineFilter ccasaSecurityPipelineFilter) throws Exception {
 		LOGGER.info("Configurando seguridad de la API (JWT)...");
 
 		return http
@@ -54,9 +52,7 @@ public class SecurityConfiguration {
 						.anyRequest().authenticated())
 				.sessionManagement(session ->
 						session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-				.addFilterBefore(apiPathRewriteFilter(), RateLimitingFilter.class)
-				.addFilterBefore(jwtAuthorizationFilter(), UsernamePasswordAuthenticationFilter.class)
-				.addFilterBefore(rateLimitingFilter, JWTAuthorizationFilter.class)
+				.addFilterAt(ccasaSecurityPipelineFilter, UsernamePasswordAuthenticationFilter.class)
 				.exceptionHandling(ex -> ex
 						.authenticationEntryPoint((request, response, authException) -> {
 							LOGGER.warn("Acceso no autorizado a: {} - {}", request.getRequestURI(), authException.getMessage());
@@ -111,6 +107,14 @@ public class SecurityConfiguration {
 	@Bean
 	public JWTAuthorizationFilter jwtAuthorizationFilter() {
 		return new JWTAuthorizationFilter(jwtUtilityService);
+	}
+
+	@Bean
+	public CcasaSecurityPipelineFilter ccasaSecurityPipelineFilter(
+			ApiPathRewriteFilter apiPathRewriteFilter,
+			RateLimitingFilter rateLimitingFilter,
+			JWTAuthorizationFilter jwtAuthorizationFilter) {
+		return new CcasaSecurityPipelineFilter(apiPathRewriteFilter, rateLimitingFilter, jwtAuthorizationFilter);
 	}
 
 	@Bean
