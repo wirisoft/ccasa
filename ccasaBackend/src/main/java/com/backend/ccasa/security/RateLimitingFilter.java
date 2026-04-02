@@ -14,7 +14,6 @@ import org.springframework.web.filter.OncePerRequestFilter;
 import java.io.IOException;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -24,11 +23,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class RateLimitingFilter extends OncePerRequestFilter {
 
 	private static final int MAX_REQUESTS_PER_MINUTE = 10;
-	private static final List<String> RATE_LIMITED_PATHS = List.of(
-			"/api/v1/auth/login",
-			"/api/v1/auth/register",
-			"/api/v1/auth/forgot-password"
-	);
 
 	private final Cache<String, AtomicInteger> requestCounts = Caffeine.newBuilder()
 			.expireAfterWrite(Duration.ofMinutes(1))
@@ -42,8 +36,7 @@ public class RateLimitingFilter extends OncePerRequestFilter {
 			throws ServletException, IOException {
 
 		String path = request.getRequestURI();
-		boolean isRateLimited = RATE_LIMITED_PATHS.stream()
-				.anyMatch(path::equals);
+		boolean isRateLimited = SecurityPathPatterns.isAuthRateLimitedPath(path);
 
 		if (!isRateLimited) {
 			filterChain.doFilter(request, response);

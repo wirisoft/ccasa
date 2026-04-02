@@ -45,7 +45,7 @@ public class JWTAuthorizationFilter extends OncePerRequestFilter {
 			return;
 		}
 
-		if (isPublicEndpoint(request.getRequestURI())) {
+		if (SecurityPathPatterns.isPublicForJwt(request.getRequestURI())) {
 			filterChain.doFilter(request, response);
 			return;
 		}
@@ -155,16 +155,6 @@ public class JWTAuthorizationFilter extends OncePerRequestFilter {
 			LOGGER.debug("Error leyendo claim '{}': {}", claimName, e.getMessage());
 		}
 		return null;
-	}
-
-	private boolean isPublicEndpoint(String path) {
-		if (path == null) {
-			return false;
-		}
-		return path.startsWith("/api/v1/auth/")
-				|| path.startsWith("/actuator/")
-				|| path.startsWith("/error")
-				|| path.startsWith("/h2-console/");
 	}
 
 	private boolean areClaimsValid(String subject, String email) {
