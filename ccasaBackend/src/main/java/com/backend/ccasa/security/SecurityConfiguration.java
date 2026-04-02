@@ -82,12 +82,12 @@ public class SecurityConfiguration {
 		CorsConfiguration configuration = new CorsConfiguration();
 		configuration.setAllowedOriginPatterns(List.of(
 				"http://localhost:3000",
+				"http://localhost:3000",
 				"http://127.0.0.1:3000",
-				"http://localhost:5173",
-				"http://127.0.0.1:5173",
-				"http://76.13.96.56:3002",
 				"http://localhost:3002",
-				"http://76.13.96.56"
+				"http://76.13.96.56",
+				"http://ccasa.hexvorn.cloud",
+				"https://ccasa.hexvorn.cloud"
 		));
 		configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
 		configuration.setAllowedHeaders(Arrays.asList(
