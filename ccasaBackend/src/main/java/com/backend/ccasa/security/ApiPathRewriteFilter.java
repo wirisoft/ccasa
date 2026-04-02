@@ -5,6 +5,7 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletRequestWrapper;
 import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.core.Ordered;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
@@ -14,7 +15,12 @@ import java.io.IOException;
  * la petición llega como {@code /v1/...} pero los controladores mapean {@code /api/v1/...}.
  * Este filtro restaura el prefijo para toda la cadena posterior (rate limit, JWT, MVC).
  */
-public class ApiPathRewriteFilter extends OncePerRequestFilter {
+public class ApiPathRewriteFilter extends OncePerRequestFilter implements Ordered {
+
+	@Override
+	public int getOrder() {
+		return SecurityFilterOrder.API_PATH_REWRITE;
+	}
 
 	@Override
 	protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
