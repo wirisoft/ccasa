@@ -11,15 +11,10 @@ import Typography from '@mui/material/Typography'
 // Component Imports
 import CrudListPanel from '@components/ccasa/CrudListPanel'
 
-// Config Imports
-import { getCatalogBackend } from '@configs/backendApiRegistry'
-
 // Lib Imports
 import { BATCH_CONFIG } from '@/lib/ccasa/crudFields'
 
 const Page = () => {
-  const c = getCatalogBackend('batches')!
-
   return (
     <Stack spacing={4}>
       <div className='flex items-center justify-between flex-wrap gap-2'>
@@ -31,7 +26,6 @@ const Page = () => {
       <CrudListPanel
         apiPath={BATCH_CONFIG.apiPath}
         title={BATCH_CONFIG.labelPlural}
-        subtitle={c.controllerHint}
         fields={BATCH_CONFIG.fields}
         resourceLabel={BATCH_CONFIG.label}
       />

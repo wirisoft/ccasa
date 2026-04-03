@@ -26,11 +26,18 @@ const LogoText = styled.span<LogoTextProps>`
   margin-inline-start: 10px;
 `
 
-const Logo = ({ color }: { color?: CSSProperties['color'] }) => {
+type LogoProps = {
+  color?: CSSProperties['color']
+  variant?: 'light' | 'dark'
+}
+
+const Logo = ({ color, variant = 'dark' }: LogoProps) => {
+  const isLight = variant === 'light'
+
   return (
     <div className='flex items-center min-bs-[24px]'>
-      <MaterioLogo className='text-[22px] text-primary' />
-      <LogoText color={color}>{themeConfig.templateName}</LogoText>
+      <MaterioLogo className={`text-[22px] ${isLight ? 'text-white' : 'text-primary'}`} />
+      <LogoText color={color ?? (isLight ? '#FFFFFF' : undefined)}>{themeConfig.templateName}</LogoText>
     </div>
   )
 }

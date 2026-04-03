@@ -241,7 +241,7 @@ const CrudListPanel = ({
       {!loading && !error && rows ? (
         <>
           <Typography variant='body2' color='text.secondary' className='mbe-2'>
-            <code>{`GET ${apiPath}`}</code> — {rows.length} registro{rows.length === 1 ? '' : 's'}.
+            {rows.length} registro{rows.length === 1 ? '' : 's'}
           </Typography>
           {hasWrite ? (
             <Stack direction='row' justifyContent='flex-end' className='mbe-2'>

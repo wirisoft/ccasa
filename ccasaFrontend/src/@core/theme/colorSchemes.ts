@@ -82,7 +82,7 @@ const colorSchemes = (): Theme['colorSchemes'] => {
         divider: `rgb(var(--mui-mainColorChannels-light) / 0.12)`,
         dividerChannel: 'var(--mui-mainColorChannels-light)',
         background: {
-          default: skin === 'bordered' ? '#FFFFFF' : '#F5F7FA',
+          default: skin === 'bordered' ? '#FFFFFF' : '#FAFBFC',
           paper: '#FFFFFF'
         },
         action: {
@@ -154,13 +154,13 @@ const colorSchemes = (): Theme['colorSchemes'] => {
           border: 'var(--mui-palette-divider)'
         },
         customColors: {
-          bodyBg: '#F5F7FA',
+          bodyBg: '#FAFBFC',
           chatBg: '#F7F6FA',
           greyLightBg: '#FAFAFA',
           inputBorder: `rgb(var(--mui-mainColorChannels-light) / 0.22)`,
-          tableHeaderBg: '#ECEFF1',
+          tableHeaderBg: '#F8F9FA',
           tooltipText: '#FFFFFF',
-          trackBg: '#ECEFF1'
+          trackBg: '#F1F3F5'
         }
       }
     },

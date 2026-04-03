@@ -21,7 +21,7 @@ const Page = () => (
       <div>
         <Typography variant='h5'>Entradas (núcleo)</Typography>
         <Typography variant='body2' color='text.secondary'>
-          Tabla genérica <code>Entry</code> vía EntryCrudController. Para resúmenes por bitácora usa la vista desde cada bitácora o{' '}
+          Vista general de todas las entradas del laboratorio. Para ver el detalle por bitácora, abre{' '}
           <Button component={Link} href='/bitacoras' size='small' sx={{ verticalAlign: 'baseline' }}>
             Bitácoras
           </Button>
@@ -33,8 +33,7 @@ const Page = () => (
       </Button>
     </div>
     <CrudListPanel
-      title='Entry — CRUD'
-      subtitle='CrudResponseDTO: campos dinámicos según entidad Entry en el backend.'
+      title='Entradas'
       apiPath={`${API_V1}/entries`}
       fields={ENTRY_CORE_CONFIG.fields}
       resourceLabel={ENTRY_CORE_CONFIG.label}

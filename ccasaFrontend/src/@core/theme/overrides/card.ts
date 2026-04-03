@@ -14,14 +14,20 @@ const card = (skin: Skin): Theme['components'] => {
       },
       styleOverrides: {
         root: ({ ownerState }) => ({
+          borderRadius: 'var(--mui-shape-customBorderRadius-xl)',
+          transition: 'box-shadow 0.2s ease, transform 0.2s ease',
           ...(ownerState.variant !== 'outlined' && {
-            boxShadow: 'var(--mui-customShadows-md)'
+            boxShadow: 'var(--mui-customShadows-md)',
+            border: '1px solid var(--mui-palette-divider)'
           })
         })
       }
     },
     MuiCardHeader: {
       styleOverrides: {
+        title: {
+          fontWeight: 600
+        },
         root: ({ theme }) => ({
           padding: theme.spacing(5),
           '& + .MuiCardContent-root, & + .MuiCardActions-root': {

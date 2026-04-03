@@ -25,7 +25,7 @@ const Page = () => {
           Inicio
         </Button>
       </div>
-      <CrudListPanel title={c.label} subtitle={c.controllerHint} apiPath={c.crudBasePath} />
+      <CrudListPanel title={c.label} apiPath={c.crudBasePath} />
     </Stack>
   )
 }

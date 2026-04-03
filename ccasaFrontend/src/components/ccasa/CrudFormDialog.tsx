@@ -258,10 +258,16 @@ const CrudFormDialog = ({
   const primaryLabel = isEditMode ? 'Actualizar' : 'Crear'
 
   return (
-    <Dialog open={open} onClose={handleDialogClose} fullWidth maxWidth='sm'>
-      <DialogTitle>{title}</DialogTitle>
+    <Dialog
+      open={open}
+      onClose={handleDialogClose}
+      fullWidth
+      maxWidth='sm'
+      PaperProps={{ sx: { borderRadius: 3 } }}
+    >
+      <DialogTitle sx={{ borderBottom: '1px solid', borderColor: 'divider', pb: 3 }}>{title}</DialogTitle>
       <form onSubmit={e => void handleSubmit(e)} noValidate>
-        <DialogContent>
+        <DialogContent sx={{ pt: '24px !important' }}>
           {error ? (
             <Alert severity='error' className='mbe-4'>
               {error}
@@ -417,11 +423,11 @@ const CrudFormDialog = ({
             })}
           </Grid>
         </DialogContent>
-        <DialogActions className='pbs-0'>
-          <Button type='button' variant='outlined' onClick={onClose} disabled={loading}>
+        <DialogActions sx={{ borderTop: '1px solid', borderColor: 'divider', pt: 3 }}>
+          <Button type='button' variant='outlined' color='secondary' onClick={onClose} disabled={loading}>
             Cancelar
           </Button>
-          <Button type='submit' variant='contained' disabled={loading}>
+          <Button type='submit' variant='contained' sx={{ minWidth: 120 }} disabled={loading}>
             {primaryLabel}
           </Button>
         </DialogActions>

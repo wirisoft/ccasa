@@ -29,7 +29,6 @@ const Page = () => {
       </div>
       <CrudListPanel
         title={s.label}
-        subtitle={`${s.controllerHint} · CrudResponseDTO (mapa values por campo de entidad).`}
         apiPath={s.crudBasePath}
         fields={USER_CONFIG.fields}
         resourceLabel={USER_CONFIG.label}

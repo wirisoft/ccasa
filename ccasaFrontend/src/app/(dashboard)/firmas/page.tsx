@@ -28,7 +28,7 @@ const Page = () => {
       </div>
       <CrudListPanel
         title={s.label}
-        subtitle='Registros de firma asociados a entradas (SignatureCrudController).'
+        subtitle='Registros de firma asociados a entradas.'
         apiPath={s.crudBasePath}
         fields={SIGNATURE_CONFIG.fields}
         resourceLabel={SIGNATURE_CONFIG.label}

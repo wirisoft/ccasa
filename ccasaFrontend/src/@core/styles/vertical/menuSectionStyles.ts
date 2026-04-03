@@ -10,30 +10,23 @@ import { menuClasses } from '@menu/utils/menuClasses'
 const menuSectionStyles = (theme: Theme): MenuProps['menuSectionStyles'] => {
   return {
     root: {
-      marginBlockStart: theme.spacing(7),
+      marginBlockStart: theme.spacing(5),
       [`& .${menuClasses.menuSectionContent}`]: {
-        color: 'var(--mui-palette-text-disabled)',
+        color: 'rgba(255, 255, 255, 0.38)',
         paddingInline: '0 !important',
-        paddingBlock: `${theme.spacing(1.75)} !important`,
-        gap: theme.spacing(2.5),
-
-        '&:before': {
-          content: '""',
-          blockSize: 1,
-          inlineSize: '0.875rem',
-          backgroundColor: 'var(--mui-palette-divider)'
-        },
-        '&:after': {
-          content: '""',
-          blockSize: 1,
-          flexGrow: 1,
-          backgroundColor: 'var(--mui-palette-divider)'
+        paddingBlock: `${theme.spacing(1.5)} !important`,
+        gap: 0,
+        '&:before, &:after': {
+          display: 'none'
         }
       },
       [`& .${menuClasses.menuSectionLabel}`]: {
         flexGrow: 0,
-        fontSize: '13px',
-        lineHeight: 1.38462
+        fontSize: '12px',
+        fontWeight: 600,
+        letterSpacing: '0.06em',
+        textTransform: 'uppercase',
+        lineHeight: 1.4
       }
     }
   }

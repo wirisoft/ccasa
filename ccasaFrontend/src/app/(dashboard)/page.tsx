@@ -1,112 +1,177 @@
-// Next Imports
+'use client'
+
 import Link from 'next/link'
 
-// MUI Imports
-import Grid from '@mui/material/Grid'
+import Box from '@mui/material/Box'
 import Card from '@mui/material/Card'
 import CardContent from '@mui/material/CardContent'
+import Grid from '@mui/material/Grid'
 import Typography from '@mui/material/Typography'
-import Button from '@mui/material/Button'
+import Divider from '@mui/material/Divider'
 
-// Component Imports
 import LogbooksPanel from '@components/ccasa/LogbooksPanel'
+import { useAuth } from '@/contexts/AuthContext'
 
-const summaryCards = [
+const sections = [
   {
-    icon: 'ri-book-2-line',
     title: 'Bitácoras',
-    subtitle: 'Gestión de bitácoras activas',
-    href: '/bitacoras',
-    cta: 'Ver bitácoras'
+    description: 'Gestión de bitácoras activas',
+    icon: 'ri-book-2-line',
+    href: '/bitacoras'
   },
   {
+    title: 'Registros',
+    description: 'Entradas por tipo',
     icon: 'ri-file-list-3-line',
-    title: 'Entradas',
-    subtitle: 'Registros por tipo de entrada',
-    href: '/entradas/core',
-    cta: 'Ver entradas'
+    href: '/entradas/core'
   },
   {
-    icon: 'ri-flask-line',
     title: 'Catálogos',
-    subtitle: 'Reactivos, lotes y soluciones',
-    href: '/catalogos/reactivos',
-    cta: 'Ver catálogos'
+    description: 'Reactivos, lotes y soluciones',
+    icon: 'ri-flask-line',
+    href: '/catalogos/reactivos'
   },
   {
+    title: 'Personal',
+    description: 'Empleados del laboratorio',
     icon: 'ri-team-line',
-    title: 'Empleados',
-    subtitle: 'Gestión de personal del laboratorio',
-    href: '/empleados',
-    cta: 'Ver empleados'
+    href: '/empleados'
   }
-] as const
+]
 
-const quickLinks = [
-  { icon: 'ri-numbers-line', name: 'Folios y bloques', href: '/folios' },
-  { icon: 'ri-alarm-warning-line', name: 'Alertas', href: '/alertas' },
-  { icon: 'ri-ball-pen-line', name: 'Firmas', href: '/firmas' },
-  { icon: 'ri-shield-user-line', name: 'Roles', href: '/roles' }
-] as const
+const navigation = [
+  { title: 'Folios', icon: 'ri-numbers-line', href: '/folios' },
+  { title: 'Alertas', icon: 'ri-alarm-warning-line', href: '/alertas' },
+  { title: 'Firmas', icon: 'ri-ball-pen-line', href: '/firmas' },
+  { title: 'Roles', icon: 'ri-shield-user-line', href: '/roles' },
+  { title: 'Lotes', icon: 'ri-stack-line', href: '/catalogos/lotes' },
+  { title: 'Insumos', icon: 'ri-shopping-basket-line', href: '/catalogos/insumos' }
+]
 
 const DashboardCcasa = () => {
+  const { email } = useAuth()
+
   return (
-    <Grid container spacing={6}>
+    <Grid container spacing={4}>
+      {/* Header */}
       <Grid item xs={12}>
-        <Typography variant='h4' className='mbe-2'>
-          Panel de control
-        </Typography>
-        <Typography variant='body1' color='text.secondary' className='mbe-6'>
-          Resumen del sistema de bitácoras del laboratorio.
-        </Typography>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', flexWrap: 'wrap', gap: 1 }}>
+          <div>
+            <Typography variant='h5' sx={{ fontWeight: 700, color: 'text.primary' }}>
+              Panel de control
+            </Typography>
+            <Typography variant='body2' sx={{ color: 'text.secondary', mt: 0.5 }}>
+              {email ? `Conectado como ${email}` : 'Sistema de gestión de bitácoras de laboratorio'}
+            </Typography>
+          </div>
+        </Box>
       </Grid>
 
-      <Grid item xs={12}>
-        <Grid container spacing={4}>
-          {summaryCards.map(card => (
-            <Grid item xs={12} sm={6} md={3} key={card.href}>
-              <Card variant='outlined' className='bs-full'>
-                <CardContent className='flex flex-col gap-3 p-6'>
-                  <i className={`${card.icon} text-3xl text-primary`} />
-                  <Typography variant='h6'>{card.title}</Typography>
-                  <Typography variant='body2' color='text.secondary'>
-                    {card.subtitle}
+      {/* Module cards */}
+      {sections.map(section => (
+        <Grid item xs={12} sm={6} md={3} key={section.title}>
+          <Card
+            component={Link}
+            href={section.href}
+            sx={{
+              textDecoration: 'none',
+              display: 'block',
+              border: '1px solid',
+              borderColor: 'divider',
+              borderRadius: 2,
+              transition: 'border-color 0.2s ease, box-shadow 0.2s ease',
+              boxShadow: 'none',
+              '&:hover': {
+                borderColor: 'primary.main',
+                boxShadow: '0 2px 8px rgba(21, 101, 192, 0.08)'
+              }
+            }}
+          >
+            <CardContent sx={{ p: 3, '&:last-child': { pb: 3 } }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                <Box
+                  sx={{
+                    width: 44,
+                    height: 44,
+                    borderRadius: 1.5,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    backgroundColor: 'action.hover',
+                    flexShrink: 0
+                  }}
+                >
+                  <i className={section.icon} style={{ fontSize: 22, color: 'var(--mui-palette-text-secondary)' }} />
+                </Box>
+                <div>
+                  <Typography variant='subtitle2' sx={{ fontWeight: 600, color: 'text.primary', lineHeight: 1.3 }}>
+                    {section.title}
                   </Typography>
-                  <Button component={Link} href={card.href} variant='text' size='small' className='self-start'>
-                    {card.cta}
-                  </Button>
-                </CardContent>
-              </Card>
-            </Grid>
-          ))}
+                  <Typography variant='caption' sx={{ color: 'text.secondary' }}>
+                    {section.description}
+                  </Typography>
+                </div>
+              </Box>
+            </CardContent>
+          </Card>
         </Grid>
-      </Grid>
+      ))}
 
-      <Grid item xs={12}>
+      {/* Main content */}
+      <Grid item xs={12} lg={8}>
         <LogbooksPanel title='Bitácoras activas' />
       </Grid>
 
-      <Grid item xs={12}>
-        <Typography variant='h6' className='mbe-4'>
-          Accesos rápidos
-        </Typography>
-        <Grid container spacing={4}>
-          {quickLinks.map(link => (
-            <Grid item xs={12} sm={6} md={3} key={link.href}>
-              <Card variant='outlined' className='bs-full'>
-                <CardContent className='flex flex-col gap-3 p-6'>
-                  <div className='flex items-center gap-2'>
-                    <i className={`${link.icon} text-2xl text-primary`} />
-                    <Typography variant='subtitle1'>{link.name}</Typography>
-                  </div>
-                  <Button component={Link} href={link.href} variant='outlined' size='small' className='self-start'>
-                    Abrir
-                  </Button>
-                </CardContent>
-              </Card>
-            </Grid>
-          ))}
-        </Grid>
+      {/* Navigation panel */}
+      <Grid item xs={12} lg={4}>
+        <Card sx={{ border: '1px solid', borderColor: 'divider', boxShadow: 'none', borderRadius: 2, height: '100%' }}>
+          <CardContent sx={{ p: 3, '&:last-child': { pb: 3 } }}>
+            <Typography variant='subtitle2' sx={{ fontWeight: 600, mb: 2, color: 'text.primary' }}>
+              Navegación
+            </Typography>
+            <Divider sx={{ mb: 2 }} />
+            {navigation.map((link, index) => (
+              <Box
+                key={link.title}
+                component={Link}
+                href={link.href}
+                sx={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 2,
+                  py: 1.5,
+                  px: 1.5,
+                  mx: -1.5,
+                  borderRadius: 1.5,
+                  textDecoration: 'none',
+                  color: 'text.primary',
+                  transition: 'background-color 0.15s ease',
+                  '&:hover': {
+                    backgroundColor: 'action.hover'
+                  },
+                  ...(index < navigation.length - 1 && {
+                    borderBottom: '1px solid',
+                    borderColor: 'divider',
+                    borderRadius: 0,
+                    mx: 0,
+                    px: 0,
+                    '&:hover': {
+                      backgroundColor: 'action.hover',
+                      borderRadius: 1.5,
+                      mx: -1.5,
+                      px: 1.5
+                    }
+                  })
+                }}
+              >
+                <i className={link.icon} style={{ fontSize: 18, color: 'var(--mui-palette-text-secondary)' }} />
+                <Typography variant='body2' sx={{ fontWeight: 500 }}>
+                  {link.title}
+                </Typography>
+              </Box>
+            ))}
+          </CardContent>
+        </Card>
       </Grid>
     </Grid>
   )

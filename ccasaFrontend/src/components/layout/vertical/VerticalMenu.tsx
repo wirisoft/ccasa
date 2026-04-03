@@ -73,7 +73,7 @@ const VerticalMenu = ({ scrollMenu }: { scrollMenu: (container: any, isPerfectSc
         <MenuSection label='Registros por tipo'>
           <SubMenu label='Entradas' icon={<i className='ri-file-list-3-line' />}>
             <MenuItem href='/entradas/core' icon={<i className='ri-table-line' />}>
-              Núcleo (tabla Entry)
+              Núcleo
             </MenuItem>
             {ENTRADA_MODULOS.map(mod => (
               <MenuItem key={mod.slug} href={`/entradas/${mod.slug}`} icon={<i className={mod.iconClass} />}>
@@ -123,25 +123,10 @@ const VerticalMenu = ({ scrollMenu }: { scrollMenu: (container: any, isPerfectSc
             Roles
           </MenuItem>
           <MenuItem href='/configuracion' icon={<i className='ri-settings-3-line' />}>
-            Configuración del laboratorio
+            Configuración
           </MenuItem>
           <MenuItem href='/account-settings' icon={<i className='ri-user-settings-line' />}>
             Mi cuenta
-          </MenuItem>
-        </MenuSection>
-
-        <MenuSection label='Documentación (repo)'>
-          <MenuItem href='/documentacion/excel-especificaciones' icon={<i className='ri-file-excel-2-line' />}>
-            EXCEL_ESPECIFICACIONES
-          </MenuItem>
-          <MenuItem href='/documentacion/analisis-resultados-a-software' icon={<i className='ri-git-repository-line' />}>
-            Análisis → software
-          </MenuItem>
-        </MenuSection>
-
-        <MenuSection label='Plataforma'>
-          <MenuItem href='/plataforma/tenants' icon={<i className='ri-building-4-line' />}>
-            Laboratorios (Super Admin)
           </MenuItem>
         </MenuSection>
       </Menu>

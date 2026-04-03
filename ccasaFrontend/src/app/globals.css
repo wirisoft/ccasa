@@ -111,3 +111,58 @@ code {
   background-color: rgb(var(--mui-palette-info-mainChannel) / 0.08);
   border: 0;
 }
+
+/* ── CCASA Lab: refinamientos globales ── */
+
+/* Blank layout (login, registro, etc.): sin fondo gris del contenedor */
+.ts-blank-layout {
+  background-color: transparent !important;
+  min-block-size: 100%;
+}
+
+/* Scroll suave global */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Mejorar selección de texto */
+::selection {
+  background-color: rgba(21, 101, 192, 0.2);
+  color: inherit;
+}
+
+/* Links dentro de contenido */
+.MuiTypography-root a:not([class]) {
+  color: var(--mui-palette-primary-main);
+  text-decoration: none;
+  border-bottom: 1px solid transparent;
+  transition: border-color 0.2s;
+}
+.MuiTypography-root a:not([class]):hover {
+  border-bottom-color: var(--mui-palette-primary-main);
+}
+
+/* Backdrop dark mode fix para nuevo tema */
+[data-mui-color-scheme='dark'] {
+  --backdrop-color: rgb(13 33 55 / 0.7);
+}
+
+/* Cards hover sutil en listas */
+.MuiCard-root {
+  transition: box-shadow 0.2s ease, transform 0.1s ease;
+}
+
+/* Botones con transición suave */
+.MuiButton-root {
+  transition: all 0.2s ease;
+}
+
+/* Tablas: celdas no envuelven texto en headers */
+.MuiTableHead-root .MuiTableCell-root {
+  white-space: nowrap;
+}
+
+/* Next root (id en <html> en app/layout): no heredar fondo gris sobre login/register */
+#__next {
+  background-color: transparent;
+}

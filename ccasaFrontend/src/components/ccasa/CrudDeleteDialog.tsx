@@ -53,8 +53,14 @@ const CrudDeleteDialog = ({
       : '¿Estás seguro de que deseas eliminar este registro? Esta acción no se puede deshacer.'
 
   return (
-    <Dialog open={open} onClose={handleClose} fullWidth maxWidth='xs'>
-      <DialogTitle>{`Eliminar ${resourceLabel}`}</DialogTitle>
+    <Dialog
+      open={open}
+      onClose={handleClose}
+      fullWidth
+      maxWidth='xs'
+      PaperProps={{ sx: { borderRadius: 3 } }}
+    >
+      <DialogTitle sx={{ borderBottom: '1px solid', borderColor: 'divider', pb: 3 }}>{`Eliminar ${resourceLabel}`}</DialogTitle>
       <DialogContent>
         {error ? (
           <Alert severity='error' className='mbe-4'>
@@ -63,11 +69,18 @@ const CrudDeleteDialog = ({
         ) : null}
         <DialogContentText>{targetPhrase}</DialogContentText>
       </DialogContent>
-      <DialogActions className='pbs-0'>
-        <Button type='button' variant='outlined' onClick={handleClose} disabled={loading}>
+      <DialogActions sx={{ borderTop: '1px solid', borderColor: 'divider', pt: 3 }}>
+        <Button type='button' variant='outlined' color='secondary' onClick={handleClose} disabled={loading}>
           Cancelar
         </Button>
-        <Button type='button' color='error' variant='contained' onClick={handleConfirm} disabled={loading}>
+        <Button
+          type='button'
+          color='error'
+          variant='contained'
+          sx={{ minWidth: 120 }}
+          onClick={handleConfirm}
+          disabled={loading}
+        >
           Eliminar
         </Button>
       </DialogActions>

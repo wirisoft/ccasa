@@ -207,7 +207,7 @@ const LogbooksPanel = ({ title = 'Bitácoras activas', showCard = true }: Logboo
         <>
           <Stack direction='row' justifyContent='space-between' alignItems='center' className='mbe-2' flexWrap='wrap' useFlexGap>
             <Typography variant='body2' color='text.secondary'>
-              {rows.length} registro{rows.length === 1 ? '' : 's'}
+              {rows.length} bitácora{rows.length === 1 ? '' : 's'} activa{rows.length === 1 ? '' : 's'}
             </Typography>
             <Button
               variant='contained'
@@ -218,9 +218,6 @@ const LogbooksPanel = ({ title = 'Bitácoras activas', showCard = true }: Logboo
               Nueva bitácora
             </Button>
           </Stack>
-          <Typography variant='body2' color='text.secondary' className='mbe-4'>
-            Datos desde <code>GET /api/v1/logbooks</code>.
-          </Typography>
           <TableContainer>
             <Table size='small'>
               <TableHead>
@@ -283,9 +280,9 @@ const LogbooksPanel = ({ title = 'Bitácoras activas', showCard = true }: Logboo
   )
 
   const shell = showCard ? (
-    <Card>
-      <CardHeader title={title} />
-      <CardContent>{inner}</CardContent>
+    <Card sx={{ border: '1px solid', borderColor: 'divider', boxShadow: 'none', borderRadius: 2 }}>
+      <CardHeader title={title} titleTypographyProps={{ variant: 'h6', fontWeight: 600 }} />
+      <CardContent sx={{ p: 3, '&:last-child': { pb: 3 } }}>{inner}</CardContent>
     </Card>
   ) : (
     inner

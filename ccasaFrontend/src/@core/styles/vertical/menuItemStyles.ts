@@ -1,5 +1,4 @@
 // MUI Imports
-import { lighten } from '@mui/material/styles'
 import type { Theme } from '@mui/material/styles'
 
 // Type Imports
@@ -11,10 +10,10 @@ import { menuClasses } from '@menu/utils/menuClasses'
 const menuItemStyles = (theme: Theme): MenuItemStyles => {
   return {
     root: {
-      marginBlockStart: theme.spacing(1.5),
+      marginBlockStart: theme.spacing(0.25),
       [`&.${menuClasses.subMenuRoot}.${menuClasses.open} > .${menuClasses.button}, &.${menuClasses.subMenuRoot} > .${menuClasses.button}.${menuClasses.active}`]:
         {
-          backgroundColor: 'var(--mui-palette-action-selected) !important'
+          backgroundColor: 'rgba(255, 255, 255, 0.06) !important'
         },
       [`&.${menuClasses.disabled} > .${menuClasses.button}`]: {
         color: 'var(--mui-palette-text-disabled)',
@@ -23,44 +22,39 @@ const menuItemStyles = (theme: Theme): MenuItemStyles => {
         }
       },
       [`&:not(.${menuClasses.subMenuRoot}) > .${menuClasses.button}.${menuClasses.active}`]: {
-        color: 'var(--mui-palette-primary-contrastText)',
-        background:
-          theme.direction === 'ltr'
-            ? `linear-gradient(270deg, var(--mui-palette-primary-main), ${lighten(
-                theme.palette.primary.main,
-                0.5
-              )} 100%)`
-            : `linear-gradient(270deg, ${lighten(
-                theme.palette.primary.main,
-                0.5
-              )}, var(--mui-palette-primary-main) 100%)`,
+        color: 'rgba(255, 255, 255, 0.92)',
+        backgroundColor: 'rgba(255, 255, 255, 0.07)',
+        boxShadow: `inset 3px 0 0 ${theme.palette.primary.light}`,
         [`& .${menuClasses.icon}`]: {
-          color: 'inherit'
+          color: 'rgba(255, 255, 255, 0.7)'
         }
       }
     },
     button: ({ active }) => ({
-      paddingBlock: theme.spacing(2),
+      paddingBlock: theme.spacing(1.5),
       '&:has(.MuiChip-root)': {
-        paddingBlock: theme.spacing(1.75)
+        paddingBlock: theme.spacing(1.5)
       },
       paddingInlineStart: theme.spacing(5.5),
       paddingInlineEnd: theme.spacing(3.5),
-      borderStartEndRadius: 50,
-      borderEndEndRadius: 50,
+      borderRadius: 0,
+      borderStartEndRadius: 0,
+      borderEndEndRadius: 0,
       ...(!active && {
+        color: 'rgba(255, 255, 255, 0.72)',
         '&:hover, &:focus-visible': {
-          backgroundColor: 'var(--mui-palette-action-hover)'
+          backgroundColor: 'rgba(255, 255, 255, 0.06)'
         },
         '&[aria-expanded="true"]': {
-          backgroundColor: 'var(--mui-palette-action-selected)'
+          backgroundColor: 'rgba(255, 255, 255, 0.08)'
         }
       })
     }),
     icon: ({ level }) => ({
       ...(level === 0 && {
         fontSize: '1.375rem',
-        marginInlineEnd: theme.spacing(2)
+        marginInlineEnd: theme.spacing(2),
+        color: 'rgba(255, 255, 255, 0.5)'
       }),
       ...(level > 0 && {
         fontSize: '0.75rem',

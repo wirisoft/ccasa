@@ -85,9 +85,6 @@ const EntriesByLogbookPanel = ({ logbookId }: EntriesByLogbookPanelProps) => {
         }
       />
       <CardContent>
-        <Typography variant='body2' color='text.secondary' className='mbe-4'>
-          <code>{`GET /api/v1/entries/by-logbook/${logbookId}`}</code>
-        </Typography>
         {loading ? (
           <Box className='flex justify-center p-6'>
             <CircularProgress />

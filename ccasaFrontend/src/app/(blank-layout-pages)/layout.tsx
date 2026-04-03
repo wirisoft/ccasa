@@ -11,7 +11,10 @@ const Layout = ({ children }: ChildrenType) => {
 
   return (
     <Providers direction={direction}>
-      <BlankLayout>{children}</BlankLayout>
+      {/* Fondo blanco: evita que body (#FAFBFC por CssBaseline) se vea en login/register */}
+      <div style={{ minHeight: '100dvh', backgroundColor: '#FFFFFF' }}>
+        <BlankLayout>{children}</BlankLayout>
+      </div>
     </Providers>
   )
 }

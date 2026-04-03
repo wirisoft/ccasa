@@ -28,7 +28,7 @@ const Page = () => {
       </div>
       <CrudListPanel
         title={s.label}
-        subtitle='Listado activo vía AlertCrudService (reglas automáticas en backend).'
+        subtitle='Listado de alertas del sistema.'
         apiPath={s.crudBasePath}
         fields={ALERT_CONFIG.fields}
         resourceLabel={ALERT_CONFIG.label}
