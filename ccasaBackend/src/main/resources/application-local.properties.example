@@ -1,0 +1,20 @@
+# Copia este archivo como application-local.properties (está en .gitignore).
+# Activa el perfil "local" al arrancar.
+#
+# PowerShell:
+#   $env:SPRING_PROFILES_ACTIVE = "local"
+#   .\gradlew.bat bootRun
+#
+# En Windows, si Docker publica Postgres en 5434 (por conflicto con otro servicio en 5433),
+# añade en application-local.properties:
+#   spring.datasource.url=jdbc:postgresql://localhost:5434/ccasa
+#   spring.datasource.username=postgres
+#   spring.datasource.password=qwerty
+#
+# Docker (Linux/servidor, sin conflicto): -p 5433:5432  →  URL por defecto en application.properties.
+#
+# Otro puerto HTTP si 8082 está ocupado:
+#   server.port=8081
+#   y en .env.local: NEXT_PUBLIC_API_BASE_URL=http://localhost:8081
+
+# server.port=8081

@@ -1,5 +1,5 @@
 // Next Imports
-import { Inter } from 'next/font/google'
+import { IBM_Plex_Sans } from 'next/font/google'
 
 // MUI Imports
 import type { Theme } from '@mui/material/styles'
@@ -15,7 +15,7 @@ import shadows from './shadows'
 import customShadows from './customShadows'
 import typography from './typography'
 
-const inter = Inter({ subsets: ['latin'], weight: ['300', '400', '500', '600', '700', '800', '900'] })
+const ibmPlex = IBM_Plex_Sans({ subsets: ['latin'], weight: ['300', '400', '500', '600', '700'] })
 
 const theme = (mode: SystemMode, direction: Theme['direction']): Theme => {
   return {
@@ -34,13 +34,13 @@ const theme = (mode: SystemMode, direction: Theme['direction']): Theme => {
       }
     },
     shadows: shadows(mode),
-    typography: typography(inter.style.fontFamily),
+    typography: typography(ibmPlex.style.fontFamily),
     customShadows: customShadows(mode),
     mainColorChannels: {
-      light: '46 38 61',
-      dark: '231 227 252',
-      lightShadow: '46 38 61',
-      darkShadow: '19 17 32'
+      light: '38 50 56',
+      dark: '207 216 220',
+      lightShadow: '38 50 56',
+      darkShadow: '19 23 27'
     }
   } as Theme
 }

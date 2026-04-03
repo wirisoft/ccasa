@@ -25,9 +25,6 @@ import type { Mode } from '@core/types'
 import Logo from '@components/layout/shared/Logo'
 import Illustrations from '@components/Illustrations'
 
-// Config Imports
-import themeConfig from '@configs/themeConfig'
-
 // Hook Imports
 import { useImageVariant } from '@core/hooks/useImageVariant'
 
@@ -35,8 +32,8 @@ import { useImageVariant } from '@core/hooks/useImageVariant'
 import { useAuth } from '@/contexts/AuthContext'
 
 const Login = ({ mode, redirectTo = '/' }: { mode: Mode; redirectTo?: string }) => {
-  const [email, setEmail] = useState('admin@ccasa.local')
-  const [password, setPassword] = useState('change-me')
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
   const [isPasswordShown, setIsPasswordShown] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
@@ -80,9 +77,9 @@ const Login = ({ mode, redirectTo = '/' }: { mode: Mode; redirectTo?: string }) 
           </Link>
           <div className='flex flex-col gap-5'>
             <div>
-              <Typography variant='h4'>{`ccasa — ${themeConfig.templateName}`}</Typography>
+              <Typography variant='h4'>Bienvenido a CCASA Lab</Typography>
               <Typography className='mbs-1' color='text.secondary'>
-                Inicia sesión con el usuario del DataLoader del backend (por defecto admin@ccasa.local / change-me).
+                Sistema de gestión de bitácoras de laboratorio. Ingresa tus credenciales para continuar.
               </Typography>
             </div>
             {error ? (
@@ -128,8 +125,11 @@ const Login = ({ mode, redirectTo = '/' }: { mode: Mode; redirectTo?: string }) 
                 {submitting ? 'Entrando…' : 'Entrar'}
               </Button>
               <Typography variant='body2' color='text.secondary' className='text-center'>
-                ¿Sin sesión? El panel requiere backend en marcha y JWT (carpeta{' '}
-                <code className='text-xs'>jwtKeys/*.pem</code> generada localmente; ver README del backend).
+                ¿No tienes cuenta? Contacta al administrador del laboratorio o{' '}
+                <Link href='/register' className='text-primary'>
+                  regístrate aquí
+                </Link>
+                .
               </Typography>
             </form>
           </div>

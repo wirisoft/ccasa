@@ -1,19 +1,41 @@
-import ModulePlaceholder from '@components/ccasa/ModulePlaceholder'
+'use client'
+
+// Next Imports
+import Link from 'next/link'
+
+// MUI Imports
+import Button from '@mui/material/Button'
+import Stack from '@mui/material/Stack'
+import Typography from '@mui/material/Typography'
+
+// Component Imports
+import CrudListPanel from '@components/ccasa/CrudListPanel'
 
 // Config Imports
 import { getCatalogBackend } from '@configs/backendApiRegistry'
+
+// Lib Imports
+import { SOLUTION_CONFIG } from '@/lib/ccasa/crudFields'
 
 const Page = () => {
   const c = getCatalogBackend('solutions')!
 
   return (
-    <ModulePlaceholder
-      title='Soluciones'
-      description='Catálogo de soluciones (nombre, concentración, cantidad, clave) para preparación y pesadas.'
-      docRef='Catálogos · Solution · RF-07'
-      apiResources={[{ title: c.label, crudPath: c.crudBasePath, controller: c.controllerHint }]}
-      backHref='/'
-    />
+    <Stack spacing={4}>
+      <div className='flex items-center justify-between flex-wrap gap-2'>
+        <Typography variant='h5'>Soluciones</Typography>
+        <Button component={Link} href='/' variant='outlined' size='small'>
+          Inicio
+        </Button>
+      </div>
+      <CrudListPanel
+        apiPath={SOLUTION_CONFIG.apiPath}
+        title={SOLUTION_CONFIG.labelPlural}
+        subtitle={c.controllerHint}
+        fields={SOLUTION_CONFIG.fields}
+        resourceLabel={SOLUTION_CONFIG.label}
+      />
+    </Stack>
   )
 }
 

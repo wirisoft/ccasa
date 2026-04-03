@@ -1,7 +1,7 @@
 'use client'
 
 // React Imports
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 
 // Next Imports
 import Link from 'next/link'
@@ -14,58 +14,182 @@ import Card from '@mui/material/Card'
 import CardContent from '@mui/material/CardContent'
 import CardHeader from '@mui/material/CardHeader'
 import CircularProgress from '@mui/material/CircularProgress'
+import IconButton from '@mui/material/IconButton'
+import Snackbar from '@mui/material/Snackbar'
+import Stack from '@mui/material/Stack'
 import Table from '@mui/material/Table'
 import TableBody from '@mui/material/TableBody'
 import TableCell from '@mui/material/TableCell'
 import TableContainer from '@mui/material/TableContainer'
 import TableHead from '@mui/material/TableHead'
 import TableRow from '@mui/material/TableRow'
+import Tooltip from '@mui/material/Tooltip'
 import Typography from '@mui/material/Typography'
 
 // Lib Imports
 import { apiFetch } from '@/lib/ccasa/api'
+import { LOGBOOK_CONFIG } from '@/lib/ccasa/crudFields'
 import type { LogbookDTO } from '@/lib/ccasa/types'
+
+// Hook Imports
+import { useCrudOperations } from '@/hooks/ccasa/useCrudOperations'
 
 // Context Imports
 import { useAuth } from '@/contexts/AuthContext'
+
+// Component Imports
+import CrudDeleteDialog from './CrudDeleteDialog'
+import CrudFormDialog from './CrudFormDialog'
 
 type LogbooksPanelProps = {
   title?: string
   showCard?: boolean
 }
 
+function logbookToValues(dto: LogbookDTO): Record<string, unknown> {
+  return {
+    code: dto.code,
+    name: dto.name,
+    description: dto.description,
+    maxEntries: dto.maxEntries
+  }
+}
+
 const LogbooksPanel = ({ title = 'Bitácoras activas', showCard = true }: LogbooksPanelProps) => {
   const { token } = useAuth()
+
+  const {
+    loading: crudLoading,
+    error: crudError,
+    create: crudCreate,
+    update: crudUpdate,
+    remove: crudRemove,
+    clearError: crudClearError
+  } = useCrudOperations()
+
   const [rows, setRows] = useState<LogbookDTO[] | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
 
-  useEffect(() => {
-    if (!token) return
+  const [formOpen, setFormOpen] = useState(false)
+  const [editingRow, setEditingRow] = useState<LogbookDTO | null>(null)
 
-    let cancelled = false
+  const [deleteOpen, setDeleteOpen] = useState(false)
+  const [deletingRow, setDeletingRow] = useState<LogbookDTO | null>(null)
 
-    const run = async () => {
-      setLoading(true)
-      setError(null)
+  const [snackbar, setSnackbar] = useState<string | null>(null)
 
-      try {
-        const data = await apiFetch<LogbookDTO[]>('/api/v1/logbooks')
-
-        if (!cancelled) setRows(data)
-      } catch (e) {
-        if (!cancelled) setError(e instanceof Error ? e.message : 'Error al cargar bitácoras')
-      } finally {
-        if (!cancelled) setLoading(false)
-      }
+  const fetchRows = useCallback(async () => {
+    if (!token) {
+      return
     }
 
-    void run()
+    setLoading(true)
+    setError(null)
 
-    return () => {
-      cancelled = true
+    try {
+      const data = await apiFetch<LogbookDTO[]>('/api/v1/logbooks')
+
+      setRows(data)
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Error al cargar bitácoras')
+    } finally {
+      setLoading(false)
     }
   }, [token])
+
+  useEffect(() => {
+    void fetchRows()
+  }, [fetchRows])
+
+  const handleOpenCreate = useCallback(() => {
+    crudClearError()
+    setEditingRow(null)
+    setFormOpen(true)
+  }, [crudClearError])
+
+  const handleOpenEdit = useCallback(
+    (row: LogbookDTO) => {
+      crudClearError()
+      setEditingRow(row)
+      setFormOpen(true)
+    },
+    [crudClearError]
+  )
+
+  const handleCloseForm = useCallback(() => {
+    if (crudLoading) {
+      return
+    }
+
+    crudClearError()
+    setFormOpen(false)
+    setEditingRow(null)
+  }, [crudClearError, crudLoading])
+
+  const handleSave = useCallback(
+    async (values: Record<string, unknown>) => {
+      if (editingRow) {
+        const res = await crudUpdate(LOGBOOK_CONFIG.apiPath, editingRow.id, values)
+
+        if (res) {
+          setFormOpen(false)
+          setEditingRow(null)
+          crudClearError()
+          setSnackbar('Bitácora actualizada correctamente')
+          void fetchRows()
+        }
+      } else {
+        const res = await crudCreate(LOGBOOK_CONFIG.apiPath, values)
+
+        if (res) {
+          setFormOpen(false)
+          setEditingRow(null)
+          crudClearError()
+          setSnackbar('Bitácora creada correctamente')
+          void fetchRows()
+        }
+      }
+    },
+    [crudClearError, crudCreate, crudUpdate, editingRow, fetchRows]
+  )
+
+  const handleOpenDelete = useCallback(
+    (row: LogbookDTO) => {
+      crudClearError()
+      setDeletingRow(row)
+      setDeleteOpen(true)
+    },
+    [crudClearError]
+  )
+
+  const handleCloseDelete = useCallback(() => {
+    if (crudLoading) {
+      return
+    }
+
+    crudClearError()
+    setDeleteOpen(false)
+    setDeletingRow(null)
+  }, [crudClearError, crudLoading])
+
+  const handleConfirmDelete = useCallback(async () => {
+    if (!deletingRow) {
+      return
+    }
+
+    const ok = await crudRemove(LOGBOOK_CONFIG.apiPath, deletingRow.id)
+
+    if (ok) {
+      setDeleteOpen(false)
+      setDeletingRow(null)
+      crudClearError()
+      setSnackbar('Bitácora eliminada correctamente')
+      void fetchRows()
+    }
+  }, [crudClearError, crudRemove, deletingRow, fetchRows])
+
+  const formTitle = editingRow ? `Editar ${LOGBOOK_CONFIG.label.toLowerCase()}` : `Nueva ${LOGBOOK_CONFIG.label.toLowerCase()}`
 
   const inner = (
     <>
@@ -81,8 +205,21 @@ const LogbooksPanel = ({ title = 'Bitácoras activas', showCard = true }: Logboo
       ) : null}
       {!loading && !error && rows ? (
         <>
+          <Stack direction='row' justifyContent='space-between' alignItems='center' className='mbe-2' flexWrap='wrap' useFlexGap>
+            <Typography variant='body2' color='text.secondary'>
+              {rows.length} registro{rows.length === 1 ? '' : 's'}
+            </Typography>
+            <Button
+              variant='contained'
+              startIcon={<i className='ri-add-line' />}
+              onClick={handleOpenCreate}
+              disabled={!token}
+            >
+              Nueva bitácora
+            </Button>
+          </Stack>
           <Typography variant='body2' color='text.secondary' className='mbe-4'>
-            Datos desde <code>GET /api/v1/logbooks</code> ({rows.length} registros).
+            Datos desde <code>GET /api/v1/logbooks</code>.
           </Typography>
           <TableContainer>
             <Table size='small'>
@@ -103,9 +240,37 @@ const LogbooksPanel = ({ title = 'Bitácoras activas', showCard = true }: Logboo
                     <TableCell>{row.description}</TableCell>
                     <TableCell align='right'>{row.maxEntries}</TableCell>
                     <TableCell align='right'>
-                      <Button component={Link} href={`/bitacoras/${row.id}`} size='small' variant='outlined'>
-                        Ver entradas
-                      </Button>
+                      <Tooltip title='Ver entradas'>
+                        <IconButton
+                          component={Link}
+                          href={`/bitacoras/${row.id}`}
+                          color='primary'
+                          size='small'
+                          aria-label='Ver entradas'
+                        >
+                          <i className='ri-eye-line' />
+                        </IconButton>
+                      </Tooltip>
+                      <Tooltip title='Editar'>
+                        <IconButton
+                          color='default'
+                          size='small'
+                          aria-label='Editar'
+                          onClick={() => handleOpenEdit(row)}
+                        >
+                          <i className='ri-pencil-line' />
+                        </IconButton>
+                      </Tooltip>
+                      <Tooltip title='Eliminar'>
+                        <IconButton
+                          color='error'
+                          size='small'
+                          aria-label='Eliminar'
+                          onClick={() => handleOpenDelete(row)}
+                        >
+                          <i className='ri-delete-bin-line' />
+                        </IconButton>
+                      </Tooltip>
                     </TableCell>
                   </TableRow>
                 ))}
@@ -117,15 +282,45 @@ const LogbooksPanel = ({ title = 'Bitácoras activas', showCard = true }: Logboo
     </>
   )
 
-  if (!showCard) {
-    return inner
-  }
-
-  return (
+  const shell = showCard ? (
     <Card>
       <CardHeader title={title} />
       <CardContent>{inner}</CardContent>
     </Card>
+  ) : (
+    inner
+  )
+
+  return (
+    <>
+      {shell}
+      <CrudFormDialog
+        open={formOpen}
+        onClose={handleCloseForm}
+        onSave={handleSave}
+        fields={LOGBOOK_CONFIG.fields}
+        title={formTitle}
+        initialValues={editingRow ? logbookToValues(editingRow) : null}
+        loading={crudLoading}
+        error={crudError}
+      />
+      <CrudDeleteDialog
+        open={deleteOpen}
+        onClose={handleCloseDelete}
+        onConfirm={handleConfirmDelete}
+        resourceLabel={LOGBOOK_CONFIG.label}
+        itemLabel={deletingRow?.name}
+        loading={crudLoading}
+        error={crudError}
+      />
+      <Snackbar
+        open={snackbar != null}
+        autoHideDuration={3000}
+        onClose={() => setSnackbar(null)}
+        message={snackbar ?? ''}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      />
+    </>
   )
 }
 

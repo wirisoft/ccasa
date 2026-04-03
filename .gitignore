@@ -4,6 +4,8 @@
 
 # ----- Backend (ccasaBackend) -----
 HELP.md
+# Override local (puerto, etc.): copiar desde application-local.properties.example
+ccasaBackend/src/main/resources/application-local.properties
 .gradle
 build/
 !gradle/wrapper/gradle-wrapper.jar

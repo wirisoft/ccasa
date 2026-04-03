@@ -1,7 +1,7 @@
 import ModulePlaceholder from '@components/ccasa/ModulePlaceholder'
 
 // Config Imports
-import { AUTH_BACKEND_PLANNED, PLATFORM_BACKEND_NOTE } from '@configs/backendApiRegistry'
+import { AUTH_BACKEND, PLATFORM_BACKEND_NOTE } from '@configs/backendApiRegistry'
 
 const Page = () => (
   <ModulePlaceholder
@@ -11,8 +11,8 @@ const Page = () => (
     apiResources={[
       {
         title: 'Auth (referencia en seguridad)',
-        extras: AUTH_BACKEND_PLANNED,
-        footnote: 'permitAll para login/register/forgot-password; el resto de /api/v1 suele exigir JWT.'
+        extras: AUTH_BACKEND,
+        footnote: 'permitAll para /api/v1/auth/**; respuesta AuthResponseDTO { token, userId, email, role }; el resto de /api/v1 exige JWT.'
       }
     ]}
     backHref='/'

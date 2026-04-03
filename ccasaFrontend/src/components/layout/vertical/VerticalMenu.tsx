@@ -72,6 +72,9 @@ const VerticalMenu = ({ scrollMenu }: { scrollMenu: (container: any, isPerfectSc
 
         <MenuSection label='Registros por tipo'>
           <SubMenu label='Entradas' icon={<i className='ri-file-list-3-line' />}>
+            <MenuItem href='/entradas/core' icon={<i className='ri-table-line' />}>
+              Núcleo (tabla Entry)
+            </MenuItem>
             {ENTRADA_MODULOS.map(mod => (
               <MenuItem key={mod.slug} href={`/entradas/${mod.slug}`} icon={<i className={mod.iconClass} />}>
                 {mod.label}

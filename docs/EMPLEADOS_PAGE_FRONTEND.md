@@ -1,3 +1,8 @@
+# `ccasaFrontend/src/app/(dashboard)/empleados/page.tsx`
+
+Página de empleados del dashboard. Es un componente cliente (`'use client'`); en esta carpeta solo existe `page.tsx` (no hay `*Client.tsx` aparte). Usa `CrudListPanel` con la entrada `users` de `SUPPORT_BACKEND`.
+
+```tsx
 'use client'
 
 // Next Imports
@@ -13,29 +18,26 @@ import CrudListPanel from '@components/ccasa/CrudListPanel'
 
 // Config Imports
 import { SUPPORT_BACKEND } from '@configs/backendApiRegistry'
-import { ALERT_CONFIG } from '@/lib/ccasa/crudFields'
 
 const Page = () => {
-  const s = SUPPORT_BACKEND.find(x => x.key === 'alerts')!
+  const s = SUPPORT_BACKEND.find(x => x.key === 'users')!
 
   return (
     <Stack spacing={4}>
       <div className='flex items-center justify-between flex-wrap gap-2'>
-        <Typography variant='h5'>Alertas</Typography>
+        <Typography variant='h5'>Empleados</Typography>
         <Button component={Link} href='/' variant='outlined' size='small'>
           Inicio
         </Button>
       </div>
       <CrudListPanel
         title={s.label}
-        subtitle='Listado activo vía AlertCrudService (reglas automáticas en backend).'
+        subtitle={`${s.controllerHint} · CrudResponseDTO (mapa values por campo de entidad).`}
         apiPath={s.crudBasePath}
-        fields={ALERT_CONFIG.fields}
-        resourceLabel={ALERT_CONFIG.label}
-        nameColumn='type'
       />
     </Stack>
   )
 }
 
 export default Page
+```

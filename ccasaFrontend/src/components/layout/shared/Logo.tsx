@@ -20,9 +20,9 @@ const LogoText = styled.span<LogoTextProps>`
   color: ${({ color }) => color ?? 'var(--mui-palette-text-primary)'};
   font-size: 1.25rem;
   line-height: 1.2;
-  font-weight: 600;
-  letter-spacing: 0.15px;
-  text-transform: uppercase;
+  font-weight: 700;
+  letter-spacing: 0.25px;
+  text-transform: none;
   margin-inline-start: 10px;
 `
 

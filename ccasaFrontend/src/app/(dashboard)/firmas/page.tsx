@@ -1,19 +1,40 @@
-import ModulePlaceholder from '@components/ccasa/ModulePlaceholder'
+'use client'
+
+// Next Imports
+import Link from 'next/link'
+
+// MUI Imports
+import Button from '@mui/material/Button'
+import Stack from '@mui/material/Stack'
+import Typography from '@mui/material/Typography'
+
+// Component Imports
+import CrudListPanel from '@components/ccasa/CrudListPanel'
 
 // Config Imports
 import { SUPPORT_BACKEND } from '@configs/backendApiRegistry'
+import { SIGNATURE_CONFIG } from '@/lib/ccasa/crudFields'
 
 const Page = () => {
   const s = SUPPORT_BACKEND.find(x => x.key === 'signatures')!
 
   return (
-    <ModulePlaceholder
-      title='Firmas y flujo'
-      description='CRUD de firmas; el flujo Draft → Signed → Locked y doble firma RF-02 se completa en servicios y pantallas que consuman Entry + Signature.'
-      docRef='RF-02 · Signature'
-      apiResources={[{ title: s.label, crudPath: s.crudBasePath, controller: s.controllerHint }]}
-      backHref='/'
-    />
+    <Stack spacing={4}>
+      <div className='flex items-center justify-between flex-wrap gap-2'>
+        <Typography variant='h5'>Firmas</Typography>
+        <Button component={Link} href='/' variant='outlined' size='small'>
+          Inicio
+        </Button>
+      </div>
+      <CrudListPanel
+        title={s.label}
+        subtitle='Registros de firma asociados a entradas (SignatureCrudController).'
+        apiPath={s.crudBasePath}
+        fields={SIGNATURE_CONFIG.fields}
+        resourceLabel={SIGNATURE_CONFIG.label}
+        nameColumn='signatureType'
+      />
+    </Stack>
   )
 }
 

@@ -209,11 +209,18 @@ export const SUPPORT_BACKEND: SupportBackendResource[] = [
   { key: 'roles', label: 'Roles', crudBasePath: `${API_V1}/roles`, controllerHint: 'RoleCrudController' }
 ]
 
-/** Auth: permitAll en SecurityConfiguration para login/register/forgot-password; buscar implementación en el paquete security/auth si aplica */
-export const AUTH_BACKEND_PLANNED: BackendExtraEndpoint[] = [
-  { method: 'POST', path: `${API_V1}/auth/login`, label: 'permitAll — JWT' },
-  { method: 'POST', path: `${API_V1}/auth/register`, label: 'permitAll' },
-  { method: 'POST', path: `${API_V1}/auth/forgot-password`, label: 'permitAll' }
+/**
+ * Auth: permitAll `/api/v1/auth/**` (SecurityConfiguration).
+ * Respuesta: AuthResponseDTO { token, userId, email, role } — AuthController + IAuthService.
+ */
+export const AUTH_BACKEND: BackendExtraEndpoint[] = [
+  { method: 'POST', path: `${API_V1}/auth/login`, label: 'AuthLoginRequestDTO → AuthResponseDTO (JWT en token)' },
+  { method: 'POST', path: `${API_V1}/auth/register`, label: 'AuthRegisterRequestDTO → AuthResponseDTO' },
+  {
+    method: 'POST',
+    path: `${API_V1}/auth/init-admin`,
+    label: 'Bootstrap admin si aplica (dev) → AuthResponseDTO'
+  }
 ]
 
 /** Multi-tenant en JWT (tenantId); sin TenantController en controllers a la fecha */

@@ -2,11 +2,14 @@
 
 // React Imports
 import { useState } from 'react'
+import type { FormEvent } from 'react'
 
 // Next Imports
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 
 // MUI Imports
+import Alert from '@mui/material/Alert'
 import Card from '@mui/material/Card'
 import CardContent from '@mui/material/CardContent'
 import Typography from '@mui/material/Typography'
@@ -16,7 +19,6 @@ import InputAdornment from '@mui/material/InputAdornment'
 import Checkbox from '@mui/material/Checkbox'
 import Button from '@mui/material/Button'
 import FormControlLabel from '@mui/material/FormControlLabel'
-import Divider from '@mui/material/Divider'
 
 // Type Imports
 import type { Mode } from '@core/types'
@@ -28,18 +30,56 @@ import Logo from '@components/layout/shared/Logo'
 // Hook Imports
 import { useImageVariant } from '@core/hooks/useImageVariant'
 
+// Context Imports
+import { useAuth } from '@/contexts/AuthContext'
+
 const Register = ({ mode }: { mode: Mode }) => {
-  // States
+  const router = useRouter()
+  const { register } = useAuth()
+
+  const [firstName, setFirstName] = useState('')
+  const [lastName, setLastName] = useState('')
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [agreeToTerms, setAgreeToTerms] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [loading, setLoading] = useState(false)
   const [isPasswordShown, setIsPasswordShown] = useState(false)
 
-  // Vars
   const darkImg = '/images/pages/auth-v1-mask-dark.png'
   const lightImg = '/images/pages/auth-v1-mask-light.png'
 
-  // Hooks
   const authBackground = useImageVariant(mode, lightImg, darkImg)
 
   const handleClickShowPassword = () => setIsPasswordShown(show => !show)
+
+  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault()
+
+    const trimmedFirst = firstName.trim()
+    const trimmedLast = lastName.trim()
+    const trimmedEmail = email.trim()
+
+    if (!trimmedFirst || !trimmedLast || !trimmedEmail || !password || !agreeToTerms) {
+      setError('Completa todos los campos y acepta los términos y condiciones.')
+
+      return
+    }
+
+    setLoading(true)
+    setError(null)
+
+    try {
+      await register(trimmedFirst, trimmedLast, trimmedEmail, password)
+      router.push('/')
+    } catch (e) {
+      const message = e instanceof Error ? e.message : 'Error al registrarse'
+
+      setError(message)
+    } finally {
+      setLoading(false)
+    }
+  }
 
   return (
     <div className='flex flex-col justify-center items-center min-bs-[100dvh] relative p-6'>
@@ -48,16 +88,45 @@ const Register = ({ mode }: { mode: Mode }) => {
           <Link href='/' className='flex justify-center items-start mbe-6'>
             <Logo />
           </Link>
-          <Typography variant='h4'>Adventure starts here 🚀</Typography>
+          <Typography variant='h4'>Crear cuenta</Typography>
           <div className='flex flex-col gap-5'>
-            <Typography className='mbs-1'>Make your app management easy and fun!</Typography>
-            <form noValidate autoComplete='off' onSubmit={e => e.preventDefault()} className='flex flex-col gap-5'>
-              <TextField autoFocus fullWidth label='Username' />
-              <TextField fullWidth label='Email' />
+            <Typography className='mbs-1'>Regístrate para comenzar a usar el sistema</Typography>
+            {error != null ? (
+              <Alert severity='error' onClose={() => setError(null)}>
+                {error}
+              </Alert>
+            ) : null}
+            <form noValidate autoComplete='off' onSubmit={handleSubmit} className='flex flex-col gap-5'>
+              <div className='flex flex-row gap-4'>
+                <TextField
+                  autoFocus
+                  fullWidth
+                  className='flex-1'
+                  label='Nombre'
+                  value={firstName}
+                  onChange={ev => setFirstName(ev.target.value)}
+                />
+                <TextField
+                  fullWidth
+                  className='flex-1'
+                  label='Apellido'
+                  value={lastName}
+                  onChange={ev => setLastName(ev.target.value)}
+                />
+              </div>
               <TextField
                 fullWidth
-                label='Password'
+                label='Correo electrónico'
+                type='email'
+                value={email}
+                onChange={ev => setEmail(ev.target.value)}
+              />
+              <TextField
+                fullWidth
+                label='Contraseña'
                 type={isPasswordShown ? 'text' : 'password'}
+                value={password}
+                onChange={ev => setPassword(ev.target.value)}
                 InputProps={{
                   endAdornment: (
                     <InputAdornment position='end'>
@@ -74,39 +143,19 @@ const Register = ({ mode }: { mode: Mode }) => {
                 }}
               />
               <FormControlLabel
-                control={<Checkbox />}
-                label={
-                  <>
-                    <span>I agree to </span>
-                    <Link className='text-primary' href='/' onClick={e => e.preventDefault()}>
-                      privacy policy & terms
-                    </Link>
-                  </>
+                control={
+                  <Checkbox checked={agreeToTerms} onChange={ev => setAgreeToTerms(ev.target.checked)} />
                 }
+                label='Acepto los términos y condiciones'
               />
-              <Button fullWidth variant='contained' type='submit'>
-                Sign Up
+              <Button fullWidth variant='contained' type='submit' disabled={loading || !agreeToTerms}>
+                {loading ? 'Registrando…' : 'Registrarse'}
               </Button>
               <div className='flex justify-center items-center flex-wrap gap-2'>
-                <Typography>Already have an account?</Typography>
+                <Typography>¿Ya tienes cuenta?</Typography>
                 <Typography component={Link} href='/login' color='primary'>
-                  Sign in instead
+                  Inicia sesión
                 </Typography>
-              </div>
-              <Divider className='gap-3'>Or</Divider>
-              <div className='flex justify-center items-center gap-2'>
-                <IconButton size='small' className='text-facebook'>
-                  <i className='ri-facebook-fill' />
-                </IconButton>
-                <IconButton size='small' className='text-twitter'>
-                  <i className='ri-twitter-fill' />
-                </IconButton>
-                <IconButton size='small' className='text-github'>
-                  <i className='ri-github-fill' />
-                </IconButton>
-                <IconButton size='small' className='text-googlePlus'>
-                  <i className='ri-google-fill' />
-                </IconButton>
               </div>
             </form>
           </div>
