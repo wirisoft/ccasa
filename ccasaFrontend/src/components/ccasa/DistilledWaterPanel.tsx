@@ -2,7 +2,7 @@
 
 // React Imports
 import type { FormEvent } from 'react'
-import { useCallback, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 
 // MUI Imports
 import Alert from '@mui/material/Alert'
@@ -12,7 +12,12 @@ import Card from '@mui/material/Card'
 import CardContent from '@mui/material/CardContent'
 import CardHeader from '@mui/material/CardHeader'
 import CircularProgress from '@mui/material/CircularProgress'
+import FormControl from '@mui/material/FormControl'
 import Grid from '@mui/material/Grid'
+import InputLabel from '@mui/material/InputLabel'
+import MenuItem from '@mui/material/MenuItem'
+import Select from '@mui/material/Select'
+import type { SelectChangeEvent } from '@mui/material/Select'
 import Snackbar from '@mui/material/Snackbar'
 import Stack from '@mui/material/Stack'
 import Table from '@mui/material/Table'
@@ -25,7 +30,12 @@ import Typography from '@mui/material/Typography'
 
 // Lib Imports
 import { apiFetch } from '@/lib/ccasa/api'
-import type { DistilledWaterRequestDTO, DistilledWaterResponseDTO } from '@/lib/ccasa/types'
+import type {
+  CrudResponseDTO,
+  DistilledWaterRequestDTO,
+  DistilledWaterResponseDTO,
+  LogbookDTO
+} from '@/lib/ccasa/types'
 
 // Context Imports
 import { useAuth } from '@/contexts/AuthContext'
@@ -53,9 +63,6 @@ type FormFieldConfig = {
 }
 
 const FORM_FIELDS: FormFieldConfig[] = [
-  { key: 'folioId', label: 'ID Folio', required: true, md: 4 },
-  { key: 'logbookId', label: 'ID Bitácora', required: true, md: 4 },
-  { key: 'userId', label: 'ID Usuario', required: true, md: 4 },
   { key: 'phReading1', label: 'pH Lectura 1', md: 4 },
   { key: 'phReading2', label: 'pH Lectura 2', md: 4 },
   { key: 'phReading3', label: 'pH Lectura 3', md: 4 },
@@ -63,9 +70,10 @@ const FORM_FIELDS: FormFieldConfig[] = [
   { key: 'ceReading2', label: 'CE Lectura 2', md: 4 },
   { key: 'ceReading3', label: 'CE Lectura 3', md: 4 },
   { key: 'referenceDifference', label: 'Diferencia referencia', md: 6 },
-  { key: 'controlStandardPct', label: 'Estándar control %', md: 6 },
-  { key: 'waterBatchId', label: 'ID Lote de agua', md: 6 }
+  { key: 'controlStandardPct', label: 'Estándar control %', md: 6 }
 ]
+
+type Option = { value: number; label: string }
 
 function formatCell(value: number | string | boolean | null | undefined): string {
   if (value === null || value === undefined) {
@@ -79,26 +87,26 @@ function formatCell(value: number | string | boolean | null | undefined): string
   return String(value)
 }
 
-function responseToTableRows(d: DistilledWaterResponseDTO): { field: string; value: string }[] {
+function responseToTableRows(d: DistilledWaterResponseDTO): { label: string; value: string }[] {
   return [
-    { field: 'entryId', value: formatCell(d.entryId) },
-    { field: 'distilledWaterEntryId', value: formatCell(d.distilledWaterEntryId) },
-    { field: 'phReading1', value: formatCell(d.phReading1) },
-    { field: 'phReading2', value: formatCell(d.phReading2) },
-    { field: 'phReading3', value: formatCell(d.phReading3) },
-    { field: 'phAverage', value: formatCell(d.phAverage) },
-    { field: 'ceReading1', value: formatCell(d.ceReading1) },
-    { field: 'ceReading2', value: formatCell(d.ceReading2) },
-    { field: 'ceReading3', value: formatCell(d.ceReading3) },
-    { field: 'ceAverage', value: formatCell(d.ceAverage) },
-    { field: 'referenceDifference', value: formatCell(d.referenceDifference) },
-    { field: 'controlStandardPct', value: formatCell(d.controlStandardPct) },
+    { label: 'Entrada', value: formatCell(d.entryId) },
+    { label: 'ID registro', value: formatCell(d.distilledWaterEntryId) },
+    { label: 'pH Lectura 1', value: formatCell(d.phReading1) },
+    { label: 'pH Lectura 2', value: formatCell(d.phReading2) },
+    { label: 'pH Lectura 3', value: formatCell(d.phReading3) },
+    { label: 'pH Promedio', value: formatCell(d.phAverage) },
+    { label: 'CE Lectura 1', value: formatCell(d.ceReading1) },
+    { label: 'CE Lectura 2', value: formatCell(d.ceReading2) },
+    { label: 'CE Lectura 3', value: formatCell(d.ceReading3) },
+    { label: 'CE Promedio', value: formatCell(d.ceAverage) },
+    { label: 'Diferencia referencia', value: formatCell(d.referenceDifference) },
+    { label: 'Estándar control %', value: formatCell(d.controlStandardPct) },
     {
-      field: 'isAcceptable',
+      label: '¿Aceptable?',
       value: d.isAcceptable === null ? '—' : d.isAcceptable ? 'Sí' : 'No'
     },
-    { field: 'waterBatchId', value: formatCell(d.waterBatchId) },
-    { field: 'entryStatus', value: formatCell(d.entryStatus) }
+    { label: 'Lote de agua', value: formatCell(d.waterBatchId) },
+    { label: 'Estado', value: formatCell(d.entryStatus) }
   ]
 }
 
@@ -120,15 +128,15 @@ function buildCreateDto(form: Record<string, string>): { ok: true; dto: Distille
   const userId = Number(form.userId?.trim())
 
   if (!form.folioId?.trim() || !Number.isFinite(folioId)) {
-    return { ok: false, message: 'ID Folio es obligatorio y debe ser un número válido.' }
+    return { ok: false, message: 'Selecciona un folio.' }
   }
 
   if (!form.logbookId?.trim() || !Number.isFinite(logbookId)) {
-    return { ok: false, message: 'ID Bitácora es obligatorio y debe ser un número válido.' }
+    return { ok: false, message: 'Selecciona una bitácora.' }
   }
 
   if (!form.userId?.trim() || !Number.isFinite(userId)) {
-    return { ok: false, message: 'ID Usuario es obligatorio y debe ser un número válido.' }
+    return { ok: false, message: 'Selecciona un usuario.' }
   }
 
   const dto: DistilledWaterRequestDTO = { folioId, logbookId, userId }
@@ -174,9 +182,9 @@ function DistilledWaterResultTable({ data }: { data: DistilledWaterResponseDTO }
       <Table size='small'>
         <TableBody>
           {rows.map(row => (
-            <TableRow key={row.field}>
+            <TableRow key={row.label}>
               <TableCell component='th' scope='row' sx={{ fontWeight: 600, width: '40%' }}>
-                {row.field}
+                {row.label}
               </TableCell>
               <TableCell>{row.value}</TableCell>
             </TableRow>
@@ -191,9 +199,15 @@ const DistilledWaterPanel = () => {
   const { token, hydrated } = useAuth()
 
   const [searchId, setSearchId] = useState('')
+  const [entryOptions, setEntryOptions] = useState<Option[]>([])
   const [result, setResult] = useState<DistilledWaterResponseDTO | null>(null)
   const [searching, setSearching] = useState(false)
   const [searchError, setSearchError] = useState<string | null>(null)
+
+  const [folioOptions, setFolioOptions] = useState<Option[]>([])
+  const [logbookOptions, setLogbookOptions] = useState<Option[]>([])
+  const [userOptions, setUserOptions] = useState<Option[]>([])
+  const [batchOptions, setBatchOptions] = useState<Option[]>([])
 
   const [formState, setFormState] = useState<Record<string, string>>(() => ({ ...EMPTY_FORM }))
   const [creating, setCreating] = useState(false)
@@ -201,6 +215,73 @@ const DistilledWaterPanel = () => {
   const [createSuccess, setCreateSuccess] = useState(false)
   const [createResult, setCreateResult] = useState<DistilledWaterResponseDTO | null>(null)
   const [snackbarOpen, setSnackbarOpen] = useState(false)
+
+  useEffect(() => {
+    if (!token) {
+      setFolioOptions([])
+      setLogbookOptions([])
+      setUserOptions([])
+      setBatchOptions([])
+      setEntryOptions([])
+
+      return
+    }
+
+    const opts = { token }
+
+    void Promise.all([
+      apiFetch<CrudResponseDTO[]>('/api/v1/folios', opts).then(rows =>
+        setFolioOptions(
+          (Array.isArray(rows) ? rows : []).map(item => ({
+            value: item.id,
+            label: `Folio ${item.values?.folioNumber ?? item.id}`
+          }))
+        )
+      ),
+      apiFetch<LogbookDTO[]>('/api/v1/logbooks', opts).then(rows =>
+        setLogbookOptions(
+          (Array.isArray(rows) ? rows : []).map(item => ({
+            value: item.id,
+            label: item.name ?? `#${item.id}`
+          }))
+        )
+      ),
+      apiFetch<CrudResponseDTO[]>('/api/v1/users', opts).then(rows =>
+        setUserOptions(
+          (Array.isArray(rows) ? rows : []).map(item => {
+            const name = `${item.values?.firstName ?? ''} ${item.values?.lastName ?? ''}`.trim()
+
+            return {
+              value: item.id,
+              label: name || `#${item.id}`
+            }
+          })
+        )
+      ),
+      apiFetch<CrudResponseDTO[]>('/api/v1/batches', opts).then(rows =>
+        setBatchOptions(
+          (Array.isArray(rows) ? rows : []).map(item => ({
+            value: item.id,
+            label: String(item.values?.batchCode ?? `#${item.id}`)
+          }))
+        )
+      ),
+      apiFetch<CrudResponseDTO[]>('/api/v1/entries', opts).then(rows =>
+        setEntryOptions(
+          (Array.isArray(rows) ? rows : []).map(item => ({
+            value: item.id,
+            label: `Entrada #${item.id}`
+          }))
+        )
+      )
+    ]).catch(() => {
+      setFolioOptions([])
+      setLogbookOptions([])
+      setUserOptions([])
+      setBatchOptions([])
+      setEntryOptions([])
+    })
+  }, [token])
 
   const handleSearch = useCallback(async () => {
     if (!token) {
@@ -211,14 +292,14 @@ const DistilledWaterPanel = () => {
     const id = searchId.trim()
 
     if (!id) {
-      setSearchError('Ingresa un ID de entrada.')
+      setSearchError('Selecciona una entrada.')
       setResult(null)
 
       return
     }
 
     if (!Number.isFinite(Number(id))) {
-      setSearchError('El ID de entrada debe ser un número válido.')
+      setSearchError('La entrada seleccionada no es válida.')
       setResult(null)
 
       return
@@ -228,7 +309,9 @@ const DistilledWaterPanel = () => {
     setResult(null)
 
     try {
-      const data = await apiFetch<DistilledWaterResponseDTO>(`/api/v1/entries/${encodeURIComponent(id)}/distilled-water`)
+      const data = await apiFetch<DistilledWaterResponseDTO>(`/api/v1/entries/${encodeURIComponent(id)}/distilled-water`, {
+        token
+      })
 
       setResult(data)
     } catch (e) {
@@ -263,7 +346,8 @@ const DistilledWaterPanel = () => {
       try {
         const data = await apiFetch<DistilledWaterResponseDTO>('/api/v1/entries/distilled-water', {
           method: 'POST',
-          body: JSON.stringify(built.dto)
+          body: JSON.stringify(built.dto),
+          token
         })
 
         setCreateResult(data)
@@ -281,6 +365,46 @@ const DistilledWaterPanel = () => {
 
   const noToken = hydrated && !token
 
+  const selectNumberValue = (raw: string): number | '' => {
+    if (raw === '') {
+      return ''
+    }
+
+    const n = Number(raw)
+
+    return Number.isFinite(n) ? n : ''
+  }
+
+  const onFolioChange = (ev: SelectChangeEvent<number | ''>) => {
+    const v = ev.target.value
+
+    setFormState(prev => ({ ...prev, folioId: v === '' ? '' : String(v) }))
+  }
+
+  const onLogbookChange = (ev: SelectChangeEvent<number | ''>) => {
+    const v = ev.target.value
+
+    setFormState(prev => ({ ...prev, logbookId: v === '' ? '' : String(v) }))
+  }
+
+  const onUserChange = (ev: SelectChangeEvent<number | ''>) => {
+    const v = ev.target.value
+
+    setFormState(prev => ({ ...prev, userId: v === '' ? '' : String(v) }))
+  }
+
+  const onBatchChange = (ev: SelectChangeEvent<number | ''>) => {
+    const v = ev.target.value
+
+    setFormState(prev => ({ ...prev, waterBatchId: v === '' ? '' : String(v) }))
+  }
+
+  const onSearchEntryChange = (ev: SelectChangeEvent<number | ''>) => {
+    const v = ev.target.value
+
+    setSearchId(v === '' ? '' : String(v))
+  }
+
   return (
     <Stack spacing={4}>
       {noToken ? (
@@ -292,16 +416,25 @@ const DistilledWaterPanel = () => {
         <CardContent>
           <Stack spacing={2}>
             <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} alignItems={{ sm: 'center' }}>
-              <TextField
-                label='ID de entrada'
-                type='text'
-                value={searchId}
-                onChange={ev => setSearchId(ev.target.value)}
-                disabled={!token || searching}
-                size='small'
-                sx={{ minWidth: 200 }}
-                inputProps={{ inputMode: 'numeric' }}
-              />
+              <FormControl size='small' sx={{ minWidth: 220 }} disabled={!token || searching}>
+                <InputLabel id='distilled-search-entry-label'>Entrada</InputLabel>
+                <Select
+                  labelId='distilled-search-entry-label'
+                  label='Entrada'
+                  value={selectNumberValue(searchId)}
+                  onChange={onSearchEntryChange}
+                  displayEmpty
+                >
+                  <MenuItem value=''>
+                    <em>Seleccionar…</em>
+                  </MenuItem>
+                  {entryOptions.map(opt => (
+                    <MenuItem key={opt.value} value={opt.value}>
+                      {opt.label}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
               <Button variant='contained' onClick={() => void handleSearch()} disabled={!token || searching}>
                 Consultar
               </Button>
@@ -314,7 +447,7 @@ const DistilledWaterPanel = () => {
 
             {!searching && !searchError && !result ? (
               <Typography variant='body2' color='text.secondary'>
-                Ingresa un ID de entrada para consultar
+                Selecciona una entrada para consultar
               </Typography>
             ) : null}
           </Stack>
@@ -322,26 +455,112 @@ const DistilledWaterPanel = () => {
       </Card>
 
       <Card variant='outlined'>
-        <CardHeader title='Nueva entrada de agua destilada (dominio)' titleTypographyProps={{ variant: 'subtitle1' }} />
+        <CardHeader title='Nueva entrada de agua destilada' titleTypographyProps={{ variant: 'subtitle1' }} />
         <CardContent>
           <Box component='form' onSubmit={handleCreateSubmit}>
             <Grid container spacing={2}>
+              <Grid item xs={12} md={4}>
+                <FormControl fullWidth size='small' required disabled={!token || creating}>
+                  <InputLabel id='dw-folio-label'>Folio</InputLabel>
+                  <Select
+                    labelId='dw-folio-label'
+                    label='Folio'
+                    value={selectNumberValue(formState.folioId ?? '')}
+                    onChange={onFolioChange}
+                    displayEmpty
+                  >
+                    <MenuItem value=''>
+                      <em>Seleccionar…</em>
+                    </MenuItem>
+                    {folioOptions.map(opt => (
+                      <MenuItem key={opt.value} value={opt.value}>
+                        {opt.label}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+              </Grid>
+              <Grid item xs={12} md={4}>
+                <FormControl fullWidth size='small' required disabled={!token || creating}>
+                  <InputLabel id='dw-logbook-label'>Bitácora</InputLabel>
+                  <Select
+                    labelId='dw-logbook-label'
+                    label='Bitácora'
+                    value={selectNumberValue(formState.logbookId ?? '')}
+                    onChange={onLogbookChange}
+                    displayEmpty
+                  >
+                    <MenuItem value=''>
+                      <em>Seleccionar…</em>
+                    </MenuItem>
+                    {logbookOptions.map(opt => (
+                      <MenuItem key={opt.value} value={opt.value}>
+                        {opt.label}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+              </Grid>
+              <Grid item xs={12} md={4}>
+                <FormControl fullWidth size='small' required disabled={!token || creating}>
+                  <InputLabel id='dw-user-label'>Usuario</InputLabel>
+                  <Select
+                    labelId='dw-user-label'
+                    label='Usuario'
+                    value={selectNumberValue(formState.userId ?? '')}
+                    onChange={onUserChange}
+                    displayEmpty
+                  >
+                    <MenuItem value=''>
+                      <em>Seleccionar…</em>
+                    </MenuItem>
+                    {userOptions.map(opt => (
+                      <MenuItem key={opt.value} value={opt.value}>
+                        {opt.label}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+              </Grid>
+
               {FORM_FIELDS.map(f => (
                 <Grid key={f.key} item xs={12} md={f.md}>
                   <TextField
                     label={f.label}
                     name={f.key}
                     type='text'
-                    required={f.required}
                     fullWidth
                     size='small'
                     value={formState[f.key] ?? ''}
                     onChange={ev => setFormState(prev => ({ ...prev, [f.key]: ev.target.value }))}
                     disabled={!token || creating}
-                    inputProps={f.key !== 'folioId' && f.key !== 'logbookId' && f.key !== 'userId' ? { inputMode: 'decimal' } : { inputMode: 'numeric' }}
+                    inputProps={{ inputMode: 'decimal' }}
                   />
                 </Grid>
               ))}
+
+              <Grid item xs={12} md={6}>
+                <FormControl fullWidth size='small' disabled={!token || creating}>
+                  <InputLabel id='dw-batch-label'>Lote de agua</InputLabel>
+                  <Select
+                    labelId='dw-batch-label'
+                    label='Lote de agua'
+                    value={selectNumberValue(formState.waterBatchId ?? '')}
+                    onChange={onBatchChange}
+                    displayEmpty
+                  >
+                    <MenuItem value=''>
+                      <em>— Ninguno —</em>
+                    </MenuItem>
+                    {batchOptions.map(opt => (
+                      <MenuItem key={opt.value} value={opt.value}>
+                        {opt.label}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+              </Grid>
+
               <Grid item xs={12}>
                 <Button type='submit' variant='contained' disabled={!token || creating}>
                   Crear entrada

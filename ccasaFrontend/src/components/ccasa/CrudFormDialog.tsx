@@ -21,8 +21,13 @@ import MenuItem from '@mui/material/MenuItem'
 import Select from '@mui/material/Select'
 import TextField from '@mui/material/TextField'
 
+// Context Imports
+import { useAuth } from '@/contexts/AuthContext'
+
 // Lib Imports
+import { apiFetch } from '@/lib/ccasa/api'
 import type { CrudFieldDef, CrudFieldType } from '@/lib/ccasa/crudFields'
+import type { CrudResponseDTO } from '@/lib/ccasa/types'
 
 export type CrudFormDialogProps = {
   open: boolean
@@ -40,7 +45,7 @@ function emptyDefaultForType(type: CrudFieldType): unknown {
     return false
   }
 
-  if (type === 'number') {
+  if (type === 'number' || type === 'async-select') {
     return ''
   }
 
@@ -95,7 +100,7 @@ function isEmptyForValidation(field: CrudFieldDef, value: unknown): boolean {
     return value.trim() === ''
   }
 
-  if (field.type === 'number') {
+  if (field.type === 'number' || field.type === 'async-select') {
     if (value === '') {
       return true
     }
@@ -148,6 +153,22 @@ function buildCleanPayload(fields: CrudFieldDef[], formState: Record<string, unk
       continue
     }
 
+    if (field.type === 'async-select') {
+      if (raw === '' || raw == null) {
+        continue
+      }
+
+      const n = Number(raw)
+
+      if (Number.isNaN(n)) {
+        continue
+      }
+
+      out[field.key] = n
+
+      continue
+    }
+
     if (typeof raw === 'string') {
       const trimmed = raw.trim()
 
@@ -180,11 +201,15 @@ const CrudFormDialog = ({
   loading = false,
   error = null
 }: CrudFormDialogProps) => {
+  const { token } = useAuth()
+
   const [formState, setFormState] = useState<Record<string, unknown>>(() =>
     buildInitialFormState(fields, initialValues)
   )
 
   const [touchedKeys, setTouchedKeys] = useState<Set<string>>(() => new Set())
+
+  const [asyncOptions, setAsyncOptions] = useState<Record<string, { value: number; label: string }[]>>({})
 
   const isEditMode = initialValues != null
 
@@ -196,6 +221,42 @@ const CrudFormDialog = ({
     setFormState(buildInitialFormState(fields, initialValues))
     setTouchedKeys(new Set())
   }, [open, initialValues, fields])
+
+  useEffect(() => {
+    if (!open) {
+      return
+    }
+
+    const asyncFields = fields.filter(f => f.type === 'async-select' && f.optionsApiPath)
+
+    asyncFields.forEach(field => {
+      apiFetch<CrudResponseDTO[]>(field.optionsApiPath!, { token: token ?? undefined })
+        .then(data => {
+          const options = (Array.isArray(data) ? data : []).map(item => {
+            const valueKey = field.optionValueKey || 'id'
+            const value = valueKey === 'id' ? item.id : (item.values?.[valueKey] as number)
+
+            const labelKey = field.optionLabelKey || 'name'
+            let label: string
+
+            if (Array.isArray(labelKey)) {
+              label = labelKey.map(k => item.values?.[k] ?? (item as Record<string, unknown>)[k] ?? '').join(' ').trim()
+            } else {
+              label = String(
+                item.values?.[labelKey] ?? (item as Record<string, unknown>)[labelKey] ?? `#${item.id}`
+              )
+            }
+
+            return { value: Number(value), label: label || `#${item.id}` }
+          })
+
+          setAsyncOptions(prev => ({ ...prev, [field.key]: options }))
+        })
+        .catch(() => {
+          setAsyncOptions(prev => ({ ...prev, [field.key]: [] }))
+        })
+    })
+  }, [open, fields, token])
 
   const setValue = useCallback((key: string, value: unknown) => {
     setFormState(prev => ({ ...prev, [key]: value }))
@@ -335,6 +396,49 @@ const CrudFormDialog = ({
                         {!field.required ? <MenuItem value=''>—</MenuItem> : null}
                         {(field.options ?? []).map(opt => (
                           <MenuItem key={String(opt.value)} value={opt.value}>
+                            {opt.label}
+                          </MenuItem>
+                        ))}
+                      </Select>
+                      {field.helperText && !showFieldError ? <FormHelperText>{field.helperText}</FormHelperText> : null}
+                      {showFieldError ? <FormHelperText>{errMsg}</FormHelperText> : null}
+                    </FormControl>
+                  </Grid>
+                )
+              }
+
+              if (field.type === 'async-select') {
+                const loadedOptions = asyncOptions[field.key] ?? []
+                const selectVal = value === undefined || value === null || value === '' ? '' : Number(value)
+
+                return (
+                  <Grid item xs={12} sm={gridSm} key={field.key}>
+                    <FormControl fullWidth error={showFieldError} margin='normal' disabled={loading || readOnly}>
+                      <InputLabel id={`${field.key}-label`} shrink>
+                        {field.label}
+                        {field.required ? ' *' : ''}
+                      </InputLabel>
+                      <Select
+                        labelId={`${field.key}-label`}
+                        label={`${field.label}${field.required ? ' *' : ''}`}
+                        notched
+                        value={selectVal}
+                        onChange={e => {
+                          markTouched(field.key)
+                          setValue(field.key, e.target.value)
+                        }}
+                        onBlur={() => markTouched(field.key)}
+                      >
+                        {!field.required && loadedOptions.length > 0 ? (
+                          <MenuItem value=''>— Ninguno —</MenuItem>
+                        ) : null}
+                        {loadedOptions.length === 0 ? (
+                          <MenuItem value='' disabled>
+                            Cargando...
+                          </MenuItem>
+                        ) : null}
+                        {loadedOptions.map(opt => (
+                          <MenuItem key={opt.value} value={opt.value}>
                             {opt.label}
                           </MenuItem>
                         ))}

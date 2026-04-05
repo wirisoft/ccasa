@@ -7,7 +7,14 @@ export type CrudRequestDTO = {
   values: Record<string, unknown>
 }
 
-export type CrudFieldType = 'text' | 'number' | 'textarea' | 'select' | 'date' | 'boolean'
+export type CrudFieldType =
+  | 'text'
+  | 'number'
+  | 'textarea'
+  | 'select'
+  | 'date'
+  | 'boolean'
+  | 'async-select'
 
 export type CrudSelectOption = {
   value: string | number
@@ -22,6 +29,19 @@ export type CrudFieldDef = {
   placeholder?: string
   defaultValue?: unknown
   options?: CrudSelectOption[]
+
+  /** Para async-select: path de la API para cargar opciones (ej. '/api/v1/users') */
+  optionsApiPath?: string
+
+  /** Para async-select: qué campo del response usar como valor del option (default: 'id') */
+  optionValueKey?: string
+
+  /**
+   * Para async-select: qué campo(s) de values usar como label legible.
+   * Puede ser un string (ej. 'name') o un array (ej. ['firstName', 'lastName'] para concatenar).
+   * Default: 'name'
+   */
+  optionLabelKey?: string | string[]
 
   /** Columnas en grid 12 (1–12). Por defecto 12. */
   gridCols?: number
@@ -99,10 +119,11 @@ export const BATCH_FIELDS: CrudFieldDef[] = [
   { key: 'batchCode', label: 'Código de lote', type: 'text', required: true, gridCols: 6 },
   {
     key: 'reagentId',
-    label: 'ID Reactivo',
-    type: 'number',
+    label: 'Reactivo',
+    type: 'async-select',
     gridCols: 6,
-    helperText: 'ID del reactivo asociado'
+    optionsApiPath: '/api/v1/reagents',
+    optionLabelKey: 'name'
   },
   { key: 'generatedAt', label: 'Fecha de generación', type: 'date', gridCols: 4 },
   { key: 'startDate', label: 'Fecha inicio', type: 'date', gridCols: 4 },
@@ -154,8 +175,7 @@ export const ROLE_FIELDS: CrudFieldDef[] = [
     label: 'Nombre del rol',
     type: 'text',
     required: true,
-    gridCols: 6,
-    helperText: 'Debe coincidir con RoleNameEnum del backend'
+    gridCols: 6
   },
   { key: 'description', label: 'Descripción', type: 'textarea' }
 ]
@@ -221,19 +241,22 @@ export const FOLIO_FIELDS: CrudFieldDef[] = [
   },
   {
     key: 'folioBlockId',
-    label: 'ID Bloque de folios',
-    type: 'number',
+    label: 'Bloque de folios',
+    type: 'async-select',
     required: true,
     gridCols: 6,
-    helperText: 'ID del bloque al que pertenece'
+    optionsApiPath: '/api/v1/folio-blocks',
+    optionLabelKey: 'identifier'
   },
   {
     key: 'logbookId',
-    label: 'ID Bitácora',
-    type: 'number',
+    label: 'Bitácora',
+    type: 'async-select',
     required: true,
     gridCols: 6,
-    helperText: 'ID de la bitácora asociada'
+    optionsApiPath: '/api/v1/logbooks',
+    optionValueKey: 'id',
+    optionLabelKey: 'name'
   }
 ]
 
@@ -266,8 +289,7 @@ export const ALERT_FIELDS: CrudFieldDef[] = [
     key: 'generatedAt',
     label: 'Fecha de generación',
     type: 'date',
-    gridCols: 6,
-    helperText: 'Formato ISO (se envía como fecha)'
+    gridCols: 6
   },
   {
     key: 'status',
@@ -283,10 +305,11 @@ export const ALERT_FIELDS: CrudFieldDef[] = [
   },
   {
     key: 'targetUserId',
-    label: 'ID Usuario destino',
-    type: 'number',
+    label: 'Usuario destino',
+    type: 'async-select',
     gridCols: 6,
-    helperText: 'ID del usuario al que va dirigida la alerta'
+    optionsApiPath: '/api/v1/users',
+    optionLabelKey: ['firstName', 'lastName']
   }
 ]
 
@@ -315,23 +338,24 @@ export const SIGNATURE_FIELDS: CrudFieldDef[] = [
     key: 'signedAt',
     label: 'Fecha de firma',
     type: 'date',
-    gridCols: 6,
-    helperText: 'Formato ISO'
+    gridCols: 6
   },
   {
     key: 'entryId',
-    label: 'ID Entrada',
-    type: 'number',
+    label: 'Entrada',
+    type: 'async-select',
     required: true,
     gridCols: 6,
-    helperText: 'ID de la entrada asociada'
+    optionsApiPath: '/api/v1/entries',
+    optionLabelKey: 'id'
   },
   {
     key: 'supervisorUserId',
-    label: 'ID Supervisor',
-    type: 'number',
+    label: 'Supervisor',
+    type: 'async-select',
     gridCols: 6,
-    helperText: 'ID del usuario supervisor que firma'
+    optionsApiPath: '/api/v1/users',
+    optionLabelKey: ['firstName', 'lastName']
   }
 ]
 
@@ -350,18 +374,19 @@ export const USER_FIELDS: CrudFieldDef[] = [
   { key: 'email', label: 'Correo electrónico', type: 'text', required: true, gridCols: 6 },
   {
     key: 'passwordHash',
-    label: 'Contraseña (hash)',
+    label: 'Contraseña',
     type: 'text',
     gridCols: 6,
-    helperText: 'Solo requerido al crear. Dejar vacío para no cambiar en edición.'
+    helperText: 'Solo necesaria al crear un usuario nuevo.'
   },
   { key: 'active', label: 'Activo', type: 'boolean', defaultValue: true },
   {
     key: 'roleId',
-    label: 'ID Rol',
-    type: 'number',
+    label: 'Rol',
+    type: 'async-select',
     gridCols: 6,
-    helperText: 'ID del rol asignado al usuario'
+    optionsApiPath: '/api/v1/roles',
+    optionLabelKey: 'name'
   }
 ]
 
@@ -390,25 +415,30 @@ export const ENTRY_CORE_FIELDS: CrudFieldDef[] = [
   },
   {
     key: 'folioId',
-    label: 'ID Folio',
-    type: 'number',
+    label: 'Folio',
+    type: 'async-select',
+    required: false,
     gridCols: 4,
-    helperText: 'ID del folio asociado'
+    optionsApiPath: '/api/v1/folios',
+    optionLabelKey: 'folioNumber'
   },
   {
     key: 'logbookId',
-    label: 'ID Bitácora',
-    type: 'number',
+    label: 'Bitácora',
+    type: 'async-select',
     required: true,
     gridCols: 4,
-    helperText: 'ID de la bitácora'
+    optionsApiPath: '/api/v1/logbooks',
+    optionLabelKey: 'name'
   },
   {
     key: 'userId',
-    label: 'ID Usuario',
-    type: 'number',
+    label: 'Usuario',
+    type: 'async-select',
+    required: false,
     gridCols: 4,
-    helperText: 'ID del usuario que registra'
+    optionsApiPath: '/api/v1/users',
+    optionLabelKey: ['firstName', 'lastName']
   }
 ]
 
@@ -435,18 +465,20 @@ export const ENTRY_DISTILLED_WATER_FIELDS: CrudFieldDef[] = [
   { key: 'isAcceptable', label: '¿Aceptable?', type: 'boolean' },
   {
     key: 'entryId',
-    label: 'ID Entrada',
-    type: 'number',
+    label: 'Entrada',
+    type: 'async-select',
     required: true,
     gridCols: 6,
-    helperText: 'ID de la entrada padre'
+    optionsApiPath: '/api/v1/entries',
+    optionLabelKey: 'id'
   },
   {
     key: 'waterBatchId',
-    label: 'ID Lote de agua',
-    type: 'number',
+    label: 'Lote de agua',
+    type: 'async-select',
     gridCols: 6,
-    helperText: 'ID del lote de agua (Batch)'
+    optionsApiPath: '/api/v1/batches',
+    optionLabelKey: 'batchCode'
   }
 ]
 
@@ -472,17 +504,19 @@ export const ENTRY_CONDUCTIVITY_FIELDS: CrudFieldDef[] = [
     ]
   },
   { key: 'measuredValue', label: 'Valor medido', type: 'number', gridCols: 6 },
+  { key: 'weightGrams', label: 'Peso (g)', type: 'number', gridCols: 6 },
   { key: 'calculatedMol', label: 'Mol calculado', type: 'number', gridCols: 6 },
   { key: 'calculatedValue', label: 'Valor calculado', type: 'number', gridCols: 6 },
   { key: 'inRange', label: '¿En rango?', type: 'boolean' },
   { key: 'autoDate', label: 'Fecha automática', type: 'date', gridCols: 6 },
   {
     key: 'entryId',
-    label: 'ID Entrada',
-    type: 'number',
+    label: 'Entrada',
+    type: 'async-select',
     required: true,
     gridCols: 6,
-    helperText: 'ID de la entrada padre'
+    optionsApiPath: '/api/v1/entries',
+    optionLabelKey: 'id'
   }
 ]
 
@@ -504,11 +538,12 @@ export const ENTRY_OVEN_TEMP_FIELDS: CrudFieldDef[] = [
   { key: 'isMaintenance', label: '¿Mantenimiento?', type: 'boolean' },
   {
     key: 'entryId',
-    label: 'ID Entrada',
-    type: 'number',
+    label: 'Entrada',
+    type: 'async-select',
     required: true,
     gridCols: 6,
-    helperText: 'ID de la entrada padre'
+    optionsApiPath: '/api/v1/entries',
+    optionLabelKey: 'id'
   }
 ]
 
@@ -540,15 +575,37 @@ export const ENTRY_DRYING_OVEN_FIELDS: CrudFieldDef[] = [
   { key: 'meetsTemp', label: '¿Cumple temperatura?', type: 'boolean' },
   {
     key: 'entryId',
-    label: 'ID Entrada',
-    type: 'number',
+    label: 'Entrada',
+    type: 'async-select',
     required: true,
     gridCols: 4,
-    helperText: 'ID de la entrada padre'
+    optionsApiPath: '/api/v1/entries',
+    optionLabelKey: 'id'
   },
-  { key: 'reagentId', label: 'ID Reactivo', type: 'number', gridCols: 4 },
-  { key: 'analystUserId', label: 'ID Analista', type: 'number', gridCols: 4 },
-  { key: 'supervisorUserId', label: 'ID Supervisor', type: 'number', gridCols: 4 }
+  {
+    key: 'reagentId',
+    label: 'Reactivo',
+    type: 'async-select',
+    gridCols: 4,
+    optionsApiPath: '/api/v1/reagents',
+    optionLabelKey: 'name'
+  },
+  {
+    key: 'analystUserId',
+    label: 'Analista',
+    type: 'async-select',
+    gridCols: 4,
+    optionsApiPath: '/api/v1/users',
+    optionLabelKey: ['firstName', 'lastName']
+  },
+  {
+    key: 'supervisorUserId',
+    label: 'Supervisor',
+    type: 'async-select',
+    gridCols: 4,
+    optionsApiPath: '/api/v1/users',
+    optionLabelKey: ['firstName', 'lastName']
+  }
 ]
 
 export const ENTRY_DRYING_OVEN_CONFIG: CrudResourceConfig = {
@@ -573,13 +630,34 @@ export const ENTRY_EXPENSE_CHART_FIELDS: CrudFieldDef[] = [
     options: [
       { value: 'Distilled', label: 'Destilada' },
       { value: 'Type', label: 'Tipo' }
-    ],
-    helperText: 'Valores según WaterTypeEnum del backend'
+    ]
   },
   { key: 'kclUsedG', label: 'KCl usado (g)', type: 'number', gridCols: 6 },
-  { key: 'entryId', label: 'ID Entrada', type: 'number', required: true, gridCols: 4 },
-  { key: 'batchId', label: 'ID Lote', type: 'number', gridCols: 4 },
-  { key: 'kclJarId', label: 'ID Frasco KCl', type: 'number', gridCols: 4 }
+  {
+    key: 'entryId',
+    label: 'Entrada',
+    type: 'async-select',
+    required: true,
+    gridCols: 4,
+    optionsApiPath: '/api/v1/entries',
+    optionLabelKey: 'id'
+  },
+  {
+    key: 'batchId',
+    label: 'Lote',
+    type: 'async-select',
+    gridCols: 4,
+    optionsApiPath: '/api/v1/batches',
+    optionLabelKey: 'batchCode'
+  },
+  {
+    key: 'kclJarId',
+    label: 'Frasco KCl',
+    type: 'async-select',
+    gridCols: 4,
+    optionsApiPath: '/api/v1/reagent-jars',
+    optionLabelKey: 'id'
+  }
 ]
 
 export const ENTRY_EXPENSE_CHART_CONFIG: CrudResourceConfig = {
@@ -601,22 +679,36 @@ export const ENTRY_MATERIAL_WASH_FIELDS: CrudFieldDef[] = [
     options: [
       { value: 'Carboy', label: 'Garrafón' },
       { value: 'Flask', label: 'Matraz' }
-    ],
-    helperText: 'Valores según PieceTypeEnum del backend'
+    ]
   },
   { key: 'material', label: 'Material', type: 'text', gridCols: 6 },
   { key: 'determination', label: 'Determinación', type: 'text', gridCols: 6 },
   { key: 'color', label: 'Color', type: 'text', gridCols: 4 },
   {
     key: 'entryId',
-    label: 'ID Entrada',
-    type: 'number',
+    label: 'Entrada',
+    type: 'async-select',
     required: true,
     gridCols: 4,
-    helperText: 'ID de la entrada padre'
+    optionsApiPath: '/api/v1/entries',
+    optionLabelKey: 'id'
   },
-  { key: 'analystUserId', label: 'ID Analista', type: 'number', gridCols: 4 },
-  { key: 'supervisorUserId', label: 'ID Supervisor', type: 'number', gridCols: 4 }
+  {
+    key: 'analystUserId',
+    label: 'Analista',
+    type: 'async-select',
+    gridCols: 4,
+    optionsApiPath: '/api/v1/users',
+    optionLabelKey: ['firstName', 'lastName']
+  },
+  {
+    key: 'supervisorUserId',
+    label: 'Supervisor',
+    type: 'async-select',
+    gridCols: 4,
+    optionsApiPath: '/api/v1/users',
+    optionLabelKey: ['firstName', 'lastName']
+  }
 ]
 
 export const ENTRY_MATERIAL_WASH_CONFIG: CrudResourceConfig = {
@@ -631,14 +723,37 @@ export const ENTRY_MATERIAL_WASH_CONFIG: CrudResourceConfig = {
 export const ENTRY_SOLUTION_PREP_FIELDS: CrudFieldDef[] = [
   {
     key: 'entryId',
-    label: 'ID Entrada',
-    type: 'number',
+    label: 'Entrada',
+    type: 'async-select',
     required: true,
-    gridCols: 6
+    gridCols: 6,
+    optionsApiPath: '/api/v1/entries',
+    optionLabelKey: 'id'
   },
-  { key: 'solutionId', label: 'ID Solución', type: 'number', gridCols: 6 },
-  { key: 'weighingEntryId', label: 'ID Entrada pesada', type: 'number', gridCols: 6 },
-  { key: 'analystUserId', label: 'ID Analista', type: 'number', gridCols: 6 }
+  {
+    key: 'solutionId',
+    label: 'Solución',
+    type: 'async-select',
+    gridCols: 6,
+    optionsApiPath: '/api/v1/solutions',
+    optionLabelKey: 'name'
+  },
+  {
+    key: 'weighingEntryId',
+    label: 'Entrada de pesada',
+    type: 'async-select',
+    gridCols: 6,
+    optionsApiPath: '/api/v1/entry-weighing',
+    optionLabelKey: 'id'
+  },
+  {
+    key: 'analystUserId',
+    label: 'Analista',
+    type: 'async-select',
+    gridCols: 6,
+    optionsApiPath: '/api/v1/users',
+    optionLabelKey: ['firstName', 'lastName']
+  }
 ]
 
 export const ENTRY_SOLUTION_PREP_CONFIG: CrudResourceConfig = {
@@ -654,13 +769,29 @@ export const ENTRY_WEIGHING_FIELDS: CrudFieldDef[] = [
   { key: 'weightGrams', label: 'Peso (gramos)', type: 'number', gridCols: 6 },
   {
     key: 'entryId',
-    label: 'ID Entrada',
-    type: 'number',
+    label: 'Entrada',
+    type: 'async-select',
     required: true,
-    gridCols: 6
+    gridCols: 6,
+    optionsApiPath: '/api/v1/entries',
+    optionLabelKey: 'id'
   },
-  { key: 'reagentId', label: 'ID Reactivo', type: 'number', gridCols: 6 },
-  { key: 'targetSolutionId', label: 'ID Solución destino', type: 'number', gridCols: 6 }
+  {
+    key: 'reagentId',
+    label: 'Reactivo',
+    type: 'async-select',
+    gridCols: 6,
+    optionsApiPath: '/api/v1/reagents',
+    optionLabelKey: 'name'
+  },
+  {
+    key: 'targetSolutionId',
+    label: 'Solución destino',
+    type: 'async-select',
+    gridCols: 6,
+    optionsApiPath: '/api/v1/solutions',
+    optionLabelKey: 'name'
+  }
 ]
 
 export const ENTRY_WEIGHING_CONFIG: CrudResourceConfig = {
@@ -681,13 +812,30 @@ export const ENTRY_ACCURACY_FIELDS: CrudFieldDef[] = [
   { key: 'dailyRecordDate', label: 'Fecha registro diario', type: 'date', gridCols: 4 },
   {
     key: 'entryId',
-    label: 'ID Entrada',
-    type: 'number',
+    label: 'Entrada',
+    type: 'async-select',
     required: true,
-    gridCols: 4
+    gridCols: 4,
+    optionsApiPath: '/api/v1/entries',
+    optionLabelKey: 'id'
   },
-  { key: 'samplerUserId', label: 'ID Muestreador', type: 'number', gridCols: 4 },
-  { key: 'phLogbookId', label: 'ID Bitácora pH', type: 'number', gridCols: 4 }
+  {
+    key: 'samplerUserId',
+    label: 'Muestreador',
+    type: 'async-select',
+    gridCols: 4,
+    optionsApiPath: '/api/v1/users',
+    optionLabelKey: ['firstName', 'lastName']
+  },
+  {
+    key: 'phLogbookId',
+    label: 'Bitácora pH',
+    type: 'async-select',
+    gridCols: 4,
+    optionsApiPath: '/api/v1/logbooks',
+    optionValueKey: 'id',
+    optionLabelKey: 'name'
+  }
 ]
 
 export const ENTRY_ACCURACY_CONFIG: CrudResourceConfig = {
@@ -706,14 +854,37 @@ export const ENTRY_FLASK_TREATMENT_FIELDS: CrudFieldDef[] = [
   { key: 'reportDate', label: 'Fecha de reporte', type: 'date', gridCols: 6 },
   {
     key: 'entryId',
-    label: 'ID Entrada',
-    type: 'number',
+    label: 'Entrada',
+    type: 'async-select',
     required: true,
-    gridCols: 4
+    gridCols: 4,
+    optionsApiPath: '/api/v1/entries',
+    optionLabelKey: 'id'
   },
-  { key: 'washEntryId', label: 'ID Entrada lavado', type: 'number', gridCols: 4 },
-  { key: 'swabSupplyId', label: 'ID Insumo hisopo', type: 'number', gridCols: 4 },
-  { key: 'supervisorUserId', label: 'ID Supervisor', type: 'number', gridCols: 4 }
+  {
+    key: 'washEntryId',
+    label: 'Entrada de lavado',
+    type: 'async-select',
+    gridCols: 4,
+    optionsApiPath: '/api/v1/entry-material-wash',
+    optionLabelKey: 'id'
+  },
+  {
+    key: 'swabSupplyId',
+    label: 'Insumo hisopo',
+    type: 'async-select',
+    gridCols: 4,
+    optionsApiPath: '/api/v1/supplies',
+    optionLabelKey: 'name'
+  },
+  {
+    key: 'supervisorUserId',
+    label: 'Supervisor',
+    type: 'async-select',
+    gridCols: 4,
+    optionsApiPath: '/api/v1/users',
+    optionLabelKey: ['firstName', 'lastName']
+  }
 ]
 
 export const ENTRY_FLASK_TREATMENT_CONFIG: CrudResourceConfig = {

@@ -75,7 +75,7 @@ const ModulePlaceholder = (props: ModulePlaceholderProps) => {
           <>
             <Divider className='mlb-1' />
             <Typography variant='subtitle2' color='text.primary'>
-              API backend (ccasaBackend)
+              API del sistema
             </Typography>
             {apiResources.map((block, idx) => (
               <div key={idx} className='flex flex-col gap-2'>
@@ -86,7 +86,7 @@ const ModulePlaceholder = (props: ModulePlaceholderProps) => {
                 ) : null}
                 {block.notImplemented ? (
                   <Typography variant='body2' color='warning.main'>
-                    Sin controlador REST en el backend por ahora; previsto en documentación.
+                    Esta función aún no está expuesta por la API; consulta la documentación del proyecto.
                   </Typography>
                 ) : null}
                 {block.crudPath ? (
