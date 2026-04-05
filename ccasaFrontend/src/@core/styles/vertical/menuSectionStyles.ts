@@ -22,9 +22,9 @@ const menuSectionStyles = (theme: Theme): MenuProps['menuSectionStyles'] => {
       },
       [`& .${menuClasses.menuSectionLabel}`]: {
         flexGrow: 0,
-        fontSize: '12px',
+        fontSize: '0.6875rem',
+        letterSpacing: '0.8px',
         fontWeight: 600,
-        letterSpacing: '0.06em',
         textTransform: 'uppercase',
         lineHeight: 1.4
       }

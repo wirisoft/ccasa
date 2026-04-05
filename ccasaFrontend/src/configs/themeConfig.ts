@@ -3,9 +3,8 @@
  * as these are stored in the cookie (cookie has the highest priority over the themeConfig):
  * 1. mode
  *
- * To see the effect of the above items, you can click on the reset button from the Customizer
- * which is on the top-right corner of the customizer besides the close button.
- * This will reset the cookie to the values provided in the config object below.
+ * To see the effect of the above items, borra la cookie `ccasa-lab-settings` en el navegador
+ * y recarga; o ajusta los valores por defecto en este archivo.
  *
  * Another way is to clear the cookie from the browser's Application/Storage tab and then reload the page.
  */
@@ -24,7 +23,7 @@ export type Config = {
 
 const themeConfig: Config = {
   templateName: 'CCASA Lab',
-  settingsCookieName: 'materio-mui-next-free-demo',
+  settingsCookieName: 'ccasa-lab-settings',
   mode: 'light', // 'light', 'dark'
   layoutPadding: 24, // Common padding for header, content, footer layout components (in px)
   compactContentWidth: 1440, // in px

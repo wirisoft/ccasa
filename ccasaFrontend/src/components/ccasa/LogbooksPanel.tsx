@@ -226,7 +226,7 @@ const LogbooksPanel = ({ title = 'Bitácoras activas', showCard = true }: Logboo
                   <TableCell>Nombre</TableCell>
                   <TableCell>Descripción</TableCell>
                   <TableCell align='right'>Máx. entradas</TableCell>
-                  <TableCell align='right'>Acciones</TableCell>
+                  <TableCell align='center'>Acciones</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
@@ -236,38 +236,40 @@ const LogbooksPanel = ({ title = 'Bitácoras activas', showCard = true }: Logboo
                     <TableCell>{row.name}</TableCell>
                     <TableCell>{row.description}</TableCell>
                     <TableCell align='right'>{row.maxEntries}</TableCell>
-                    <TableCell align='right'>
-                      <Tooltip title='Ver entradas'>
-                        <IconButton
-                          component={Link}
-                          href={`/bitacoras/${row.id}`}
-                          color='primary'
-                          size='small'
-                          aria-label='Ver entradas'
-                        >
-                          <i className='ri-eye-line' />
-                        </IconButton>
-                      </Tooltip>
-                      <Tooltip title='Editar'>
-                        <IconButton
-                          color='default'
-                          size='small'
-                          aria-label='Editar'
-                          onClick={() => handleOpenEdit(row)}
-                        >
-                          <i className='ri-pencil-line' />
-                        </IconButton>
-                      </Tooltip>
-                      <Tooltip title='Eliminar'>
-                        <IconButton
-                          color='error'
-                          size='small'
-                          aria-label='Eliminar'
-                          onClick={() => handleOpenDelete(row)}
-                        >
-                          <i className='ri-delete-bin-line' />
-                        </IconButton>
-                      </Tooltip>
+                    <TableCell align='center'>
+                      <Stack direction='row' spacing={0.5} justifyContent='flex-end' alignItems='center'>
+                        <Tooltip title='Ver entradas'>
+                          <IconButton
+                            component={Link}
+                            href={`/bitacoras/${row.id}`}
+                            color='primary'
+                            aria-label='Ver entradas'
+                            sx={{ width: 32, height: 32 }}
+                          >
+                            <i className='ri-eye-line' />
+                          </IconButton>
+                        </Tooltip>
+                        <Tooltip title='Editar'>
+                          <IconButton
+                            color='default'
+                            aria-label='Editar'
+                            sx={{ width: 32, height: 32 }}
+                            onClick={() => handleOpenEdit(row)}
+                          >
+                            <i className='ri-pencil-line' />
+                          </IconButton>
+                        </Tooltip>
+                        <Tooltip title='Eliminar'>
+                          <IconButton
+                            color='error'
+                            aria-label='Eliminar'
+                            sx={{ width: 32, height: 32 }}
+                            onClick={() => handleOpenDelete(row)}
+                          >
+                            <i className='ri-delete-bin-line' />
+                          </IconButton>
+                        </Tooltip>
+                      </Stack>
                     </TableCell>
                   </TableRow>
                 ))}

@@ -267,7 +267,7 @@ const CrudListPanel = ({
                     {columns.map(col => (
                       <TableCell key={col}>{col}</TableCell>
                     ))}
-                    {hasWrite ? <TableCell align='right'>Acciones</TableCell> : null}
+                    {hasWrite ? <TableCell align='center'>Acciones</TableCell> : null}
                   </TableRow>
                 </TableHead>
                 <TableBody>
@@ -279,26 +279,29 @@ const CrudListPanel = ({
                         </TableCell>
                       ))}
                       {hasWrite ? (
-                        <TableCell align='right'>
-                          <Tooltip title='Editar'>
-                            <IconButton
-                              size='small'
-                              aria-label='Editar'
-                              onClick={() => handleOpenEdit(row)}
-                            >
-                              <i className='ri-pencil-line' />
-                            </IconButton>
-                          </Tooltip>
-                          <Tooltip title='Eliminar'>
-                            <IconButton
-                              color='error'
-                              size='small'
-                              aria-label='Eliminar'
-                              onClick={() => handleOpenDelete(row)}
-                            >
-                              <i className='ri-delete-bin-line' />
-                            </IconButton>
-                          </Tooltip>
+                        <TableCell align='center'>
+                          <Stack direction='row' spacing={0.5} justifyContent='flex-end' alignItems='center'>
+                            <Tooltip title='Editar'>
+                              <IconButton
+                                color='default'
+                                aria-label='Editar'
+                                sx={{ width: 32, height: 32 }}
+                                onClick={() => handleOpenEdit(row)}
+                              >
+                                <i className='ri-pencil-line' />
+                              </IconButton>
+                            </Tooltip>
+                            <Tooltip title='Eliminar'>
+                              <IconButton
+                                color='error'
+                                aria-label='Eliminar'
+                                sx={{ width: 32, height: 32 }}
+                                onClick={() => handleOpenDelete(row)}
+                              >
+                                <i className='ri-delete-bin-line' />
+                              </IconButton>
+                            </Tooltip>
+                          </Stack>
                         </TableCell>
                       ) : null}
                     </TableRow>

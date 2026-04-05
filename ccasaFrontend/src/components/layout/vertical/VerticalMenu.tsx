@@ -23,6 +23,15 @@ import menuSectionStyles from '@core/styles/vertical/menuSectionStyles'
 // Config Imports
 import { ENTRADA_MODULOS } from '@configs/ccasaModules'
 
+/** Etiquetas cortas solo en el menú lateral (las páginas siguen usando `mod.label` completo). */
+const ENTRADA_NAV_LABEL: Partial<Record<string, string>> = {
+  conductividad: 'Conductividad',
+  'temperatura-horno': 'Temperatura horno',
+  'gastos-cartas': 'Gastos y cartas',
+  'preparacion-soluciones': 'Prep. soluciones',
+  'tratamiento-matraz': 'Trat. matraz'
+}
+
 type RenderExpandIconProps = {
   open?: boolean
   transitionDuration?: VerticalMenuContextProps['transitionDuration']
@@ -77,7 +86,7 @@ const VerticalMenu = ({ scrollMenu }: { scrollMenu: (container: any, isPerfectSc
             </MenuItem>
             {ENTRADA_MODULOS.map(mod => (
               <MenuItem key={mod.slug} href={`/entradas/${mod.slug}`} icon={<i className={mod.iconClass} />}>
-                {mod.label}
+                {ENTRADA_NAV_LABEL[mod.slug] ?? mod.label}
               </MenuItem>
             ))}
           </SubMenu>
@@ -89,7 +98,7 @@ const VerticalMenu = ({ scrollMenu }: { scrollMenu: (container: any, isPerfectSc
               Reactivos
             </MenuItem>
             <MenuItem href='/catalogos/frascos-reactivo' icon={<i className='ri-inbox-line' />}>
-              Frascos de reactivo
+              Frascos
             </MenuItem>
             <MenuItem href='/catalogos/lotes' icon={<i className='ri-stack-line' />}>
               Lotes (batch)
@@ -111,7 +120,7 @@ const VerticalMenu = ({ scrollMenu }: { scrollMenu: (container: any, isPerfectSc
             Alertas
           </MenuItem>
           <MenuItem href='/firmas' icon={<i className='ri-ball-pen-line' />}>
-            Firmas y flujo
+            Firmas
           </MenuItem>
         </MenuSection>
 

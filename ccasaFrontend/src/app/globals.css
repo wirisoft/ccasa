@@ -5,7 +5,9 @@
 :root {
   --border-radius: var(--mui-shape-borderRadius);
   --border-color: var(--mui-palette-divider);
-  --primary-color: var(--mui-palette-primary-main);
+  /* Fallback antes de que MUI inyecte variables; alineado con colorSchemes */
+  --primary-color: #1565c0 !important;
+  --mui-palette-primary-main: #1565c0;
   --background-color: var(--mui-palette-background-default);
   --header-height: 64px;
   --header-z-index: var(--mui-zIndex-appBar);

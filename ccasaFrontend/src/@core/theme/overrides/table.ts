@@ -1,11 +1,10 @@
-// MUI Imports
 import type { Theme } from '@mui/material/styles'
 
 const table: Theme['components'] = {
   MuiTableContainer: {
     styleOverrides: {
       root: {
-        borderRadius: 'var(--mui-shape-customBorderRadius-lg)',
+        borderRadius: 8,
         border: '1px solid var(--mui-palette-divider)',
         overflow: 'hidden'
       }
@@ -18,11 +17,13 @@ const table: Theme['components'] = {
           backgroundColor: 'var(--mui-palette-customColors-tableHeaderBg)',
           color: 'var(--mui-palette-text-secondary)',
           fontWeight: 600,
-          fontSize: '0.75rem',
-          textTransform: 'uppercase',
-          letterSpacing: '0.5px',
+          fontSize: '0.6875rem',
+          textTransform: 'uppercase' as const,
+          letterSpacing: '0.8px',
           borderBottom: '2px solid var(--mui-palette-divider)',
-          whiteSpace: 'nowrap'
+          whiteSpace: 'nowrap',
+          paddingBlock: 12,
+          paddingInline: 16
         }
       }
     }
@@ -35,7 +36,7 @@ const table: Theme['components'] = {
             borderBottom: 0
           },
           '&:hover': {
-            backgroundColor: 'var(--mui-palette-action-hover)'
+            backgroundColor: 'rgba(0, 0, 0, 0.02)'
           }
         }
       }
@@ -43,14 +44,16 @@ const table: Theme['components'] = {
   },
   MuiTableCell: {
     styleOverrides: {
-      root: ({ theme }) => ({
-        padding: theme.spacing(3, 4),
+      root: {
         fontSize: '0.8125rem',
+        paddingBlock: 12,
+        paddingInline: 16,
         borderColor: 'var(--mui-palette-divider)'
-      }),
-      sizeSmall: ({ theme }) => ({
-        padding: theme.spacing(2, 3)
-      })
+      },
+      sizeSmall: {
+        paddingBlock: 8,
+        paddingInline: 12
+      }
     }
   },
   MuiTableRow: {

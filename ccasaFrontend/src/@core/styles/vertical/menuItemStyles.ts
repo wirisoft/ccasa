@@ -20,14 +20,6 @@ const menuItemStyles = (theme: Theme): MenuItemStyles => {
         [`& .${menuClasses.icon}`]: {
           color: 'inherit'
         }
-      },
-      [`&:not(.${menuClasses.subMenuRoot}) > .${menuClasses.button}.${menuClasses.active}`]: {
-        color: 'rgba(255, 255, 255, 0.92)',
-        backgroundColor: 'rgba(255, 255, 255, 0.07)',
-        boxShadow: `inset 3px 0 0 ${theme.palette.primary.light}`,
-        [`& .${menuClasses.icon}`]: {
-          color: 'rgba(255, 255, 255, 0.7)'
-        }
       }
     },
     button: ({ active }) => ({
@@ -37,9 +29,10 @@ const menuItemStyles = (theme: Theme): MenuItemStyles => {
       },
       paddingInlineStart: theme.spacing(5.5),
       paddingInlineEnd: theme.spacing(3.5),
+      overflow: 'hidden',
+      textOverflow: 'ellipsis',
+      whiteSpace: 'nowrap',
       borderRadius: 0,
-      borderStartEndRadius: 0,
-      borderEndEndRadius: 0,
       ...(!active && {
         color: 'rgba(255, 255, 255, 0.72)',
         '&:hover, &:focus-visible': {
@@ -48,18 +41,36 @@ const menuItemStyles = (theme: Theme): MenuItemStyles => {
         '&[aria-expanded="true"]': {
           backgroundColor: 'rgba(255, 255, 255, 0.08)'
         }
+      }),
+      ...(active && {
+        [`&.${menuClasses.active}`]: {
+          backgroundColor: 'rgba(21, 101, 192, 0.12)',
+          color: '#1565C0',
+          fontWeight: 600,
+          borderLeft: '3px solid #1565C0',
+          borderRadius: '0 8px 8px 0',
+          boxShadow: 'none',
+          '&:hover, &:focus-visible, &[aria-expanded="true"]': {
+            backgroundColor: 'rgba(21, 101, 192, 0.16)'
+          },
+          [`& .${menuClasses.icon}`]: {
+            color: '#1565C0'
+          }
+        }
       })
     }),
     icon: ({ level }) => ({
       ...(level === 0 && {
         fontSize: '1.375rem',
         marginInlineEnd: theme.spacing(2),
-        color: 'rgba(255, 255, 255, 0.5)'
+        color: 'rgba(255, 255, 255, 0.5)',
+        flexShrink: 0
       }),
       ...(level > 0 && {
         fontSize: '0.75rem',
         color: 'var(--mui-palette-text-secondary)',
-        marginInlineEnd: theme.spacing(3.5)
+        marginInlineEnd: theme.spacing(3.5),
+        flexShrink: 0
       }),
       ...(level === 1 && {
         marginInlineStart: theme.spacing(1.5)
@@ -80,6 +91,7 @@ const menuItemStyles = (theme: Theme): MenuItemStyles => {
     subMenuExpandIcon: {
       fontSize: '1.375rem',
       marginInlineStart: theme.spacing(2),
+      flexShrink: 0,
       '& i, & svg': {
         fontSize: 'inherit'
       }
