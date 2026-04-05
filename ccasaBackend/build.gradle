@@ -23,6 +23,8 @@ dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
 	implementation 'org.springframework.boot:spring-boot-starter-security'
 	implementation 'org.springframework.boot:spring-boot-starter-webmvc'
+	/** Jackson + bean {@code ObjectMapper} (necesario p. ej. {@link com.backend.ccasa.config.FormulaCatalogSeedService}); webmvc en Boot 4 no lo registra solo. */
+	implementation 'org.springframework.boot:spring-boot-starter-json'
 	implementation 'org.springframework.boot:spring-boot-starter-validation'
 	runtimeOnly 'com.h2database:h2'
 	runtimeOnly 'org.postgresql:postgresql'

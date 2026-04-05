@@ -64,5 +64,9 @@ yarn-error.log*
 # ----- Cursor skills (GitHub no permite subir .mdc; la copia .txt sí se sube) -----
 .cursor/skills/*.mdc
 
+# ----- Python (scripts en raíz del repo) -----
+__pycache__/
+*.py[cod]
+
 # ----- Archivos de proyecto (Excel, PDF, etc.; solo uso local) -----
 filesproyect/
