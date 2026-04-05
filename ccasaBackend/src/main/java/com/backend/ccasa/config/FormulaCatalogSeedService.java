@@ -26,6 +26,9 @@ import org.springframework.transaction.annotation.Transactional;
 /**
  * Carga masiva idempotente del catálogo de fórmulas por celda desde {@code classpath:catalog/formula_cells.jsonl}.
  * Solo inserta si no hay filas activas ({@code deleted_at IS NULL}).
+ * <p>
+ * Usa un {@link ObjectMapper} propio (no inyectado): en Spring Boot 4 el bean global puede no existir
+ * según perfil/auto-config, y este servicio solo necesita lectura de líneas JSON simples.
  */
 @Service
 public class FormulaCatalogSeedService {
@@ -34,21 +37,18 @@ public class FormulaCatalogSeedService {
 	private static final String CATALOG_RESOURCE = "catalog/formula_cells.jsonl";
 	private static final int BATCH_SIZE = 1000;
 
+	/** Instancia dedicada; thread-safe para parseo de árboles ({@code readTree}). */
+	private static final ObjectMapper JSONL_PARSER = new ObjectMapper();
+
 	private final LabFormulaCellRepository labFormulaCellRepository;
 	private final JdbcTemplate jdbcTemplate;
-	private final ObjectMapper objectMapper;
 
 	@Value("${ccasa.formula-catalog.seed-enabled:true}")
 	private boolean seedEnabled;
 
-	public FormulaCatalogSeedService(
-		LabFormulaCellRepository labFormulaCellRepository,
-		JdbcTemplate jdbcTemplate,
-		ObjectMapper objectMapper
-	) {
+	public FormulaCatalogSeedService(LabFormulaCellRepository labFormulaCellRepository, JdbcTemplate jdbcTemplate) {
 		this.labFormulaCellRepository = labFormulaCellRepository;
 		this.jdbcTemplate = jdbcTemplate;
-		this.objectMapper = objectMapper;
 	}
 
 	@Transactional
@@ -82,7 +82,7 @@ public class FormulaCatalogSeedService {
 				if (line.isEmpty()) {
 					continue;
 				}
-				JsonNode node = objectMapper.readTree(line);
+				JsonNode node = JSONL_PARSER.readTree(line);
 				String code = text(node, "code");
 				String fileKey = text(node, "fileKey");
 				String sheetName = text(node, "sheetName");
