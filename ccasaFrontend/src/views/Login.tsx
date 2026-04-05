@@ -72,10 +72,10 @@ const Login = () => {
           <Box sx={{ mb: 5 }}>
             <Logo variant='light' />
           </Box>
-          <Typography variant='h4' sx={{ fontWeight: 800, mb: 2, lineHeight: 1.3 }}>
+          <Typography variant='h4' sx={{ color: '#FFFFFF', fontWeight: 800, mb: 2, lineHeight: 1.3 }}>
             Sistema de gestión de bitácoras
           </Typography>
-          <Typography variant='body1' sx={{ opacity: 0.85, lineHeight: 1.8 }}>
+          <Typography variant='body1' sx={{ color: 'rgba(255, 255, 255, 0.75)', lineHeight: 1.8 }}>
             Administra bitácoras, entradas, catálogos y personal de tu laboratorio de forma centralizada y segura.
           </Typography>
           <Box sx={{ mt: 6, display: 'flex', gap: 4 }}>
@@ -85,8 +85,8 @@ const Login = () => {
               { num: '6', label: 'Catálogos' }
             ].map(stat => (
               <Box key={stat.label}>
-                <Typography variant='h4' sx={{ fontWeight: 700 }}>{stat.num}</Typography>
-                <Typography variant='caption' sx={{ opacity: 0.6 }}>{stat.label}</Typography>
+                <Typography variant='h4' sx={{ color: '#FFFFFF', fontWeight: 700 }}>{stat.num}</Typography>
+                <Typography variant='caption' sx={{ color: 'rgba(255, 255, 255, 0.6)' }}>{stat.label}</Typography>
               </Box>
             ))}
           </Box>

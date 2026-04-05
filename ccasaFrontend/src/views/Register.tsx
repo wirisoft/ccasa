@@ -96,10 +96,10 @@ const Register = () => {
           <Box sx={{ mb: 5 }}>
             <Logo variant='light' />
           </Box>
-          <Typography variant='h4' sx={{ fontWeight: 800, mb: 2, lineHeight: 1.3 }}>
+          <Typography variant='h4' sx={{ color: '#FFFFFF', fontWeight: 800, mb: 2, lineHeight: 1.3 }}>
             Únete a CCASA Lab
           </Typography>
-          <Typography variant='body1' sx={{ opacity: 0.85, lineHeight: 1.8 }}>
+          <Typography variant='body1' sx={{ color: 'rgba(255, 255, 255, 0.75)', lineHeight: 1.8 }}>
             Crea tu cuenta para acceder al sistema de gestión de bitácoras del laboratorio.
           </Typography>
         </Box>
