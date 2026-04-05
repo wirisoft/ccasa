@@ -40,6 +40,10 @@ public class EntryConductivityEntity extends Auditable {
 	@Column(name = "measured_value", precision = 8, scale = 4)
 	private BigDecimal measuredValue;
 
+	/** Peso (g) para cadena KCl 20-108; si está informado, la conductividad teórica va en calculated_value (µS/cm). */
+	@Column(name = "weight_grams", precision = 12, scale = 6)
+	private BigDecimal weightGrams;
+
 	@Column(name = "calculated_mol", precision = 10, scale = 6)
 	private BigDecimal calculatedMol;
 
@@ -60,6 +64,8 @@ public class EntryConductivityEntity extends Auditable {
 	public void setType(ConductivityTypeEnum type) { this.type = type; }
 	public BigDecimal getMeasuredValue() { return measuredValue; }
 	public void setMeasuredValue(BigDecimal measuredValue) { this.measuredValue = measuredValue; }
+	public BigDecimal getWeightGrams() { return weightGrams; }
+	public void setWeightGrams(BigDecimal weightGrams) { this.weightGrams = weightGrams; }
 	public BigDecimal getCalculatedMol() { return calculatedMol; }
 	public void setCalculatedMol(BigDecimal calculatedMol) { this.calculatedMol = calculatedMol; }
 	public BigDecimal getCalculatedValue() { return calculatedValue; }

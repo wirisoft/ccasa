@@ -35,10 +35,29 @@ public abstract class AbstractEntityCrudService<E extends Auditable> implements 
 
 	protected abstract E newEntity();
 
+	/**
+	 * Hook tras mapear DTO → entidad (create/update). Las subclases pueden recalcular campos derivados.
+	 */
+	protected void afterApply(E entity) {
+	}
+
+	protected ActiveRepository<E, Long> getRepository() {
+		return repository;
+	}
+
+	protected EntityManager getEntityManager() {
+		return entityManager;
+	}
+
+	protected Class<E> getEntityClass() {
+		return entityClass;
+	}
+
 	@Override
 	public CrudResponseDTO create(CrudRequestDTO request) {
 		E entity = newEntity();
 		CrudEntityMapper.apply(entityClass, entity, values(request), entityManager);
+		afterApply(entity);
 		E saved = repository.save(entity);
 		return toDto(saved);
 	}
@@ -60,6 +79,7 @@ public abstract class AbstractEntityCrudService<E extends Auditable> implements 
 		E entity = requireActive(id);
 		CrudEntityMapper.apply(entityClass, entity, values(request), entityManager);
 		entity.setUpdatedAt(Instant.now());
+		afterApply(entity);
 		E saved = repository.save(entity);
 		return toDto(saved);
 	}
@@ -71,11 +91,11 @@ public abstract class AbstractEntityCrudService<E extends Auditable> implements 
 		repository.save(entity);
 	}
 
-	private E requireActive(Long id) {
+	protected E requireActive(Long id) {
 		return repository.findByIdAndDeletedAtIsNull(id).orElseThrow(() -> new ResourceNotFoundException(resourceCode, id));
 	}
 
-	private CrudResponseDTO toDto(E entity) {
+	protected CrudResponseDTO toDto(E entity) {
 		return new CrudResponseDTO(extractId(entity), CrudEntityMapper.toValues(entityClass, entity));
 	}
 
@@ -106,7 +126,7 @@ public abstract class AbstractEntityCrudService<E extends Auditable> implements 
 		return null;
 	}
 
-	private Map<String, Object> values(CrudRequestDTO request) {
+	protected Map<String, Object> values(CrudRequestDTO request) {
 		return request == null || request.values() == null ? Map.of() : request.values();
 	}
 

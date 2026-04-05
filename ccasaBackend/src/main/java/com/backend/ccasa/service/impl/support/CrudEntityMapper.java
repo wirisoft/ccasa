@@ -138,6 +138,7 @@ public final class CrudEntityMapper {
 		if (entity instanceof EntryConductivityEntity e) {
 			if (values.containsKey("type")) e.setType(CrudValueHelper.asEnum(values.get("type"), ConductivityTypeEnum.class));
 			if (values.containsKey("measuredValue")) e.setMeasuredValue(CrudValueHelper.asBigDecimal(values.get("measuredValue")));
+			if (values.containsKey("weightGrams")) e.setWeightGrams(CrudValueHelper.asBigDecimal(values.get("weightGrams")));
 			if (values.containsKey("calculatedMol")) e.setCalculatedMol(CrudValueHelper.asBigDecimal(values.get("calculatedMol")));
 			if (values.containsKey("calculatedValue")) e.setCalculatedValue(CrudValueHelper.asBigDecimal(values.get("calculatedValue")));
 			if (values.containsKey("inRange")) e.setInRange(CrudValueHelper.asBoolean(values.get("inRange")));
@@ -355,6 +356,7 @@ public final class CrudEntityMapper {
 			values.put("entryId", idOf(e.getEntry()));
 			values.put("type", e.getType());
 			values.put("measuredValue", e.getMeasuredValue());
+			values.put("weightGrams", e.getWeightGrams());
 			values.put("calculatedMol", e.getCalculatedMol());
 			values.put("calculatedValue", e.getCalculatedValue());
 			values.put("inRange", e.getInRange());

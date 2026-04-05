@@ -1,0 +1,17 @@
+{
+  "source_file": "filesproyect/2-CONDUCTIVIDAD ALTA/20-108 --CONDUCTIVIDAD ALTA.xlsx",
+  "sheet_example": "20240101",
+  "notes": "Valores de constantes alineados a la cadena de fórmulas en excel_formulas.json (clave 2-CONDUCTIVIDAD_ALTA_20-108_--CONDUCTIVIDAD_ALTA.xlsx). Regenerar con extract_conductivity_high_20_108_constants.py cuando el Excel esté en disco.",
+  "constants": {
+    "C25": "7.4565",
+    "B24": "0.01",
+    "C24": "0.1",
+    "F24": "0.01",
+    "D28": "0.01",
+    "F28": "1412"
+  },
+  "theoretical_conductivity_acceptance_uS_per_cm": {
+    "min": "1400",
+    "max": "1420"
+  }
+}
