@@ -25,7 +25,7 @@ import Typography from '@mui/material/Typography'
 
 // Lib Imports
 import { apiFetch } from '@/lib/ccasa/api'
-import { collectCrudColumns, formatCrudCell } from '@/lib/ccasa/crudDisplay'
+import { collectCrudColumns, formatCrudCell, getColumnLabel } from '@/lib/ccasa/crudDisplay'
 import type { CrudFieldDef } from '@/lib/ccasa/crudFields'
 import type { CrudResponseDTO } from '@/lib/ccasa/types'
 
@@ -265,7 +265,7 @@ const CrudListPanel = ({
                 <TableHead>
                   <TableRow>
                     {columns.map(col => (
-                      <TableCell key={col}>{col}</TableCell>
+                      <TableCell key={col}>{getColumnLabel(col)}</TableCell>
                     ))}
                     {hasWrite ? <TableCell align='center'>Acciones</TableCell> : null}
                   </TableRow>
