@@ -222,6 +222,7 @@ const LogbooksPanel = ({ title = 'Bitácoras activas', showCard = true }: Logboo
             <Table size='small'>
               <TableHead>
                 <TableRow>
+                  <TableCell sx={{ width: 60 }}>#</TableCell>
                   <TableCell>Código</TableCell>
                   <TableCell>Nombre</TableCell>
                   <TableCell>Descripción</TableCell>
@@ -230,8 +231,9 @@ const LogbooksPanel = ({ title = 'Bitácoras activas', showCard = true }: Logboo
                 </TableRow>
               </TableHead>
               <TableBody>
-                {rows.map(row => (
+                {rows.map((row, index) => (
                   <TableRow key={row.id} hover>
+                    <TableCell sx={{ width: 60, color: 'text.secondary' }}>{index + 1}</TableCell>
                     <TableCell>{row.code}</TableCell>
                     <TableCell>{row.name}</TableCell>
                     <TableCell>{row.description}</TableCell>

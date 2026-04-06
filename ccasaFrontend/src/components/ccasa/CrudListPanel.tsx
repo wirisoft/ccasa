@@ -264,19 +264,19 @@ const CrudListPanel = ({
               <Table size='small' stickyHeader>
                 <TableHead>
                   <TableRow>
-                    {columns.map(col => (
+                    <TableCell sx={{ width: 60 }}>#</TableCell>
+                    {columns.filter(col => col !== 'id').map(col => (
                       <TableCell key={col}>{getColumnLabel(col)}</TableCell>
                     ))}
                     {hasWrite ? <TableCell align='center'>Acciones</TableCell> : null}
                   </TableRow>
                 </TableHead>
                 <TableBody>
-                  {rows.map(row => (
+                  {rows.map((row, index) => (
                     <TableRow key={row.id} hover>
-                      {columns.map(col => (
-                        <TableCell key={col}>
-                          {col === 'id' ? formatCrudCell(row.id) : formatCrudCell(row.values?.[col])}
-                        </TableCell>
+                      <TableCell sx={{ width: 60, color: 'text.secondary' }}>{index + 1}</TableCell>
+                      {columns.filter(col => col !== 'id').map(col => (
+                        <TableCell key={col}>{formatCrudCell(row.values?.[col])}</TableCell>
                       ))}
                       {hasWrite ? (
                         <TableCell align='center'>
