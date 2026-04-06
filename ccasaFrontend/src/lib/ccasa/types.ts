@@ -68,3 +68,6 @@ export type DistilledWaterResponseDTO = {
   waterBatchId: number | null
   entryStatus: string
 }
+
+/** Mapa de lookups para resolver FKs: { columnKey → { id → label } } */
+export type FkLookupMap = Record<string, Record<number | string, string>>

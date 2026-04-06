@@ -1,4 +1,6 @@
-import type { CrudResponseDTO } from '@/lib/ccasa/types'
+import { apiFetch } from '@/lib/ccasa/api'
+import type { CrudFieldDef } from '@/lib/ccasa/crudFields'
+import type { CrudResponseDTO, FkLookupMap } from '@/lib/ccasa/types'
 
 const MAX_COLUMNS = 14
 
@@ -75,6 +77,27 @@ const COLUMN_LABELS: Record<string, string> = {
   ceAverage: 'CE Prom.'
 }
 
+/** Etiquetas en español para valores de estado/enums que el backend envía en inglés. */
+const STATUS_LABELS: Record<string, string> = {
+  Draft: 'Borrador',
+  Signed: 'Firmada',
+  Locked: 'Bloqueada',
+  Open: 'Abierto',
+  Closed: 'Cerrado',
+  Pending: 'Pendiente',
+  Resolved: 'Resuelta',
+  Analyst: 'Analista',
+  Supervisor: 'Supervisor',
+  High: 'Alta',
+  Low: 'Baja',
+  Carboy: 'Garrafón',
+  Flask: 'Matraz',
+  Distilled: 'Destilada',
+  Type: 'Tipo',
+  Admin: 'Administrador',
+  Sampler: 'Muestreador'
+}
+
 export function getColumnLabel(key: string): string {
   return COLUMN_LABELS[key] ?? key
 }
@@ -113,6 +136,9 @@ export function formatCrudCell(value: unknown): string {
         day: 'numeric'
       })
     }
+    if (STATUS_LABELS[value]) {
+      return STATUS_LABELS[value]
+    }
     return value
   }
 
@@ -123,6 +149,82 @@ export function formatCrudCell(value: unknown): string {
   try {
     return JSON.stringify(value)
   } catch {
+    if (typeof value === 'string' && STATUS_LABELS[value]) {
+      return STATUS_LABELS[value]
+    }
     return String(value)
   }
+}
+
+function labelFromCrudItem(
+  item: Record<string, unknown> & { id?: number; values?: Record<string, unknown> },
+  labelKey: string | string[]
+): string {
+  if (Array.isArray(labelKey)) {
+    return labelKey
+      .map(k => item.values?.[k] ?? item[k] ?? '')
+      .join(' ')
+      .trim()
+  }
+
+  return String(item.values?.[labelKey] ?? item[labelKey] ?? '')
+}
+
+/**
+ * Dado un array de CrudFieldDef[], extrae los campos async-select
+ * y hace GET a cada optionsApiPath para construir un lookup {id → label}.
+ *
+ * Maneja dos formatos de respuesta del backend:
+ * - CrudResponseDTO[]: { id, values: { name, ... } }
+ * - DTO directo (ej. LogbookDTO[]): { id, name, code, ... }
+ */
+export async function buildFkLookupMap(fields: CrudFieldDef[]): Promise<FkLookupMap> {
+  const fkFields = fields.filter(f => f.type === 'async-select' && f.optionsApiPath)
+
+  if (fkFields.length === 0) return {}
+
+  const entries = await Promise.all(
+    fkFields.map(async f => {
+      try {
+        const data = await apiFetch<any[]>(f.optionsApiPath!)
+        const lookup: Record<number | string, string> = {}
+        const labelKey = f.optionLabelKey ?? 'name'
+
+        for (const item of data) {
+          const id = item.id
+
+          if (id == null) continue
+
+          const raw = labelFromCrudItem(item, labelKey)
+          const label = raw || `#${id}`
+
+          lookup[id] = label
+        }
+
+        return [f.key, lookup] as [string, Record<number | string, string>]
+      } catch (err) {
+        console.warn(`[buildFkLookupMap] Error cargando ${f.optionsApiPath}:`, err)
+
+        return [f.key, {}] as [string, Record<number | string, string>]
+      }
+    })
+  )
+
+  return Object.fromEntries(entries)
+}
+
+/**
+ * Dado un valor de celda, la columna, y el mapa de lookups FK,
+ * retorna el label legible si existe, o el valor formateado normal.
+ */
+export function resolveFkDisplay(value: unknown, column: string, fkLookups: FkLookupMap): string {
+  const lookup = fkLookups[column]
+
+  if (lookup && value != null) {
+    const resolved = lookup[value as number | string]
+
+    if (resolved) return resolved
+  }
+
+  return formatCrudCell(value)
 }

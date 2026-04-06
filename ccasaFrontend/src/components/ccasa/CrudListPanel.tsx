@@ -25,9 +25,9 @@ import Typography from '@mui/material/Typography'
 
 // Lib Imports
 import { apiFetch } from '@/lib/ccasa/api'
-import { collectCrudColumns, formatCrudCell, getColumnLabel } from '@/lib/ccasa/crudDisplay'
+import { buildFkLookupMap, collectCrudColumns, getColumnLabel, resolveFkDisplay } from '@/lib/ccasa/crudDisplay'
 import type { CrudFieldDef } from '@/lib/ccasa/crudFields'
-import type { CrudResponseDTO } from '@/lib/ccasa/types'
+import type { CrudResponseDTO, FkLookupMap } from '@/lib/ccasa/types'
 
 // Hook Imports
 import { useCrudOperations } from '@/hooks/ccasa/useCrudOperations'
@@ -106,6 +106,7 @@ const CrudListPanel = ({
   const [deletingRow, setDeletingRow] = useState<CrudResponseDTO | null>(null)
 
   const [snackbar, setSnackbar] = useState<string | null>(null)
+  const [fkLookups, setFkLookups] = useState<FkLookupMap>({})
 
   const fetchRows = useCallback(async () => {
     if (!token) {
@@ -118,6 +119,10 @@ const CrudListPanel = ({
     try {
       const data = await apiFetch<CrudResponseDTO[]>(apiPath)
 
+      if (apiPath === '/api/v1/entries') {
+        console.log('[CrudListPanel] GET /api/v1/entries response', data)
+      }
+
       setRows(Array.isArray(data) ? data : [])
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Error al cargar datos')
@@ -129,6 +134,23 @@ const CrudListPanel = ({
   useEffect(() => {
     void fetchRows()
   }, [fetchRows])
+
+  useEffect(() => {
+    if (!fields || fields.length === 0) {
+      setFkLookups({})
+      return
+    }
+
+    let cancelled = false
+
+    buildFkLookupMap(fields).then(map => {
+      if (!cancelled) setFkLookups(map)
+    })
+
+    return () => {
+      cancelled = true
+    }
+  }, [fields])
 
   const columns = useMemo(() => (rows && rows.length > 0 ? collectCrudColumns(rows) : ['id']), [rows])
 
@@ -276,7 +298,7 @@ const CrudListPanel = ({
                     <TableRow key={row.id} hover>
                       <TableCell sx={{ width: 60, color: 'text.secondary' }}>{index + 1}</TableCell>
                       {columns.filter(col => col !== 'id').map(col => (
-                        <TableCell key={col}>{formatCrudCell(row.values?.[col])}</TableCell>
+                        <TableCell key={col}>{resolveFkDisplay(row.values?.[col], col, fkLookups)}</TableCell>
                       ))}
                       {hasWrite ? (
                         <TableCell align='center'>
