@@ -1,7 +1,7 @@
 'use client'
 
 // React Imports
-import { useRef, useState } from 'react'
+import { useMemo, useRef, useState } from 'react'
 import type { MouseEvent } from 'react'
 
 // Next Imports
@@ -34,6 +34,34 @@ const BadgeContentSpan = styled('span')({
   boxShadow: '0 0 0 2px var(--mui-palette-background-paper)'
 })
 
+function initialsFromEmail(email: string | null | undefined): string {
+  if (!email || !email.trim()) {
+    return '?'
+  }
+
+  const local = email.split('@')[0]?.trim() || ''
+  if (!local) {
+    return '?'
+  }
+
+  const segments = local.split(/[._\-+]/).filter(s => s.length > 0)
+  if (segments.length >= 2) {
+    return (segments[0].charAt(0) + segments[1].charAt(0)).toUpperCase()
+  }
+
+  if (local.length >= 2) {
+    return local.slice(0, 2).toUpperCase()
+  }
+
+  return local.charAt(0).toUpperCase()
+}
+
+const avatarLetterSx = {
+  bgcolor: 'primary.main',
+  color: 'primary.contrastText',
+  fontWeight: 600
+} as const
+
 const UserDropdown = () => {
   // States
   const [open, setOpen] = useState(false)
@@ -44,6 +72,8 @@ const UserDropdown = () => {
   // Hooks
   const router = useRouter()
   const { email, role, logout } = useAuth()
+
+  const initials = useMemo(() => initialsFromEmail(email), [email])
 
   const handleDropdownOpen = () => {
     !open ? setOpen(true) : setOpen(false)
@@ -63,21 +93,27 @@ const UserDropdown = () => {
 
   return (
     <>
-      <Badge
-        ref={anchorRef}
-        overlap='circular'
-        badgeContent={<BadgeContentSpan onClick={handleDropdownOpen} />}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
-        className='mis-2'
-      >
-        <Avatar
-          ref={anchorRef}
-          alt={email || 'Usuario'}
-          src='/images/avatars/1.png'
-          onClick={handleDropdownOpen}
-          className='cursor-pointer bs-[38px] is-[38px]'
-        />
-      </Badge>
+      <div ref={anchorRef} className='mis-2 inline-flex'>
+        <Badge
+          overlap='circular'
+          badgeContent={<BadgeContentSpan onClick={handleDropdownOpen} />}
+          anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+        >
+          <Avatar
+            alt={email || 'Usuario'}
+            onClick={handleDropdownOpen}
+            sx={{
+              ...avatarLetterSx,
+              width: 38,
+              height: 38,
+              fontSize: '0.8125rem',
+              cursor: 'pointer'
+            }}
+          >
+            {initials}
+          </Avatar>
+        </Badge>
+      </div>
       <Popper
         open={open}
         transition
@@ -97,7 +133,17 @@ const UserDropdown = () => {
               <ClickAwayListener onClickAway={e => handleDropdownClose(e as MouseEvent | TouchEvent)}>
                 <MenuList>
                   <div className='flex items-center plb-2 pli-4 gap-2' tabIndex={-1}>
-                    <Avatar alt={email || 'Usuario'} src='/images/avatars/1.png' />
+                    <Avatar
+                      alt={email || 'Usuario'}
+                      sx={{
+                        ...avatarLetterSx,
+                        width: 40,
+                        height: 40,
+                        fontSize: '0.875rem'
+                      }}
+                    >
+                      {initials}
+                    </Avatar>
                     <div className='flex items-start flex-col'>
                       <Typography className='font-medium' color='text.primary'>
                         {email || 'Usuario'}
