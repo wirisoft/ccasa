@@ -49,6 +49,12 @@ export type CrudFieldDef = {
 
   /** Si true, el campo no se edita en actualización (solo creación). */
   readOnlyOnEdit?: boolean
+
+  /**
+   * Si true y type es `date`, el payload usa ISO-8601 instant (ej. `2026-04-07T00:00:00Z`) para `Instant.parse` en el backend.
+   * Si false u omitido, se envía `YYYY-MM-DD` para campos mapeados a `LocalDate`.
+   */
+  dateAsIsoInstant?: boolean
 }
 
 export type CrudResourceConfig = {
@@ -289,7 +295,8 @@ export const ALERT_FIELDS: CrudFieldDef[] = [
     key: 'generatedAt',
     label: 'Fecha de generación',
     type: 'date',
-    gridCols: 6
+    gridCols: 6,
+    dateAsIsoInstant: true
   },
   {
     key: 'status',
@@ -338,7 +345,8 @@ export const SIGNATURE_FIELDS: CrudFieldDef[] = [
     key: 'signedAt',
     label: 'Fecha de firma',
     type: 'date',
-    gridCols: 6
+    gridCols: 6,
+    dateAsIsoInstant: true
   },
   {
     key: 'entryId',
@@ -400,7 +408,7 @@ export const USER_CONFIG: CrudResourceConfig = {
 
 /** Entrada genérica (Entry) — claves alineadas con CrudEntityMapper del backend. */
 export const ENTRY_CORE_FIELDS: CrudFieldDef[] = [
-  { key: 'recordedAt', label: 'Fecha de registro', type: 'date', gridCols: 6 },
+  { key: 'recordedAt', label: 'Fecha de registro', type: 'date', gridCols: 6, dateAsIsoInstant: true },
   {
     key: 'status',
     label: 'Estado',
@@ -508,7 +516,7 @@ export const ENTRY_CONDUCTIVITY_FIELDS: CrudFieldDef[] = [
   { key: 'calculatedMol', label: 'Mol calculado', type: 'number', gridCols: 6 },
   { key: 'calculatedValue', label: 'Valor calculado', type: 'number', gridCols: 6 },
   { key: 'inRange', label: '¿En rango?', type: 'boolean' },
-  { key: 'autoDate', label: 'Fecha automática', type: 'date', gridCols: 6 },
+  { key: 'autoDate', label: 'Fecha automática', type: 'date', gridCols: 6, dateAsIsoInstant: true },
   {
     key: 'entryId',
     label: 'Entrada',
@@ -533,7 +541,7 @@ export const ENTRY_OVEN_TEMP_FIELDS: CrudFieldDef[] = [
   { key: 'rawTemperature', label: 'Temperatura cruda', type: 'number', gridCols: 6 },
   { key: 'correctedTemperature', label: 'Temperatura corregida', type: 'number', gridCols: 6 },
   { key: 'readingNumber', label: 'Número de lectura', type: 'number', gridCols: 4 },
-  { key: 'recordedAt', label: 'Fecha de registro', type: 'date', gridCols: 4 },
+  { key: 'recordedAt', label: 'Fecha de registro', type: 'date', gridCols: 4, dateAsIsoInstant: true },
   { key: 'inRange', label: '¿En rango?', type: 'boolean' },
   { key: 'isMaintenance', label: '¿Mantenimiento?', type: 'boolean' },
   {

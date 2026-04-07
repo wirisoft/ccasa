@@ -153,6 +153,20 @@ function buildCleanPayload(fields: CrudFieldDef[], formState: Record<string, unk
       continue
     }
 
+    if (field.type === 'date') {
+      if (typeof raw === 'string' && raw.trim() !== '') {
+        const dateStr = raw.trim()
+        // Solo Instant en backend (asInstant); LocalDate sigue en YYYY-MM-DD
+        if (field.dateAsIsoInstant === true) {
+          out[field.key] = dateStr.includes('T') ? dateStr : `${dateStr}T00:00:00Z`
+        } else {
+          out[field.key] = dateStr
+        }
+      }
+
+      continue
+    }
+
     if (field.type === 'async-select') {
       if (raw === '' || raw == null) {
         continue
