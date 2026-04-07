@@ -17,6 +17,7 @@ import Alert from '@mui/material/Alert'
 import Fade from '@mui/material/Fade'
 
 import Logo from '@components/layout/shared/Logo'
+import LabAnimation from '@components/ccasa/LabAnimation'
 import { useAuth } from '@/contexts/AuthContext'
 
 const textFieldFocusSx = {
@@ -166,8 +167,7 @@ const Register = () => {
           </Box>
         </Fade>
 
-        <Box sx={{ position: 'absolute', top: -100, right: -100, width: 350, height: 350, borderRadius: '50%', background: 'radial-gradient(circle, rgba(255,255,255,0.04) 0%, transparent 70%)' }} />
-        <Box sx={{ position: 'absolute', bottom: -150, left: -80, width: 450, height: 450, borderRadius: '50%', background: 'radial-gradient(circle, rgba(21,101,192,0.2) 0%, transparent 70%)' }} />
+        <LabAnimation />
       </Box>
 
       {/* Panel derecho */}
