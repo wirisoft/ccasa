@@ -48,6 +48,7 @@ const Register = () => {
   const [isPasswordShown, setIsPasswordShown] = useState(false)
   const [touched, setTouched] = useState<Record<string, boolean>>({})
   const [showLoading, setShowLoading] = useState(false)
+  const [fadeOutLoading, setFadeOutLoading] = useState(false)
 
   const markTouched = (field: string) => setTouched(prev => ({ ...prev, [field]: true }))
 
@@ -100,7 +101,7 @@ const Register = () => {
       await register(trimmedFirst, trimmedLast, trimmedEmail, password)
       setShowLoading(true)
       setTimeout(() => {
-        router.replace('/')
+        setFadeOutLoading(true)
       }, 2000)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error al registrarse. Intenta de nuevo.')
@@ -110,7 +111,12 @@ const Register = () => {
   }
 
   if (showLoading) {
-    return <LoadingScreen />
+    return (
+      <LoadingScreen
+        fadeOut={fadeOutLoading}
+        onFadeOutComplete={() => router.replace('/')}
+      />
+    )
   }
 
   return (

@@ -40,6 +40,7 @@ const Login = () => {
   const [submitting, setSubmitting] = useState(false)
   const [touched, setTouched] = useState<{ email: boolean; password: boolean }>({ email: false, password: false })
   const [showLoading, setShowLoading] = useState(false)
+  const [fadeOutLoading, setFadeOutLoading] = useState(false)
 
   const router = useRouter()
   const { login } = useAuth()
@@ -77,7 +78,7 @@ const Login = () => {
       await login(trimmedEmail, password)
       setShowLoading(true)
       setTimeout(() => {
-        router.replace('/')
+        setFadeOutLoading(true)
       }, 2000)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'No se pudo iniciar sesión. Verifica tus credenciales.')
@@ -87,7 +88,12 @@ const Login = () => {
   }
 
   if (showLoading) {
-    return <LoadingScreen />
+    return (
+      <LoadingScreen
+        fadeOut={fadeOutLoading}
+        onFadeOutComplete={() => router.replace('/')}
+      />
+    )
   }
 
   return (

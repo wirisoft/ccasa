@@ -3,7 +3,6 @@
 import { useEffect, useState } from 'react'
 import Box from '@mui/material/Box'
 import Typography from '@mui/material/Typography'
-import Fade from '@mui/material/Fade'
 
 const LOADING_MESSAGES = [
   'Preparando el laboratorio…',
@@ -12,14 +11,43 @@ const LOADING_MESSAGES = [
   'Calibrando instrumentos…'
 ]
 
-const LoadingScreen = () => {
-  const [messageIndex, setMessageIndex] = useState(0)
+type LoadingScreenProps = {
+  /** Cuando pasa a true, inicia el fade out. El componente llama a onFadeOutComplete cuando termina. */
+  fadeOut?: boolean
+  /** Callback cuando la animación de fade out terminó. */
+  onFadeOutComplete?: () => void
+}
 
+const LoadingScreen = ({ fadeOut = false, onFadeOutComplete }: LoadingScreenProps) => {
+  const [messageIndex, setMessageIndex] = useState(0)
+  const [opacity, setOpacity] = useState(0)
+
+  // Fade in al montar
+  useEffect(() => {
+    const timer = requestAnimationFrame(() => {
+      setOpacity(1)
+    })
+    return () => cancelAnimationFrame(timer)
+  }, [])
+
+  // Fade out cuando se pide
+  useEffect(() => {
+    if (!fadeOut) return
+
+    setOpacity(0)
+
+    const timer = setTimeout(() => {
+      onFadeOutComplete?.()
+    }, 600) // Debe coincidir con la duración de la transición CSS
+
+    return () => clearTimeout(timer)
+  }, [fadeOut, onFadeOutComplete])
+
+  // Mensajes rotativos
   useEffect(() => {
     const interval = setInterval(() => {
       setMessageIndex(prev => (prev + 1) % LOADING_MESSAGES.length)
     }, 2000)
-
     return () => clearInterval(interval)
   }, [])
 
@@ -34,10 +62,12 @@ const LoadingScreen = () => {
         justifyContent: 'center',
         alignItems: 'center',
         background: 'linear-gradient(160deg, #0D2137 0%, #132F4C 50%, #1565C0 100%)',
-        gap: 4
+        gap: 4,
+        opacity,
+        transition: 'opacity 0.6s ease-in-out'
       }}
     >
-      {/* Logo animado — matraz con burbujas */}
+      {/* Matraz animado */}
       <Box sx={{ position: 'relative', width: 120, height: 140 }}>
         <svg
           width='120'
@@ -60,7 +90,6 @@ const LoadingScreen = () => {
           `}</style>
 
           <g className='flask-glow'>
-            {/* Matraz Erlenmeyer */}
             <path
               d='M42,30 L42,55 L15,115 Q12,125 22,128 L98,128 Q108,125 105,115 L78,55 L78,30 Z'
               fill='rgba(21,101,192,0.2)'
@@ -68,17 +97,12 @@ const LoadingScreen = () => {
               strokeWidth='2'
               strokeLinejoin='round'
             />
-            {/* Cuello */}
             <line x1='38' y1='30' x2='82' y2='30' stroke='rgba(255,255,255,0.7)' strokeWidth='2.5' strokeLinecap='round' />
-
-            {/* Líquido */}
             <path
               d='M20,95 Q40,88 60,95 Q80,102 100,95 L105,115 Q108,125 98,128 L22,128 Q12,125 15,115 Z'
               fill='rgba(21,101,192,0.45)'
               className='liq-pulse'
             />
-
-            {/* Burbujas dentro del matraz */}
             <circle cx='45' cy='100' r='4' fill='rgba(255,255,255,0.7)' className='lb1' />
             <circle cx='65' cy='105' r='3' fill='rgba(255,255,255,0.5)' className='lb2' />
             <circle cx='55' cy='95' r='2.5' fill='rgba(255,255,255,0.6)' className='lb3' />
@@ -88,20 +112,21 @@ const LoadingScreen = () => {
       </Box>
 
       {/* Nombre */}
-      <Fade in timeout={800}>
-        <Typography
-          variant='h5'
-          sx={{
-            color: '#FFFFFF',
-            fontWeight: 700,
-            letterSpacing: 1
-          }}
-        >
-          CCASA Lab
-        </Typography>
-      </Fade>
+      <Typography
+        variant='h5'
+        sx={{
+          color: '#FFFFFF',
+          fontWeight: 700,
+          letterSpacing: 1,
+          transform: opacity === 1 ? 'translateY(0)' : 'translateY(10px)',
+          transition: 'transform 0.8s ease-out, opacity 0.8s ease-out',
+          opacity: opacity
+        }}
+      >
+        CCASA Lab
+      </Typography>
 
-      {/* Barra de progreso animada */}
+      {/* Barra de progreso */}
       <Box
         sx={{
           width: 200,
@@ -126,19 +151,26 @@ const LoadingScreen = () => {
         />
       </Box>
 
-      {/* Mensaje rotativo */}
-      <Fade in key={messageIndex} timeout={500}>
+      {/* Mensaje rotativo con transición */}
+      <Box sx={{ minHeight: 24, display: 'flex', alignItems: 'center' }}>
         <Typography
+          key={messageIndex}
           variant='body2'
           sx={{
             color: 'rgba(255,255,255,0.6)',
             fontSize: '0.85rem',
-            minHeight: 24
+            animation: 'messageFade 2s ease-in-out',
+            '@keyframes messageFade': {
+              '0%': { opacity: 0, transform: 'translateY(5px)' },
+              '15%': { opacity: 1, transform: 'translateY(0)' },
+              '85%': { opacity: 1, transform: 'translateY(0)' },
+              '100%': { opacity: 0, transform: 'translateY(-5px)' }
+            }
           }}
         >
           {LOADING_MESSAGES[messageIndex]}
         </Typography>
-      </Fade>
+      </Box>
     </Box>
   )
 }
