@@ -18,6 +18,7 @@ import Fade from '@mui/material/Fade'
 
 import Logo from '@components/layout/shared/Logo'
 import LabAnimation from '@components/ccasa/LabAnimation'
+import LoadingScreen from '@components/ccasa/LoadingScreen'
 import { useAuth } from '@/contexts/AuthContext'
 
 const textFieldFocusSx = {
@@ -46,6 +47,7 @@ const Register = () => {
   const [submitting, setSubmitting] = useState(false)
   const [isPasswordShown, setIsPasswordShown] = useState(false)
   const [touched, setTouched] = useState<Record<string, boolean>>({})
+  const [showLoading, setShowLoading] = useState(false)
 
   const markTouched = (field: string) => setTouched(prev => ({ ...prev, [field]: true }))
 
@@ -96,12 +98,19 @@ const Register = () => {
 
     try {
       await register(trimmedFirst, trimmedLast, trimmedEmail, password)
-      router.replace('/')
+      setShowLoading(true)
+      setTimeout(() => {
+        router.replace('/')
+      }, 2000)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error al registrarse. Intenta de nuevo.')
     } finally {
       setSubmitting(false)
     }
+  }
+
+  if (showLoading) {
+    return <LoadingScreen />
   }
 
   return (

@@ -16,6 +16,7 @@ import Fade from '@mui/material/Fade'
 
 import Logo from '@components/layout/shared/Logo'
 import LabAnimation from '@components/ccasa/LabAnimation'
+import LoadingScreen from '@components/ccasa/LoadingScreen'
 import { useAuth } from '@/contexts/AuthContext'
 
 const textFieldFocusSx = {
@@ -38,6 +39,7 @@ const Login = () => {
   const [error, setError] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
   const [touched, setTouched] = useState<{ email: boolean; password: boolean }>({ email: false, password: false })
+  const [showLoading, setShowLoading] = useState(false)
 
   const router = useRouter()
   const { login } = useAuth()
@@ -73,12 +75,19 @@ const Login = () => {
 
     try {
       await login(trimmedEmail, password)
-      router.replace('/')
+      setShowLoading(true)
+      setTimeout(() => {
+        router.replace('/')
+      }, 2000)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'No se pudo iniciar sesión. Verifica tus credenciales.')
     } finally {
       setSubmitting(false)
     }
+  }
+
+  if (showLoading) {
+    return <LoadingScreen />
   }
 
   return (
