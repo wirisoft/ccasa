@@ -417,10 +417,13 @@ const DistilledWaterPanel = () => {
           <Stack spacing={2}>
             <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} alignItems={{ sm: 'center' }}>
               <FormControl size='small' sx={{ minWidth: 220 }} disabled={!token || searching}>
-                <InputLabel id='distilled-search-entry-label'>Entrada</InputLabel>
+                <InputLabel id='distilled-search-entry-label' shrink>
+                  Entrada
+                </InputLabel>
                 <Select
                   labelId='distilled-search-entry-label'
                   label='Entrada'
+                  notched
                   value={selectNumberValue(searchId)}
                   onChange={onSearchEntryChange}
                   displayEmpty
@@ -461,10 +464,13 @@ const DistilledWaterPanel = () => {
             <Grid container spacing={2}>
               <Grid item xs={12} md={4}>
                 <FormControl fullWidth size='small' required disabled={!token || creating}>
-                  <InputLabel id='dw-folio-label'>Folio</InputLabel>
+                  <InputLabel id='dw-folio-label' shrink>
+                    Folio
+                  </InputLabel>
                   <Select
                     labelId='dw-folio-label'
                     label='Folio'
+                    notched
                     value={selectNumberValue(formState.folioId ?? '')}
                     onChange={onFolioChange}
                     displayEmpty
@@ -482,10 +488,13 @@ const DistilledWaterPanel = () => {
               </Grid>
               <Grid item xs={12} md={4}>
                 <FormControl fullWidth size='small' required disabled={!token || creating}>
-                  <InputLabel id='dw-logbook-label'>Bitácora</InputLabel>
+                  <InputLabel id='dw-logbook-label' shrink>
+                    Bitácora
+                  </InputLabel>
                   <Select
                     labelId='dw-logbook-label'
                     label='Bitácora'
+                    notched
                     value={selectNumberValue(formState.logbookId ?? '')}
                     onChange={onLogbookChange}
                     displayEmpty
@@ -503,10 +512,13 @@ const DistilledWaterPanel = () => {
               </Grid>
               <Grid item xs={12} md={4}>
                 <FormControl fullWidth size='small' required disabled={!token || creating}>
-                  <InputLabel id='dw-user-label'>Usuario</InputLabel>
+                  <InputLabel id='dw-user-label' shrink>
+                    Usuario
+                  </InputLabel>
                   <Select
                     labelId='dw-user-label'
                     label='Usuario'
+                    notched
                     value={selectNumberValue(formState.userId ?? '')}
                     onChange={onUserChange}
                     displayEmpty
@@ -541,10 +553,13 @@ const DistilledWaterPanel = () => {
 
               <Grid item xs={12} md={6}>
                 <FormControl fullWidth size='small' disabled={!token || creating}>
-                  <InputLabel id='dw-batch-label'>Lote de agua</InputLabel>
+                  <InputLabel id='dw-batch-label' shrink>
+                    Lote de agua
+                  </InputLabel>
                   <Select
                     labelId='dw-batch-label'
                     label='Lote de agua'
+                    notched
                     value={selectNumberValue(formState.waterBatchId ?? '')}
                     onChange={onBatchChange}
                     displayEmpty
