@@ -1,7 +1,8 @@
 'use client'
 
 // React Imports
-import { useCallback, useEffect, useState } from 'react'
+import type { ChangeEvent } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 
 // Next Imports
 import Link from 'next/link'
@@ -15,6 +16,7 @@ import CardContent from '@mui/material/CardContent'
 import CardHeader from '@mui/material/CardHeader'
 import CircularProgress from '@mui/material/CircularProgress'
 import IconButton from '@mui/material/IconButton'
+import InputAdornment from '@mui/material/InputAdornment'
 import Snackbar from '@mui/material/Snackbar'
 import Stack from '@mui/material/Stack'
 import Table from '@mui/material/Table'
@@ -22,7 +24,9 @@ import TableBody from '@mui/material/TableBody'
 import TableCell from '@mui/material/TableCell'
 import TableContainer from '@mui/material/TableContainer'
 import TableHead from '@mui/material/TableHead'
+import TablePagination from '@mui/material/TablePagination'
 import TableRow from '@mui/material/TableRow'
+import TextField from '@mui/material/TextField'
 import Tooltip from '@mui/material/Tooltip'
 import Typography from '@mui/material/Typography'
 
@@ -79,6 +83,10 @@ const LogbooksPanel = ({ title = 'Bitácoras activas', showCard = true }: Logboo
 
   const [snackbar, setSnackbar] = useState<string | null>(null)
 
+  const [searchQuery, setSearchQuery] = useState('')
+  const [page, setPage] = useState(0)
+  const [rowsPerPage, setRowsPerPage] = useState(10)
+
   const fetchRows = useCallback(async () => {
     if (!token) {
       return
@@ -101,6 +109,38 @@ const LogbooksPanel = ({ title = 'Bitácoras activas', showCard = true }: Logboo
   useEffect(() => {
     void fetchRows()
   }, [fetchRows])
+
+  /** Filas filtradas por búsqueda global. */
+  const filteredRows = useMemo(() => {
+    if (!rows) {
+      return []
+    }
+
+    if (!searchQuery.trim()) {
+      return rows
+    }
+
+    const query = searchQuery.toLowerCase().trim()
+
+    return rows.filter(
+      row =>
+        String(row.code ?? '').toLowerCase().includes(query) ||
+        (row.name ?? '').toLowerCase().includes(query) ||
+        (row.description ?? '').toLowerCase().includes(query) ||
+        String(row.maxEntries ?? '').includes(query)
+    )
+  }, [rows, searchQuery])
+
+  /** Filas de la página actual. */
+  const paginatedRows = useMemo(() => {
+    const start = page * rowsPerPage
+
+    return filteredRows.slice(start, start + rowsPerPage)
+  }, [filteredRows, page, rowsPerPage])
+
+  useEffect(() => {
+    setPage(0)
+  }, [searchQuery])
 
   const handleOpenCreate = useCallback(() => {
     crudClearError()
@@ -189,6 +229,15 @@ const LogbooksPanel = ({ title = 'Bitácoras activas', showCard = true }: Logboo
     }
   }, [crudClearError, crudRemove, deletingRow, fetchRows])
 
+  const handleChangePage = useCallback((_event: unknown, newPage: number) => {
+    setPage(newPage)
+  }, [])
+
+  const handleChangeRowsPerPage = useCallback((event: ChangeEvent<HTMLInputElement>) => {
+    setRowsPerPage(parseInt(event.target.value, 10))
+    setPage(0)
+  }, [])
+
   const formTitle = editingRow ? `Editar ${LOGBOOK_CONFIG.label.toLowerCase()}` : `Nueva ${LOGBOOK_CONFIG.label.toLowerCase()}`
 
   const inner = (
@@ -205,79 +254,137 @@ const LogbooksPanel = ({ title = 'Bitácoras activas', showCard = true }: Logboo
       ) : null}
       {!loading && !error && rows ? (
         <>
-          <Stack direction='row' justifyContent='space-between' alignItems='center' className='mbe-2' flexWrap='wrap' useFlexGap>
+          <Stack
+            direction='row'
+            justifyContent='space-between'
+            alignItems='center'
+            className='mbe-2'
+            flexWrap='wrap'
+            useFlexGap
+            spacing={1}
+          >
             <Typography variant='body2' color='text.secondary'>
-              {rows.length} bitácora{rows.length === 1 ? '' : 's'} activa{rows.length === 1 ? '' : 's'}
+              {searchQuery.trim()
+                ? `${filteredRows.length} de ${rows.length} bitácora${rows.length === 1 ? '' : 's'}`
+                : `${rows.length} bitácora${rows.length === 1 ? '' : 's'} activa${rows.length === 1 ? '' : 's'}`}
             </Typography>
-            <Button
-              variant='contained'
-              startIcon={<i className='ri-add-line' />}
-              onClick={handleOpenCreate}
-              disabled={!token}
-            >
-              Nueva bitácora
-            </Button>
+            <Stack direction='row' spacing={1} alignItems='center'>
+              <TextField
+                size='small'
+                placeholder='Buscar...'
+                value={searchQuery}
+                onChange={e => setSearchQuery(e.target.value)}
+                sx={{ minWidth: 220 }}
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position='start'>
+                      <i className='ri-search-line' style={{ fontSize: 18, opacity: 0.5 }} />
+                    </InputAdornment>
+                  ),
+                  ...(searchQuery
+                    ? {
+                        endAdornment: (
+                          <InputAdornment position='end'>
+                            <IconButton size='small' onClick={() => setSearchQuery('')} aria-label='Limpiar búsqueda'>
+                              <i className='ri-close-line' style={{ fontSize: 16 }} />
+                            </IconButton>
+                          </InputAdornment>
+                        )
+                      }
+                    : {})
+                }}
+              />
+              <Button
+                variant='contained'
+                startIcon={<i className='ri-add-line' />}
+                onClick={handleOpenCreate}
+                disabled={!token}
+              >
+                Nueva bitácora
+              </Button>
+            </Stack>
           </Stack>
-          <TableContainer>
-            <Table size='small'>
-              <TableHead>
-                <TableRow>
-                  <TableCell sx={{ width: 60 }}>#</TableCell>
-                  <TableCell>Código</TableCell>
-                  <TableCell>Nombre</TableCell>
-                  <TableCell>Descripción</TableCell>
-                  <TableCell align='right'>Máx. entradas</TableCell>
-                  <TableCell align='center'>Acciones</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {rows.map((row, index) => (
-                  <TableRow key={row.id} hover>
-                    <TableCell sx={{ width: 60, color: 'text.secondary' }}>{index + 1}</TableCell>
-                    <TableCell>{row.code}</TableCell>
-                    <TableCell>{row.name}</TableCell>
-                    <TableCell>{row.description}</TableCell>
-                    <TableCell align='right'>{row.maxEntries}</TableCell>
-                    <TableCell align='center'>
-                      <Stack direction='row' spacing={0.5} justifyContent='flex-end' alignItems='center'>
-                        <Tooltip title='Ver entradas'>
-                          <IconButton
-                            component={Link}
-                            href={`/bitacoras/${row.id}`}
-                            color='primary'
-                            aria-label='Ver entradas'
-                            sx={{ width: 32, height: 32 }}
-                          >
-                            <i className='ri-eye-line' />
-                          </IconButton>
-                        </Tooltip>
-                        <Tooltip title='Editar'>
-                          <IconButton
-                            color='default'
-                            aria-label='Editar'
-                            sx={{ width: 32, height: 32 }}
-                            onClick={() => handleOpenEdit(row)}
-                          >
-                            <i className='ri-pencil-line' />
-                          </IconButton>
-                        </Tooltip>
-                        <Tooltip title='Eliminar'>
-                          <IconButton
-                            color='error'
-                            aria-label='Eliminar'
-                            sx={{ width: 32, height: 32 }}
-                            onClick={() => handleOpenDelete(row)}
-                          >
-                            <i className='ri-delete-bin-line' />
-                          </IconButton>
-                        </Tooltip>
-                      </Stack>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </TableContainer>
+          {rows.length > 0 && filteredRows.length === 0 ? (
+            <Typography variant='body2' color='text.secondary' sx={{ py: 3 }}>
+              No se encontraron bitácoras que coincidan con la búsqueda.
+            </Typography>
+          ) : (
+            <>
+              <TableContainer>
+                <Table size='small'>
+                  <TableHead>
+                    <TableRow>
+                      <TableCell sx={{ width: 60 }}>#</TableCell>
+                      <TableCell>Código</TableCell>
+                      <TableCell>Nombre</TableCell>
+                      <TableCell>Descripción</TableCell>
+                      <TableCell align='right'>Máx. entradas</TableCell>
+                      <TableCell align='center'>Acciones</TableCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {paginatedRows.map((row, index) => (
+                      <TableRow key={row.id} hover>
+                        <TableCell sx={{ width: 60, color: 'text.secondary' }}>
+                          {page * rowsPerPage + index + 1}
+                        </TableCell>
+                        <TableCell>{row.code}</TableCell>
+                        <TableCell>{row.name}</TableCell>
+                        <TableCell>{row.description}</TableCell>
+                        <TableCell align='right'>{row.maxEntries}</TableCell>
+                        <TableCell align='center'>
+                          <Stack direction='row' spacing={0.5} justifyContent='flex-end' alignItems='center'>
+                            <Tooltip title='Ver entradas'>
+                              <IconButton
+                                component={Link}
+                                href={`/bitacoras/${row.id}`}
+                                color='primary'
+                                aria-label='Ver entradas'
+                                sx={{ width: 32, height: 32 }}
+                              >
+                                <i className='ri-eye-line' />
+                              </IconButton>
+                            </Tooltip>
+                            <Tooltip title='Editar'>
+                              <IconButton
+                                color='default'
+                                aria-label='Editar'
+                                sx={{ width: 32, height: 32 }}
+                                onClick={() => handleOpenEdit(row)}
+                              >
+                                <i className='ri-pencil-line' />
+                              </IconButton>
+                            </Tooltip>
+                            <Tooltip title='Eliminar'>
+                              <IconButton
+                                color='error'
+                                aria-label='Eliminar'
+                                sx={{ width: 32, height: 32 }}
+                                onClick={() => handleOpenDelete(row)}
+                              >
+                                <i className='ri-delete-bin-line' />
+                              </IconButton>
+                            </Tooltip>
+                          </Stack>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </TableContainer>
+              <TablePagination
+                component='div'
+                count={filteredRows.length}
+                page={page}
+                onPageChange={handleChangePage}
+                rowsPerPage={rowsPerPage}
+                onRowsPerPageChange={handleChangeRowsPerPage}
+                rowsPerPageOptions={[5, 10, 25, 50]}
+                labelRowsPerPage='Filas por página:'
+                labelDisplayedRows={({ from, to, count }) => `${from}–${to} de ${count}`}
+              />
+            </>
+          )}
         </>
       ) : null}
     </>
