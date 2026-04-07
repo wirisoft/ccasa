@@ -127,10 +127,6 @@ const CrudListPanel = ({
     try {
       const data = await apiFetch<CrudResponseDTO[]>(apiPath)
 
-      if (apiPath === '/api/v1/entries') {
-        console.log('[CrudListPanel] GET /api/v1/entries response', data)
-      }
-
       setRows(Array.isArray(data) ? data : [])
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Error al cargar datos')

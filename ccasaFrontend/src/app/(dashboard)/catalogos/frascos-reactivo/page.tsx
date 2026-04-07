@@ -12,11 +12,9 @@ import Typography from '@mui/material/Typography'
 import CrudListPanel from '@components/ccasa/CrudListPanel'
 
 // Config Imports
-import { getCatalogBackend } from '@configs/backendApiRegistry'
+import { REAGENT_JAR_CONFIG } from '@/lib/ccasa/crudFields'
 
 const Page = () => {
-  const c = getCatalogBackend('reagent-jars')!
-
   return (
     <Stack spacing={4}>
       <div className='flex items-center justify-between flex-wrap gap-2'>
@@ -25,7 +23,12 @@ const Page = () => {
           Inicio
         </Button>
       </div>
-      <CrudListPanel title={c.label} apiPath={c.crudBasePath} />
+      <CrudListPanel
+        title={REAGENT_JAR_CONFIG.labelPlural}
+        apiPath={REAGENT_JAR_CONFIG.apiPath}
+        fields={REAGENT_JAR_CONFIG.fields}
+        resourceLabel={REAGENT_JAR_CONFIG.label}
+      />
     </Stack>
   )
 }

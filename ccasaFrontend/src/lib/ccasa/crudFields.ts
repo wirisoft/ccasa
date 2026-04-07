@@ -895,10 +895,37 @@ export const ENTRY_FLASK_TREATMENT_CONFIG: CrudResourceConfig = {
   fields: ENTRY_FLASK_TREATMENT_FIELDS
 }
 
+// ---------------------------------------------------------------------------
+// Frascos de reactivo
+// ---------------------------------------------------------------------------
+export const REAGENT_JAR_FIELDS: CrudFieldDef[] = [
+  {
+    key: 'reagentId',
+    label: 'Reactivo',
+    type: 'async-select',
+    optionsApiPath: '/api/v1/reagents',
+    optionLabelKey: 'name',
+    required: true,
+    gridCols: 6
+  },
+  { key: 'initialAmountG', label: 'Cantidad inicial (g)', type: 'number', required: true, gridCols: 6 },
+  { key: 'currentAmountG', label: 'Cantidad actual (g)', type: 'number', required: true, gridCols: 6 },
+  { key: 'openedAt', label: 'Fecha de apertura', type: 'date', required: false, gridCols: 6 }
+]
+
+export const REAGENT_JAR_CONFIG: CrudResourceConfig = {
+  key: 'reagent-jars',
+  label: 'Frasco de reactivo',
+  labelPlural: 'Frascos de reactivo',
+  apiPath: '/api/v1/reagent-jars',
+  fields: REAGENT_JAR_FIELDS
+}
+
 /** Todas las configuraciones CRUD registradas para búsqueda por `key`. */
 export const ALL_CONFIGS: CrudResourceConfig[] = [
   LOGBOOK_CONFIG,
   REAGENT_CONFIG,
+  REAGENT_JAR_CONFIG,
   BATCH_CONFIG,
   SOLUTION_CONFIG,
   SUPPLY_CONFIG,

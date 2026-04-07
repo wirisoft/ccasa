@@ -1,7 +1,10 @@
+'use client'
+
 // Next Imports
 import Link from 'next/link'
 
 // MUI Imports
+import Alert from '@mui/material/Alert'
 import Card from '@mui/material/Card'
 import CardHeader from '@mui/material/CardHeader'
 import CardContent from '@mui/material/CardContent'
@@ -96,6 +99,9 @@ const socialAccountsArr: SocialAccountsType[] = [
 const Connections = () => {
   return (
     <Card>
+      <Alert severity='info' sx={{ m: 2, mb: 0 }}>
+        Próximamente: esta sección no está conectada al laboratorio.
+      </Alert>
       <Grid container>
         <Grid item xs={12} md={6}>
           <CardHeader

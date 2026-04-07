@@ -1,4 +1,7 @@
+'use client'
+
 // MUI Imports
+import Alert from '@mui/material/Alert'
 import Card from '@mui/material/Card'
 import CardHeader from '@mui/material/CardHeader'
 import CardContent from '@mui/material/CardContent'
@@ -54,6 +57,9 @@ const tableData: TableDataType[] = [
 const Notifications = () => {
   return (
     <Card>
+      <Alert severity='info' sx={{ m: 2, mb: 0 }}>
+        Próximamente: esta sección no está conectada al laboratorio.
+      </Alert>
       <CardHeader
         title='Recent Devices'
         subheader={
