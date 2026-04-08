@@ -73,6 +73,7 @@ const AccountDetails = () => {
     if (!token || userId == null) {
       setLoading(false)
       setError('Inicia sesión para ver tu perfil.')
+
       return
     }
 

@@ -2,8 +2,9 @@
 
 import { useState } from 'react'
 import type { FormEvent } from 'react'
+
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 
 import Box from '@mui/material/Box'
 import Typography from '@mui/material/Typography'
@@ -20,6 +21,7 @@ import Logo from '@components/layout/shared/Logo'
 import LabAnimation from '@components/ccasa/LabAnimation'
 import LoadingScreen from '@components/ccasa/LoadingScreen'
 import { useAuth } from '@/contexts/AuthContext'
+import { safeInternalPath } from '@/lib/ccasa/safeInternalPath'
 
 const textFieldFocusSx = {
   '& .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline': {
@@ -36,6 +38,8 @@ function validateEmail(email: string): boolean {
 
 const Register = () => {
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const afterAuthPath = safeInternalPath(searchParams.get('next'))
   const { register } = useAuth()
 
   const [firstName, setFirstName] = useState('')
@@ -53,8 +57,14 @@ const Register = () => {
   const markTouched = (field: string) => setTouched(prev => ({ ...prev, [field]: true }))
 
   const fieldError = (field: string, value: string, extraCheck?: string | null): string | null => {
-    if (!touched[field]) return null
-    if (value.trim() === '') return 'Este campo es obligatorio'
+    if (!touched[field]) {
+      return null
+    }
+
+    if (value.trim() === '') {
+      return 'Este campo es obligatorio'
+    }
+
     return extraCheck ?? null
   }
 
@@ -76,21 +86,25 @@ const Register = () => {
 
     if (!trimmedFirst || !trimmedLast || !trimmedEmail || !password) {
       setError('Completa todos los campos para continuar.')
+
       return
     }
 
     if (!validateEmail(trimmedEmail)) {
       setError('Ingresa un correo electrónico válido.')
+
       return
     }
 
     if (password.length < 6) {
       setError('La contraseña debe tener al menos 6 caracteres.')
+
       return
     }
 
     if (!agreeToTerms) {
       setError('Debes aceptar los términos y condiciones.')
+
       return
     }
 
@@ -114,7 +128,7 @@ const Register = () => {
     return (
       <LoadingScreen
         fadeOut={fadeOutLoading}
-        onFadeOutComplete={() => router.replace('/')}
+        onFadeOutComplete={() => router.replace(afterAuthPath)}
       />
     )
   }

@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import type { FormEvent } from 'react'
+
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
 
@@ -18,6 +19,7 @@ import Logo from '@components/layout/shared/Logo'
 import LabAnimation from '@components/ccasa/LabAnimation'
 import LoadingScreen from '@components/ccasa/LoadingScreen'
 import { useAuth } from '@/contexts/AuthContext'
+import { safeInternalPath } from '@/lib/ccasa/safeInternalPath'
 
 const textFieldFocusSx = {
   '& .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline': {
@@ -45,6 +47,7 @@ const Login = () => {
   const router = useRouter()
   const searchParams = useSearchParams()
   const sessionExpired = searchParams.get('expired') === 'true'
+  const afterAuthPath = safeInternalPath(searchParams.get('next'))
   const { login } = useAuth()
 
   const emailError = touched.email && email.trim() !== '' && !validateEmail(email.trim())
@@ -65,11 +68,13 @@ const Login = () => {
 
     if (!trimmedEmail || !password) {
       setError('Completa todos los campos para continuar.')
+
       return
     }
 
     if (!validateEmail(trimmedEmail)) {
       setError('Ingresa un correo electrónico válido.')
+
       return
     }
 
@@ -93,7 +98,7 @@ const Login = () => {
     return (
       <LoadingScreen
         fadeOut={fadeOutLoading}
-        onFadeOutComplete={() => router.replace('/')}
+        onFadeOutComplete={() => router.replace(afterAuthPath)}
       />
     )
   }

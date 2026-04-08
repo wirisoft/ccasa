@@ -5,77 +5,15 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useState } 
 import type { ReactNode } from 'react'
 
 // Lib Imports
-import { apiFetch, getStoredAccessToken, setStoredAccessToken } from '@/lib/ccasa/api'
+import { apiFetch } from '@/lib/ccasa/api'
+import {
+  clearCcasaClientSession,
+  getStoredAccessToken,
+  readStoredProfile,
+  setStoredAccessToken,
+  writeStoredProfile
+} from '@/lib/ccasa/clientSession'
 import type { AuthResponseDTO } from '@/lib/ccasa/types'
-
-const STORAGE_EMAIL_KEY = 'ccasa_user_email'
-const STORAGE_ROLE_KEY = 'ccasa_user_role'
-const STORAGE_USER_ID_KEY = 'ccasa_user_id'
-const STORAGE_FIRST_NAME_KEY = 'ccasa_user_firstName'
-const STORAGE_LAST_NAME_KEY = 'ccasa_user_lastName'
-
-function readStoredProfile(): {
-  email: string | null
-  role: string | null
-  userId: number | null
-  firstName: string | null
-  lastName: string | null
-} {
-  if (typeof window === 'undefined') {
-    return { email: null, role: null, userId: null, firstName: null, lastName: null }
-  }
-
-  const rawId = window.localStorage.getItem(STORAGE_USER_ID_KEY)
-  const parsedId = rawId != null && rawId !== '' ? Number(rawId) : NaN
-
-  return {
-    email: window.localStorage.getItem(STORAGE_EMAIL_KEY),
-    role: window.localStorage.getItem(STORAGE_ROLE_KEY),
-    userId: Number.isFinite(parsedId) ? parsedId : null,
-    firstName: window.localStorage.getItem(STORAGE_FIRST_NAME_KEY),
-    lastName: window.localStorage.getItem(STORAGE_LAST_NAME_KEY)
-  }
-}
-
-function writeStoredProfile(
-  email: string | null,
-  role: string | null,
-  userId: number | null,
-  firstName: string | null,
-  lastName: string | null
-): void {
-  if (typeof window === 'undefined') return
-
-  if (email) {
-    window.localStorage.setItem(STORAGE_EMAIL_KEY, email)
-  } else {
-    window.localStorage.removeItem(STORAGE_EMAIL_KEY)
-  }
-
-  if (role) {
-    window.localStorage.setItem(STORAGE_ROLE_KEY, role)
-  } else {
-    window.localStorage.removeItem(STORAGE_ROLE_KEY)
-  }
-
-  if (userId != null && !Number.isNaN(userId)) {
-    window.localStorage.setItem(STORAGE_USER_ID_KEY, String(userId))
-  } else {
-    window.localStorage.removeItem(STORAGE_USER_ID_KEY)
-  }
-
-  if (firstName) {
-    window.localStorage.setItem(STORAGE_FIRST_NAME_KEY, firstName)
-  } else {
-    window.localStorage.removeItem(STORAGE_FIRST_NAME_KEY)
-  }
-
-  if (lastName) {
-    window.localStorage.setItem(STORAGE_LAST_NAME_KEY, lastName)
-  } else {
-    window.localStorage.removeItem(STORAGE_LAST_NAME_KEY)
-  }
-}
 
 type AuthContextValue = {
   token: string | null
@@ -158,14 +96,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const logout = useCallback(() => {
-    setStoredAccessToken(null)
+    clearCcasaClientSession()
     setToken(null)
     setUserId(null)
     setEmail(null)
     setRole(null)
     setFirstName(null)
     setLastName(null)
-    writeStoredProfile(null, null, null, null, null)
   }, [])
 
   const value = useMemo(

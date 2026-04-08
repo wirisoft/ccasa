@@ -13,9 +13,13 @@ const LabAnimation = () => {
 
   const handleMouseMove = useCallback((e: MouseEvent) => {
     const container = containerRef.current
-    if (!container) return
+
+    if (!container) {
+      return
+    }
 
     const rect = container.getBoundingClientRect()
+
     targetRef.current = {
       x: (e.clientX - rect.left) / rect.width,
       y: (e.clientY - rect.top) / rect.height
@@ -28,13 +32,17 @@ const LabAnimation = () => {
 
   useEffect(() => {
     const container = containerRef.current
-    if (!container) return
+
+    if (!container) {
+      return
+    }
 
     container.addEventListener('mousemove', handleMouseMove)
     container.addEventListener('mouseleave', handleMouseLeave)
 
     const animate = () => {
       const lerp = 0.08
+
       currentRef.current = {
         x: currentRef.current.x + (targetRef.current.x - currentRef.current.x) * lerp,
         y: currentRef.current.y + (targetRef.current.y - currentRef.current.y) * lerp

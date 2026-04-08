@@ -3,7 +3,7 @@
 import type { ChangeEvent } from 'react'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 
-import jsPDF from 'jspdf'
+import { jsPDF } from 'jspdf'
 import autoTable from 'jspdf-autotable'
 
 import Alert from '@mui/material/Alert'
@@ -229,6 +229,7 @@ const ConductivityPanel = () => {
       setEditingRow(row)
       const v = row.values ?? {}
       const t = v.type === 'High' || v.type === 'Low' ? v.type : ''
+
       setFormType(t)
       setFormWeight(v.weightGrams != null ? String(v.weightGrams) : '')
       const eid = v.entryId
@@ -360,6 +361,7 @@ const ConductivityPanel = () => {
     doc.text('Registros de Conductividad (KCl)', pageWidth / 2, 22, { align: 'center' })
 
     const now = new Date()
+
     const fechaGen = now.toLocaleDateString('es-MX', {
       day: '2-digit',
       month: '2-digit',
@@ -367,6 +369,7 @@ const ConductivityPanel = () => {
       hour: '2-digit',
       minute: '2-digit'
     })
+
     doc.setFontSize(8)
     doc.text(`Generado: ${fechaGen}`, 14, 29)
 
@@ -385,6 +388,7 @@ const ConductivityPanel = () => {
       const mol = v.calculatedMol != null ? Number(v.calculatedMol).toFixed(6) : '—'
       const cond = v.calculatedValue != null ? Number(v.calculatedValue).toFixed(2) : '—'
       const rango = v.inRange === true ? 'Sí' : v.inRange === false ? 'No' : '—'
+
       const fecha = v.autoDate
         ? new Date(String(v.autoDate)).toLocaleDateString('es-MX', {
             day: '2-digit',
@@ -392,6 +396,7 @@ const ConductivityPanel = () => {
             year: 'numeric'
           })
         : '—'
+
       const entrada = v.entryId != null ? `#${v.entryId}` : '—'
       const creadoPor = v.createdByUserId != null ? `Usuario #${v.createdByUserId}` : '—'
 

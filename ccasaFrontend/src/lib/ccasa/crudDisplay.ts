@@ -144,9 +144,11 @@ export function formatCrudCell(value: unknown): string {
         day: 'numeric'
       })
     }
+
     if (STATUS_LABELS[value]) {
       return STATUS_LABELS[value]
     }
+
     return value
   }
 
@@ -160,6 +162,7 @@ export function formatCrudCell(value: unknown): string {
     if (typeof value === 'string' && STATUS_LABELS[value]) {
       return STATUS_LABELS[value]
     }
+
     return String(value)
   }
 }

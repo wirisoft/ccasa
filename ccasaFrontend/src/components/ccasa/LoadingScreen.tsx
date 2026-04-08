@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+
 import Box from '@mui/material/Box'
 import Typography from '@mui/material/Typography'
 
@@ -12,8 +13,10 @@ const LOADING_MESSAGES = [
 ]
 
 type LoadingScreenProps = {
+
   /** Cuando pasa a true, inicia el fade out. El componente llama a onFadeOutComplete cuando termina. */
   fadeOut?: boolean
+
   /** Callback cuando la animación de fade out terminó. */
   onFadeOutComplete?: () => void
 }
@@ -27,12 +30,15 @@ const LoadingScreen = ({ fadeOut = false, onFadeOutComplete }: LoadingScreenProp
     const timer = requestAnimationFrame(() => {
       setOpacity(1)
     })
+
     return () => cancelAnimationFrame(timer)
   }, [])
 
   // Fade out cuando se pide
   useEffect(() => {
-    if (!fadeOut) return
+    if (!fadeOut) {
+      return
+    }
 
     setOpacity(0)
 
@@ -48,6 +54,7 @@ const LoadingScreen = ({ fadeOut = false, onFadeOutComplete }: LoadingScreenProp
     const interval = setInterval(() => {
       setMessageIndex(prev => (prev + 1) % LOADING_MESSAGES.length)
     }, 2000)
+
     return () => clearInterval(interval)
   }, [])
 

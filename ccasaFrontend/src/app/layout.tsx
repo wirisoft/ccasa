@@ -39,7 +39,7 @@ export const viewport: Viewport = {
   themeColor: '#1565C0',
   width: 'device-width',
   initialScale: 1,
-  maximumScale: 1
+  maximumScale: 5
 }
 
 const RootLayout = ({ children }: ChildrenType) => {

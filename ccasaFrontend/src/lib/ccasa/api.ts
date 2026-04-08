@@ -1,4 +1,4 @@
-const STORAGE_KEY = 'ccasa_access_token'
+import { clearCcasaClientSession, getStoredAccessToken } from '@/lib/ccasa/clientSession'
 
 export function getApiBaseUrl(): string {
   const raw = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8080'
@@ -6,21 +6,7 @@ export function getApiBaseUrl(): string {
   return raw.replace(/\/$/, '')
 }
 
-export function getStoredAccessToken(): string | null {
-  if (typeof window === 'undefined') return null
-
-  return window.localStorage.getItem(STORAGE_KEY)
-}
-
-export function setStoredAccessToken(token: string | null): void {
-  if (typeof window === 'undefined') return
-
-  if (token) {
-    window.localStorage.setItem(STORAGE_KEY, token)
-  } else {
-    window.localStorage.removeItem(STORAGE_KEY)
-  }
-}
+export { getStoredAccessToken }
 
 async function parseErrorResponse(res: Response): Promise<string> {
   try {
@@ -70,12 +56,7 @@ export async function apiFetch<T>(path: string, options: ApiFetchOptions = {}): 
     // Token expirado o inválido — limpiar sesión y redirigir
     if (res.status === 401 && !skipAuth) {
       if (typeof window !== 'undefined') {
-        window.localStorage.removeItem('ccasa_access_token')
-        window.localStorage.removeItem('ccasa_user_email')
-        window.localStorage.removeItem('ccasa_user_role')
-        window.localStorage.removeItem('ccasa_user_id')
-        window.localStorage.removeItem('ccasa_user_firstName')
-        window.localStorage.removeItem('ccasa_user_lastName')
+        clearCcasaClientSession()
         window.location.href = '/login?expired=true'
       }
 
