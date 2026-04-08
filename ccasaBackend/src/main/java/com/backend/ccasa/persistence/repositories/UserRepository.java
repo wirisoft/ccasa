@@ -1,6 +1,7 @@
 package com.backend.ccasa.persistence.repositories;
 
 import com.backend.ccasa.persistence.entities.UserEntity;
+import java.util.List;
 import java.util.Optional;
 import org.springframework.data.jpa.repository.Query;
 
@@ -8,4 +9,11 @@ public interface UserRepository extends ActiveRepository<UserEntity, Long> {
 
 	@Query("select u from UserEntity u where u.deletedAt is null and u.email = :email")
 	Optional<UserEntity> findByEmail(String email);
+
+	@Query(
+		"select u from UserEntity u "
+			+ "where u.deletedAt is null and u.active = true and upper(coalesce(u.nomenclature, '')) = upper(:nomenclature) "
+			+ "order by u.id"
+	)
+	List<UserEntity> findActiveByNomenclature(String nomenclature);
 }

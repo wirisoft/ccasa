@@ -56,6 +56,11 @@ public final class CrudEntityMapper {
 			if (values.containsKey("email")) e.setEmail(CrudValueHelper.asString(values.get("email")));
 			if (values.containsKey("passwordHash")) e.setPasswordHash(CrudValueHelper.asString(values.get("passwordHash")));
 			if (values.containsKey("active")) e.setActive(Boolean.TRUE.equals(CrudValueHelper.asBoolean(values.get("active"))));
+			if (values.containsKey("nomenclature")) e.setNomenclature(CrudValueHelper.asString(values.get("nomenclature")));
+			if (values.containsKey("signatureFileName")) e.setSignatureFileName(CrudValueHelper.asString(values.get("signatureFileName")));
+			if (values.containsKey("signatureContentType")) e.setSignatureContentType(CrudValueHelper.asString(values.get("signatureContentType")));
+			if (values.containsKey("signatureStoragePath")) e.setSignatureStoragePath(CrudValueHelper.asString(values.get("signatureStoragePath")));
+			if (values.containsKey("signatureUploadedAt")) e.setSignatureUploadedAt(CrudValueHelper.asInstant(values.get("signatureUploadedAt")));
 			if (values.containsKey("roleId")) e.setRole(requireActive(entityManager, RoleEntity.class, values.get("roleId")));
 			return;
 		}
@@ -145,6 +150,14 @@ public final class CrudEntityMapper {
 			if (values.containsKey("calculatedValue")) e.setCalculatedValue(CrudValueHelper.asBigDecimal(values.get("calculatedValue")));
 			if (values.containsKey("inRange")) e.setInRange(CrudValueHelper.asBoolean(values.get("inRange")));
 			if (values.containsKey("autoDate")) e.setAutoDate(CrudValueHelper.asInstant(values.get("autoDate")));
+			if (values.containsKey("displayFolio")) e.setDisplayFolio(CrudValueHelper.asString(values.get("displayFolio")));
+			if (values.containsKey("preparationTime")) e.setPreparationTime(CrudValueHelper.asLocalTime(values.get("preparationTime")));
+			if (values.containsKey("observation")) e.setObservation(CrudValueHelper.asString(values.get("observation")));
+			if (values.containsKey("reviewerUserId")) e.setReviewerUser(requireActive(entityManager, UserEntity.class, values.get("reviewerUserId")));
+			if (values.containsKey("reviewedAt")) e.setReviewedAt(CrudValueHelper.asInstant(values.get("reviewedAt")));
+			if (values.containsKey("referenceUScm")) e.setReferenceUScm(CrudValueHelper.asBigDecimal(values.get("referenceUScm")));
+			if (values.containsKey("referenceMol")) e.setReferenceMol(CrudValueHelper.asBigDecimal(values.get("referenceMol")));
+			if (values.containsKey("referenceStandardUScm")) e.setReferenceStandardUScm(CrudValueHelper.asBigDecimal(values.get("referenceStandardUScm")));
 			if (values.containsKey("entryId")) e.setEntry(requireActive(entityManager, EntryEntity.class, values.get("entryId")));
 			return;
 		}
@@ -274,6 +287,11 @@ public final class CrudEntityMapper {
 			values.put("email", e.getEmail());
 			values.put("passwordHash", e.getPasswordHash());
 			values.put("active", e.isActive());
+			values.put("nomenclature", e.getNomenclature());
+			values.put("signatureFileName", e.getSignatureFileName());
+			values.put("signatureContentType", e.getSignatureContentType());
+			values.put("signatureStoragePath", e.getSignatureStoragePath());
+			values.put("signatureUploadedAt", e.getSignatureUploadedAt());
 			values.put("roleId", idOf(e.getRole()));
 			putAudit(values, e);
 			return values;
@@ -376,6 +394,14 @@ public final class CrudEntityMapper {
 			values.put("calculatedValue", e.getCalculatedValue());
 			values.put("inRange", e.getInRange());
 			values.put("autoDate", e.getAutoDate());
+			values.put("displayFolio", e.getDisplayFolio());
+			values.put("preparationTime", e.getPreparationTime());
+			values.put("observation", e.getObservation());
+			values.put("reviewerUserId", idOf(e.getReviewerUser()));
+			values.put("reviewedAt", e.getReviewedAt());
+			values.put("referenceUScm", e.getReferenceUScm());
+			values.put("referenceMol", e.getReferenceMol());
+			values.put("referenceStandardUScm", e.getReferenceStandardUScm());
 			putAudit(values, e);
 			return values;
 		}

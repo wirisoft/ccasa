@@ -1,6 +1,7 @@
 package com.backend.ccasa.persistence.entities.entry;
 
 import com.backend.ccasa.persistence.entities.EntryEntity;
+import com.backend.ccasa.persistence.entities.UserEntity;
 import com.backend.ccasa.persistence.entities.audit.Auditable;
 import com.backend.ccasa.service.models.enums.ConductivityTypeEnum;
 import jakarta.persistence.Column;
@@ -16,6 +17,7 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.time.LocalTime;
 
 /**
  * Entrada de conductividad (RF-05: alta 0.7440â€“0.7490, baja 0.0744â€“0.0790).
@@ -56,6 +58,31 @@ public class EntryConductivityEntity extends Auditable {
 	@Column(name = "auto_date")
 	private Instant autoDate;
 
+	@Column(name = "display_folio", length = 40)
+	private String displayFolio;
+
+	@Column(name = "preparation_time")
+	private LocalTime preparationTime;
+
+	@Column(name = "observation", columnDefinition = "TEXT")
+	private String observation;
+
+	@ManyToOne(fetch = FetchType.LAZY)
+	@JoinColumn(name = "reviewer_user_id")
+	private UserEntity reviewerUser;
+
+	@Column(name = "reviewed_at")
+	private Instant reviewedAt;
+
+	@Column(name = "reference_u_scm", precision = 12, scale = 6)
+	private BigDecimal referenceUScm;
+
+	@Column(name = "reference_mol", precision = 12, scale = 6)
+	private BigDecimal referenceMol;
+
+	@Column(name = "reference_standard_u_scm", precision = 12, scale = 6)
+	private BigDecimal referenceStandardUScm;
+
 	public Long getId() { return id; }
 	public void setId(Long id) { this.id = id; }
 	public EntryEntity getEntry() { return entry; }
@@ -74,5 +101,20 @@ public class EntryConductivityEntity extends Auditable {
 	public void setInRange(Boolean inRange) { this.inRange = inRange; }
 	public Instant getAutoDate() { return autoDate; }
 	public void setAutoDate(Instant autoDate) { this.autoDate = autoDate; }
+	public String getDisplayFolio() { return displayFolio; }
+	public void setDisplayFolio(String displayFolio) { this.displayFolio = displayFolio; }
+	public LocalTime getPreparationTime() { return preparationTime; }
+	public void setPreparationTime(LocalTime preparationTime) { this.preparationTime = preparationTime; }
+	public String getObservation() { return observation; }
+	public void setObservation(String observation) { this.observation = observation; }
+	public UserEntity getReviewerUser() { return reviewerUser; }
+	public void setReviewerUser(UserEntity reviewerUser) { this.reviewerUser = reviewerUser; }
+	public Instant getReviewedAt() { return reviewedAt; }
+	public void setReviewedAt(Instant reviewedAt) { this.reviewedAt = reviewedAt; }
+	public BigDecimal getReferenceUScm() { return referenceUScm; }
+	public void setReferenceUScm(BigDecimal referenceUScm) { this.referenceUScm = referenceUScm; }
+	public BigDecimal getReferenceMol() { return referenceMol; }
+	public void setReferenceMol(BigDecimal referenceMol) { this.referenceMol = referenceMol; }
+	public BigDecimal getReferenceStandardUScm() { return referenceStandardUScm; }
+	public void setReferenceStandardUScm(BigDecimal referenceStandardUScm) { this.referenceStandardUScm = referenceStandardUScm; }
 }
-
