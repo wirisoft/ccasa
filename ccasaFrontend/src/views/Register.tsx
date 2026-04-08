@@ -118,7 +118,19 @@ const Register = () => {
         setFadeOutLoading(true)
       }, 2000)
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Error al registrarse. Intenta de nuevo.')
+      const raw = err instanceof Error ? err.message : ''
+      const lower = raw.toLowerCase()
+
+      if (
+        lower.includes('token') ||
+        lower.includes('unauthorized') ||
+        lower.includes('duplicate') ||
+        lower.includes('already')
+      ) {
+        setError('Este correo electrónico ya está registrado. Intenta con otro o inicia sesión.')
+      } else {
+        setError(raw || 'No se pudo crear la cuenta. Intenta de nuevo.')
+      }
     } finally {
       setSubmitting(false)
     }

@@ -47,7 +47,9 @@ function formatRoleLabel(role: string | null): string {
 }
 
 const AccountDetails = () => {
-  const { userId, token, role, hydrated } = useAuth()
+  const { userId, token, role, hydrated, email, firstName, lastName } = useAuth()
+
+  const canEditProfile = role === 'Admin' || role === 'Supervisor'
 
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
@@ -101,15 +103,37 @@ const AccountDetails = () => {
       return
     }
 
+    if (!canEditProfile) {
+      if (!token || userId == null) {
+        setLoading(false)
+        setError('Inicia sesión para ver tu perfil.')
+
+        return
+      }
+
+      const profile: ProfileData = {
+        firstName: firstName ?? '',
+        lastName: lastName ?? '',
+        email: email ?? ''
+      }
+
+      setFormData(profile)
+      setOriginalData(profile)
+      setError(null)
+      setLoading(false)
+
+      return
+    }
+
     void fetchProfile()
-  }, [hydrated, fetchProfile])
+  }, [hydrated, canEditProfile, fetchProfile, token, userId, firstName, lastName, email])
 
   const handleChange = (field: keyof ProfileData, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }))
   }
 
   const handleSave = async () => {
-    if (!token || userId == null) {
+    if (!canEditProfile || !token || userId == null) {
       return
     }
 
@@ -178,7 +202,8 @@ const AccountDetails = () => {
                   value={formData.firstName}
                   placeholder='Nombre'
                   onChange={e => handleChange('firstName', e.target.value)}
-                  disabled={saving}
+                  disabled={!canEditProfile || saving}
+                  InputProps={{ readOnly: !canEditProfile }}
                 />
               </Grid>
               <Grid item xs={12} sm={6}>
@@ -188,7 +213,8 @@ const AccountDetails = () => {
                   value={formData.lastName}
                   placeholder='Apellido'
                   onChange={e => handleChange('lastName', e.target.value)}
-                  disabled={saving}
+                  disabled={!canEditProfile || saving}
+                  InputProps={{ readOnly: !canEditProfile }}
                 />
               </Grid>
               <Grid item xs={12} sm={6}>
@@ -198,7 +224,8 @@ const AccountDetails = () => {
                   value={formData.email}
                   placeholder='correo@ejemplo.com'
                   onChange={e => handleChange('email', e.target.value)}
-                  disabled={saving}
+                  disabled={!canEditProfile || saving}
+                  InputProps={{ readOnly: !canEditProfile }}
                 />
               </Grid>
               <Grid item xs={12} sm={6}>
@@ -211,15 +238,23 @@ const AccountDetails = () => {
                   InputProps={{ readOnly: true }}
                 />
               </Grid>
-              <Grid item xs={12} className='flex gap-4 flex-wrap'>
-                <Button variant='contained' onClick={() => void handleSave()} disabled={saving || !hasChanges}>
-                  {saving ? 'Guardando...' : 'Guardar cambios'}
-                </Button>
-                <Button variant='outlined' color='secondary' onClick={handleReset} disabled={saving || !hasChanges}>
-                  Restablecer
-                </Button>
-              </Grid>
+              {canEditProfile ? (
+                <Grid item xs={12} className='flex gap-4 flex-wrap'>
+                  <Button variant='contained' onClick={() => void handleSave()} disabled={saving || !hasChanges}>
+                    {saving ? 'Guardando...' : 'Guardar cambios'}
+                  </Button>
+                  <Button variant='outlined' color='secondary' onClick={handleReset} disabled={saving || !hasChanges}>
+                    Restablecer
+                  </Button>
+                </Grid>
+              ) : null}
             </Grid>
+
+            {!canEditProfile && !error ? (
+              <Alert severity='info' sx={{ mt: 3 }}>
+                Para modificar tu información de perfil, contacta al administrador.
+              </Alert>
+            ) : null}
           </CardContent>
         </Card>
 

@@ -74,25 +74,42 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const register = useCallback(async (regFirstName: string, regLastName: string, regEmail: string, password: string) => {
-    const res = await apiFetch<AuthResponseDTO>('/api/v1/auth/register', {
-      method: 'POST',
-      body: JSON.stringify({
-        firstName: regFirstName,
-        lastName: regLastName,
-        email: regEmail.trim(),
-        password
-      }),
-      skipAuth: true
-    })
+    try {
+      const res = await apiFetch<AuthResponseDTO>('/api/v1/auth/register', {
+        method: 'POST',
+        body: JSON.stringify({
+          firstName: regFirstName,
+          lastName: regLastName,
+          email: regEmail.trim(),
+          password
+        }),
+        skipAuth: true
+      })
 
-    setStoredAccessToken(res.token)
-    setToken(res.token)
-    setUserId(res.userId)
-    setEmail(res.email)
-    setRole(res.role)
-    setFirstName(res.firstName)
-    setLastName(res.lastName)
-    writeStoredProfile(res.email, res.role, res.userId, res.firstName, res.lastName)
+      setStoredAccessToken(res.token)
+      setToken(res.token)
+      setUserId(res.userId)
+      setEmail(res.email)
+      setRole(res.role)
+      setFirstName(res.firstName)
+      setLastName(res.lastName)
+      writeStoredProfile(res.email, res.role, res.userId, res.firstName, res.lastName)
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Error al registrar'
+      const lower = msg.toLowerCase()
+
+      if (
+        lower.includes('token') ||
+        lower.includes('unauthorized') ||
+        lower.includes('acceso requerido')
+      ) {
+        throw new Error(
+          'No se pudo completar el registro. Es posible que el correo ya esté en uso o haya un problema en el servidor.'
+        )
+      }
+
+      throw new Error(msg)
+    }
   }, [])
 
   const logout = useCallback(() => {
