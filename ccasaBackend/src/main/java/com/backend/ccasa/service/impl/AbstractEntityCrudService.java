@@ -9,8 +9,12 @@ import com.backend.ccasa.service.models.dtos.CrudRequestDTO;
 import com.backend.ccasa.service.models.dtos.CrudResponseDTO;
 import jakarta.persistence.EntityManager;
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.transaction.annotation.Transactional;
 
 @Transactional
@@ -41,6 +45,14 @@ public abstract class AbstractEntityCrudService<E extends Auditable> implements 
 	protected void afterApply(E entity) {
 	}
 
+	/**
+	 * Campos obligatorios para create. Las subclases pueden override para validar.
+	 * @return lista de nombres de campo requeridos (vacía por default).
+	 */
+	protected List<String> requiredFields() {
+		return Collections.emptyList();
+	}
+
 	protected ActiveRepository<E, Long> getRepository() {
 		return repository;
 	}
@@ -55,8 +67,10 @@ public abstract class AbstractEntityCrudService<E extends Auditable> implements 
 
 	@Override
 	public CrudResponseDTO create(CrudRequestDTO request) {
+		Map<String, Object> vals = values(request);
+		validateRequired(vals);
 		E entity = newEntity();
-		CrudEntityMapper.apply(entityClass, entity, values(request), entityManager);
+		CrudEntityMapper.apply(entityClass, entity, vals, entityManager);
 		afterApply(entity);
 		E saved = repository.save(entity);
 		return toDto(saved);
@@ -66,6 +80,12 @@ public abstract class AbstractEntityCrudService<E extends Auditable> implements 
 	@Transactional(readOnly = true)
 	public List<CrudResponseDTO> findAllActive() {
 		return repository.findAllByDeletedAtIsNull().stream().map(this::toDto).toList();
+	}
+
+	@Override
+	@Transactional(readOnly = true)
+	public Page<CrudResponseDTO> findAllActive(Pageable pageable) {
+		return repository.findAllByDeletedAtIsNull(pageable).map(this::toDto);
 	}
 
 	@Override
@@ -91,12 +111,37 @@ public abstract class AbstractEntityCrudService<E extends Auditable> implements 
 		repository.save(entity);
 	}
 
+	@Override
+	public void restore(Long id) {
+		E entity = repository.findById(id)
+				.orElseThrow(() -> new ResourceNotFoundException(resourceCode, id));
+		entity.setDeletedAt(null);
+		entity.setUpdatedAt(Instant.now());
+		repository.save(entity);
+	}
+
 	protected E requireActive(Long id) {
 		return repository.findByIdAndDeletedAtIsNull(id).orElseThrow(() -> new ResourceNotFoundException(resourceCode, id));
 	}
 
 	protected CrudResponseDTO toDto(E entity) {
 		return new CrudResponseDTO(extractId(entity), CrudEntityMapper.toValues(entityClass, entity));
+	}
+
+	private void validateRequired(Map<String, Object> vals) {
+		List<String> required = requiredFields();
+		if (required.isEmpty()) {
+			return;
+		}
+		List<String> missing = new ArrayList<>();
+		for (String field : required) {
+			if (!vals.containsKey(field) || vals.get(field) == null) {
+				missing.add(field);
+			}
+		}
+		if (!missing.isEmpty()) {
+			throw new IllegalArgumentException("Campos obligatorios faltantes: " + String.join(", ", missing));
+		}
 	}
 
 	private Long extractId(E entity) {
@@ -123,6 +168,8 @@ public abstract class AbstractEntityCrudService<E extends Auditable> implements 
 		if (entity instanceof com.backend.ccasa.persistence.entities.entry.EntryAccuracyEntity e) return e.getId();
 		if (entity instanceof com.backend.ccasa.persistence.entities.entry.EntryExpenseChartEntity e) return e.getId();
 		if (entity instanceof com.backend.ccasa.persistence.entities.entry.EntryFlaskTreatmentEntity e) return e.getId();
+		if (entity instanceof com.backend.ccasa.persistence.entities.LaboratoryEquipmentEntity e) return e.getId();
+		if (entity instanceof com.backend.ccasa.persistence.entities.ReferenceParameterEntity e) return e.getId();
 		return null;
 	}
 

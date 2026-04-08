@@ -45,7 +45,12 @@ public class SecurityConfiguration {
 				.cors(cors -> cors.configurationSource(corsConfigurationSource()))
 				.authorizeHttpRequests(auth -> auth
 						.requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-						.requestMatchers("/api/v1/auth/**", "/v1/auth/**").permitAll()
+						.requestMatchers(
+								"/api/v1/auth/login", "/api/v1/auth/register",
+								"/api/v1/auth/init-admin", "/api/v1/auth/forgot-password",
+								"/v1/auth/login", "/v1/auth/register",
+								"/v1/auth/init-admin", "/v1/auth/forgot-password"
+						).permitAll()
 						.requestMatchers("/api/control/v1/**").hasAuthority("PLATFORM_ADMIN")
 						.requestMatchers("/actuator/**").permitAll()
 						.requestMatchers("/h2-console/**").permitAll()

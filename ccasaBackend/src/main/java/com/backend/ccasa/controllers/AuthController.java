@@ -1,11 +1,15 @@
 package com.backend.ccasa.controllers;
 
+import com.backend.ccasa.security.CcasaUserDetails;
 import com.backend.ccasa.service.IAuthService;
 import com.backend.ccasa.service.models.dtos.AuthLoginRequestDTO;
 import com.backend.ccasa.service.models.dtos.AuthRegisterRequestDTO;
 import com.backend.ccasa.service.models.dtos.AuthResponseDTO;
+import com.backend.ccasa.service.models.dtos.ChangePasswordRequestDTO;
+import com.backend.ccasa.service.models.dtos.ForgotPasswordRequestDTO;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -34,5 +38,19 @@ public class AuthController {
 	@PostMapping("/init-admin")
 	public ResponseEntity<AuthResponseDTO> createInitialAdmin() {
 		return ResponseEntity.ok(authService.createInitialAdmin());
+	}
+
+	@PostMapping("/forgot-password")
+	public ResponseEntity<Void> forgotPassword(@RequestBody ForgotPasswordRequestDTO request) {
+		authService.forgotPassword(request.email());
+		return ResponseEntity.ok().build();
+	}
+
+	@PostMapping("/change-password")
+	public ResponseEntity<Void> changePassword(
+			@RequestBody ChangePasswordRequestDTO request,
+			@AuthenticationPrincipal CcasaUserDetails principal) {
+		authService.changePassword(principal.getUserIdAsLong(), request.currentPassword(), request.newPassword());
+		return ResponseEntity.ok().build();
 	}
 }

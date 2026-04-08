@@ -1,18 +1,15 @@
 package com.backend.ccasa.service;
 
-import com.backend.ccasa.service.models.dtos.CrudRequestDTO;
+import com.backend.ccasa.security.CcasaUserDetails;
 import com.backend.ccasa.service.models.dtos.CrudResponseDTO;
-import java.util.List;
+import com.backend.ccasa.service.models.dtos.SignEntryRequestDTO;
 
-public interface ISignatureCrudService {
+public interface ISignatureCrudService extends ITypedCrudService {
 
-	CrudResponseDTO create(CrudRequestDTO request);
-
-	List<CrudResponseDTO> findAllActive();
-
-	CrudResponseDTO findById(Long id);
-
-	CrudResponseDTO update(Long id, CrudRequestDTO request);
-
-	void delete(Long id);
+	/**
+	 * Firma una entrada con validación de reglas de negocio:
+	 * - Analyst firma → Draft→Signed
+	 * - Supervisor firma → Signed→Locked
+	 */
+	CrudResponseDTO signEntry(Long entryId, SignEntryRequestDTO request, CcasaUserDetails principal);
 }

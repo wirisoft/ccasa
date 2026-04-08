@@ -1,6 +1,6 @@
 package com.backend.ccasa.controllers.crud;
 
-import com.backend.ccasa.service.IEntryAccuracyCrudService;
+import com.backend.ccasa.service.IReferenceParameterCrudService;
 import com.backend.ccasa.service.models.dtos.CrudRequestDTO;
 import com.backend.ccasa.service.models.dtos.CrudResponseDTO;
 import java.util.List;
@@ -10,17 +10,17 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.bind.annotation.PatchMapping;
 
 @RestController
-@RequestMapping("/api/v1/entry-accuracy")
-public class EntryAccuracyCrudController {
+@RequestMapping("/api/v1/reference-parameters")
+public class ReferenceParameterCrudController {
 
-	private final IEntryAccuracyCrudService service;
+	private final IReferenceParameterCrudService service;
 
-	public EntryAccuracyCrudController(IEntryAccuracyCrudService service) {
+	public ReferenceParameterCrudController(IReferenceParameterCrudService service) {
 		this.service = service;
 	}
 
 	@PostMapping
-	@PreAuthorize("hasAnyRole('ANALYST', 'SUPERVISOR')")
+	@PreAuthorize("hasRole('ADMIN')")
 	public ResponseEntity<CrudResponseDTO> create(@RequestBody CrudRequestDTO request) {
 		return ResponseEntity.ok(service.create(request));
 	}
@@ -36,13 +36,13 @@ public class EntryAccuracyCrudController {
 	}
 
 	@PutMapping("/{id}")
-	@PreAuthorize("hasAnyRole('ANALYST', 'SUPERVISOR')")
+	@PreAuthorize("hasRole('ADMIN')")
 	public ResponseEntity<CrudResponseDTO> update(@PathVariable Long id, @RequestBody CrudRequestDTO request) {
 		return ResponseEntity.ok(service.update(id, request));
 	}
 
 	@DeleteMapping("/{id}")
-	@PreAuthorize("hasAnyRole('ANALYST', 'SUPERVISOR')")
+	@PreAuthorize("hasRole('ADMIN')")
 	public ResponseEntity<Void> delete(@PathVariable Long id) {
 		service.delete(id);
 		return ResponseEntity.noContent().build();

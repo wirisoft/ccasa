@@ -5,9 +5,11 @@ import com.backend.ccasa.persistence.entities.BatchEntity;
 import com.backend.ccasa.persistence.entities.EntryEntity;
 import com.backend.ccasa.persistence.entities.FolioBlockEntity;
 import com.backend.ccasa.persistence.entities.FolioEntity;
+import com.backend.ccasa.persistence.entities.LaboratoryEquipmentEntity;
 import com.backend.ccasa.persistence.entities.LogbookEntity;
 import com.backend.ccasa.persistence.entities.ReagentEntity;
 import com.backend.ccasa.persistence.entities.ReagentJarEntity;
+import com.backend.ccasa.persistence.entities.ReferenceParameterEntity;
 import com.backend.ccasa.persistence.entities.RoleEntity;
 import com.backend.ccasa.persistence.entities.SignatureEntity;
 import com.backend.ccasa.persistence.entities.SolutionEntity;
@@ -242,6 +244,19 @@ public final class CrudEntityMapper {
 			if (values.containsKey("supervisorUserId")) e.setSupervisorUser(requireActive(entityManager, UserEntity.class, values.get("supervisorUserId")));
 			return;
 		}
+		if (entity instanceof LaboratoryEquipmentEntity e) {
+			if (values.containsKey("equipmentType")) e.setEquipmentType(CrudValueHelper.asString(values.get("equipmentType")));
+			if (values.containsKey("denomination")) e.setDenomination(CrudValueHelper.asString(values.get("denomination")));
+			return;
+		}
+		if (entity instanceof ReferenceParameterEntity e) {
+			if (values.containsKey("code")) e.setCode(CrudValueHelper.asString(values.get("code")));
+			if (values.containsKey("minValue")) e.setMinValue(CrudValueHelper.asBigDecimal(values.get("minValue")));
+			if (values.containsKey("maxValue")) e.setMaxValue(CrudValueHelper.asBigDecimal(values.get("maxValue")));
+			if (values.containsKey("description")) e.setDescription(CrudValueHelper.asString(values.get("description")));
+			if (values.containsKey("ruleDetail")) e.setRuleDetail(CrudValueHelper.asString(values.get("ruleDetail")));
+			return;
+		}
 		throw new IllegalArgumentException("Unsupported entity for CRUD mapping: " + entityClass.getSimpleName());
 	}
 
@@ -469,6 +484,21 @@ public final class CrudEntityMapper {
 			putAudit(values, e);
 			return values;
 		}
+		if (entity instanceof LaboratoryEquipmentEntity e) {
+			values.put("equipmentType", e.getEquipmentType());
+			values.put("denomination", e.getDenomination());
+			putAudit(values, e);
+			return values;
+		}
+		if (entity instanceof ReferenceParameterEntity e) {
+			values.put("code", e.getCode());
+			values.put("minValue", e.getMinValue());
+			values.put("maxValue", e.getMaxValue());
+			values.put("description", e.getDescription());
+			values.put("ruleDetail", e.getRuleDetail());
+			putAudit(values, e);
+			return values;
+		}
 		throw new IllegalArgumentException("Unsupported entity for CRUD mapping: " + entityClass.getSimpleName());
 	}
 
@@ -532,6 +562,8 @@ public final class CrudEntityMapper {
 		if (relation instanceof EntryAccuracyEntity e) return e.getId();
 		if (relation instanceof EntryExpenseChartEntity e) return e.getId();
 		if (relation instanceof EntryFlaskTreatmentEntity e) return e.getId();
+		if (relation instanceof LaboratoryEquipmentEntity e) return e.getId();
+		if (relation instanceof ReferenceParameterEntity e) return e.getId();
 		return null;
 	}
 }

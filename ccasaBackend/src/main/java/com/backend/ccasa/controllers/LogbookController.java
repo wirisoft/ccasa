@@ -7,6 +7,7 @@ import com.backend.ccasa.service.models.dtos.CrudResponseDTO;
 import com.backend.ccasa.service.models.dtos.LogbookDTO;
 import java.util.List;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -17,7 +18,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
- * API de bitÃ¡coras (UI-01: dashboard 15 bitÃ¡coras).
+ * API de bitácoras (UI-01: dashboard 15 bitácoras).
  */
 @RestController
 @RequestMapping("/api/v1/logbooks")
@@ -42,19 +43,21 @@ public class LogbookController {
 	}
 
 	@PostMapping
+	@PreAuthorize("hasAnyRole('ADMIN', 'SUPERVISOR')")
 	public ResponseEntity<CrudResponseDTO> create(@RequestBody CrudRequestDTO request) {
 		return ResponseEntity.ok(logbookCrudService.create(request));
 	}
 
 	@PutMapping("/{id}")
+	@PreAuthorize("hasAnyRole('ADMIN', 'SUPERVISOR')")
 	public ResponseEntity<CrudResponseDTO> update(@PathVariable Long id, @RequestBody CrudRequestDTO request) {
 		return ResponseEntity.ok(logbookCrudService.update(id, request));
 	}
 
 	@DeleteMapping("/{id}")
+	@PreAuthorize("hasAnyRole('ADMIN', 'SUPERVISOR')")
 	public ResponseEntity<Void> delete(@PathVariable Long id) {
 		logbookCrudService.delete(id);
 		return ResponseEntity.noContent().build();
 	}
 }
-

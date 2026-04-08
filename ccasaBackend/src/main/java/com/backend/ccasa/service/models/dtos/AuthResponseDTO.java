@@ -6,6 +6,8 @@ public record AuthResponseDTO(
 	String token,
 	Long userId,
 	String email,
-	String role
+	String role,
+	String firstName,
+	String lastName
 ) implements Serializable {
 }

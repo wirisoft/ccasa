@@ -1,12 +1,18 @@
 package com.backend.ccasa.controllers.crud;
 
 import com.backend.ccasa.service.IEntryCrudService;
+import com.backend.ccasa.service.ISignatureCrudService;
 import com.backend.ccasa.service.models.dtos.CrudRequestDTO;
 import com.backend.ccasa.service.models.dtos.CrudResponseDTO;
+import com.backend.ccasa.service.models.dtos.SignEntryRequestDTO;
 import java.util.List;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import com.backend.ccasa.security.CcasaUserDetails;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -19,12 +25,15 @@ import org.springframework.web.bind.annotation.RestController;
 public class EntryCrudController {
 
 	private final IEntryCrudService service;
+	private final ISignatureCrudService signatureService;
 
-	public EntryCrudController(IEntryCrudService service) {
+	public EntryCrudController(IEntryCrudService service, ISignatureCrudService signatureService) {
 		this.service = service;
+		this.signatureService = signatureService;
 	}
 
 	@PostMapping
+	@PreAuthorize("hasAnyRole('ANALYST', 'SUPERVISOR')")
 	public ResponseEntity<CrudResponseDTO> create(@RequestBody CrudRequestDTO request) {
 		return ResponseEntity.ok(service.create(request));
 	}
@@ -40,13 +49,34 @@ public class EntryCrudController {
 	}
 
 	@PutMapping("/{id}")
+	@PreAuthorize("hasAnyRole('ANALYST', 'SUPERVISOR')")
 	public ResponseEntity<CrudResponseDTO> update(@PathVariable Long id, @RequestBody CrudRequestDTO request) {
 		return ResponseEntity.ok(service.update(id, request));
 	}
 
 	@DeleteMapping("/{id}")
+	@PreAuthorize("hasAnyRole('ANALYST', 'SUPERVISOR')")
 	public ResponseEntity<Void> delete(@PathVariable Long id) {
 		service.delete(id);
 		return ResponseEntity.noContent().build();
+	}
+
+	/**
+	 * Firma una entrada (Analyst → Draft→Signed, Supervisor → Signed→Locked).
+	 */
+	@PostMapping("/{id}/sign")
+	@PreAuthorize("hasAnyRole('ANALYST', 'SUPERVISOR')")
+	public ResponseEntity<CrudResponseDTO> signEntry(
+			@PathVariable Long id,
+			@RequestBody SignEntryRequestDTO request,
+			@AuthenticationPrincipal CcasaUserDetails principal) {
+		return ResponseEntity.ok(signatureService.signEntry(id, request, principal));
+	}
+
+	@PatchMapping("/{id}/restore")
+	@PreAuthorize("hasRole('ADMIN')")
+	public ResponseEntity<Void> restore(@PathVariable Long id) {
+		service.restore(id);
+		return ResponseEntity.ok().build();
 	}
 }
