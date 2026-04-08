@@ -15,6 +15,7 @@ import Card from '@mui/material/Card'
 import CardContent from '@mui/material/CardContent'
 
 import Logo from '@components/layout/shared/Logo'
+import { apiFetch } from '@/lib/ccasa/api'
 
 function validateEmail(email: string): boolean {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
@@ -24,6 +25,8 @@ const ForgotPassword = () => {
   const [email, setEmail] = useState('')
   const [touched, setTouched] = useState(false)
   const [submitted, setSubmitted] = useState(false)
+  const [submitting, setSubmitting] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   const emailError = touched && email.trim() === ''
     ? 'El correo es obligatorio'
@@ -31,15 +34,27 @@ const ForgotPassword = () => {
       ? 'Ingresa un correo válido'
       : null
 
-  const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     setTouched(true)
+    setError(null)
 
     if (!email.trim() || !validateEmail(email.trim())) return
 
-    // Backend no tiene endpoint de forgot-password aún
-    // Solo mostramos mensaje de confirmación
-    setSubmitted(true)
+    setSubmitting(true)
+
+    try {
+      await apiFetch<void>('/api/v1/auth/forgot-password', {
+        method: 'POST',
+        skipAuth: true,
+        body: JSON.stringify({ email: email.trim() })
+      })
+      setSubmitted(true)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'No se pudo enviar la solicitud.')
+    } finally {
+      setSubmitting(false)
+    }
   }
 
   return (
@@ -89,7 +104,7 @@ const ForgotPassword = () => {
                 </Box>
 
                 <Alert severity='info' sx={{ mb: 3 }}>
-                  Esta funcionalidad está en desarrollo. Por ahora, contacta al administrador del sistema para restablecer tu contraseña.
+                  Si no recibes el correo, verifica la carpeta de spam o contacta al administrador del sistema.
                 </Alert>
 
                 <Button
@@ -118,7 +133,13 @@ const ForgotPassword = () => {
                   Ingresa tu correo electrónico y te enviaremos instrucciones para restablecerla.
                 </Typography>
 
-                <form noValidate onSubmit={handleSubmit}>
+                {error ? (
+                  <Alert severity='error' sx={{ mb: 3 }} onClose={() => setError(null)}>
+                    {error}
+                  </Alert>
+                ) : null}
+
+                <form noValidate onSubmit={e => void handleSubmit(e)}>
                   <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
                     <TextField
                       autoFocus
@@ -128,6 +149,7 @@ const ForgotPassword = () => {
                       value={email}
                       onChange={e => setEmail(e.target.value)}
                       onBlur={() => setTouched(true)}
+                      disabled={submitting}
                       error={emailError != null}
                       helperText={emailError}
                       sx={{
@@ -144,6 +166,7 @@ const ForgotPassword = () => {
                       fullWidth
                       variant='contained'
                       type='submit'
+                      disabled={submitting}
                       sx={{
                         height: 48,
                         backgroundColor: '#1565C0',
@@ -157,7 +180,7 @@ const ForgotPassword = () => {
                         }
                       }}
                     >
-                      Enviar instrucciones
+                      {submitting ? 'Enviando…' : 'Enviar instrucciones'}
                     </Button>
 
                     <Typography
