@@ -174,6 +174,41 @@ export const SUPPLY_CONFIG: CrudResourceConfig = {
   fields: SUPPLY_FIELDS
 }
 
+// ---------------------------------------------------------------------------
+// Equipos de laboratorio
+// ---------------------------------------------------------------------------
+export const EQUIPMENT_FIELDS: CrudFieldDef[] = [
+  { key: 'equipmentType', label: 'Tipo de equipo', type: 'text', required: true, gridCols: 6 },
+  { key: 'denomination', label: 'Denominación', type: 'text', required: true, gridCols: 6 }
+]
+
+export const EQUIPMENT_CONFIG: CrudResourceConfig = {
+  key: 'equipment',
+  label: 'Equipo',
+  labelPlural: 'Equipos de laboratorio',
+  apiPath: '/api/v1/equipment',
+  fields: EQUIPMENT_FIELDS
+}
+
+// ---------------------------------------------------------------------------
+// Parámetros de referencia
+// ---------------------------------------------------------------------------
+export const REFERENCE_PARAMETER_FIELDS: CrudFieldDef[] = [
+  { key: 'code', label: 'Código', type: 'text', required: true, gridCols: 4 },
+  { key: 'minValue', label: 'Valor mínimo', type: 'number', gridCols: 4 },
+  { key: 'maxValue', label: 'Valor máximo', type: 'number', gridCols: 4 },
+  { key: 'description', label: 'Descripción', type: 'text', gridCols: 6 },
+  { key: 'ruleDetail', label: 'Detalle de regla', type: 'text', gridCols: 6 }
+]
+
+export const REFERENCE_PARAMETER_CONFIG: CrudResourceConfig = {
+  key: 'reference-parameters',
+  label: 'Parámetro de referencia',
+  labelPlural: 'Parámetros de referencia',
+  apiPath: '/api/v1/reference-parameters',
+  fields: REFERENCE_PARAMETER_FIELDS
+}
+
 /** Roles — claves alineadas con CrudEntityMapper del backend. */
 export const ROLE_FIELDS: CrudFieldDef[] = [
   {
@@ -937,6 +972,8 @@ export const ALL_CONFIGS: CrudResourceConfig[] = [
   BATCH_CONFIG,
   SOLUTION_CONFIG,
   SUPPLY_CONFIG,
+  EQUIPMENT_CONFIG,
+  REFERENCE_PARAMETER_CONFIG,
   ROLE_CONFIG,
   FOLIO_BLOCK_CONFIG,
   FOLIO_CONFIG,

@@ -4,6 +4,8 @@ export type AuthResponseDTO = {
   userId: number
   email: string
   role: string
+  firstName: string
+  lastName: string
 }
 
 /** Alineado con LogbookDTO del backend (code/maxEntries son Integer en Java → number en JSON) */

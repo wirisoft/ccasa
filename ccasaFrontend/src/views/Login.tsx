@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import type { FormEvent } from 'react'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 
 import Box from '@mui/material/Box'
 import Typography from '@mui/material/Typography'
@@ -43,6 +43,8 @@ const Login = () => {
   const [fadeOutLoading, setFadeOutLoading] = useState(false)
 
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const sessionExpired = searchParams.get('expired') === 'true'
   const { login } = useAuth()
 
   const emailError = touched.email && email.trim() !== '' && !validateEmail(email.trim())
@@ -189,6 +191,12 @@ const Login = () => {
             <Typography variant='body2' sx={{ color: 'text.secondary', mb: 4 }}>
               Ingresa tus credenciales para acceder al sistema
             </Typography>
+
+            {sessionExpired && !error ? (
+              <Alert severity='warning' sx={{ mb: 3 }}>
+                Tu sesión ha expirado. Inicia sesión de nuevo.
+              </Alert>
+            ) : null}
 
             {error ? (
               <Fade in>

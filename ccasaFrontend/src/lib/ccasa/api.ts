@@ -67,6 +67,21 @@ export async function apiFetch<T>(path: string, options: ApiFetchOptions = {}): 
   const res = await fetch(url, { ...rest, headers })
 
   if (!res.ok) {
+    // Token expirado o inválido — limpiar sesión y redirigir
+    if (res.status === 401 && !skipAuth) {
+      if (typeof window !== 'undefined') {
+        window.localStorage.removeItem('ccasa_access_token')
+        window.localStorage.removeItem('ccasa_user_email')
+        window.localStorage.removeItem('ccasa_user_role')
+        window.localStorage.removeItem('ccasa_user_id')
+        window.localStorage.removeItem('ccasa_user_firstName')
+        window.localStorage.removeItem('ccasa_user_lastName')
+        window.location.href = '/login?expired=true'
+      }
+
+      throw new Error('Sesión expirada')
+    }
+
     const msg = await parseErrorResponse(res)
 
     throw new Error(msg || `HTTP ${res.status}`)

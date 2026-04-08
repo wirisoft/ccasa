@@ -77,7 +77,12 @@ const COLUMN_LABELS: Record<string, string> = {
   ceReading1: 'CE L1',
   ceReading2: 'CE L2',
   ceReading3: 'CE L3',
-  ceAverage: 'CE Prom.'
+  ceAverage: 'CE Prom.',
+  equipmentType: 'Tipo de equipo',
+  denomination: 'Denominación',
+  minValue: 'Valor mínimo',
+  maxValue: 'Valor máximo',
+  ruleDetail: 'Detalle de regla'
 }
 
 /** Etiquetas en español para valores de estado/enums que el backend envía en inglés. */

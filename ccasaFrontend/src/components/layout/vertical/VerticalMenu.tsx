@@ -1,3 +1,5 @@
+'use client'
+
 // MUI Imports
 import { useTheme } from '@mui/material/styles'
 
@@ -23,6 +25,8 @@ import menuSectionStyles from '@core/styles/vertical/menuSectionStyles'
 // Config Imports
 import { ENTRADA_MODULOS } from '@configs/ccasaModules'
 
+import { useAuth } from '@/contexts/AuthContext'
+
 /** Etiquetas cortas solo en el menú lateral (las páginas siguen usando `mod.label` completo). */
 const ENTRADA_NAV_LABEL: Partial<Record<string, string>> = {
   conductividad: 'Conductividad',
@@ -46,6 +50,11 @@ const RenderExpandIcon = ({ open, transitionDuration }: RenderExpandIconProps) =
 const VerticalMenu = ({ scrollMenu }: { scrollMenu: (container: any, isPerfectScrollbar: boolean) => void }) => {
   const theme = useTheme()
   const { isBreakpointReached, transitionDuration } = useVerticalNav()
+  const { role } = useAuth()
+  const isAdmin = role === 'Admin'
+
+  /** Admin, Supervisor y Analyst ven catálogos; Sampler no (tabla de permisos menú). */
+  const showCatalogs = role !== 'Sampler'
 
   const ScrollWrapper = isBreakpointReached ? 'div' : PerfectScrollbar
 
@@ -92,28 +101,30 @@ const VerticalMenu = ({ scrollMenu }: { scrollMenu: (container: any, isPerfectSc
           </SubMenu>
         </MenuSection>
 
-        <MenuSection label='Datos maestros'>
-          <SubMenu label='Catálogos' icon={<i className='ri-database-2-line' />}>
-            <MenuItem href='/catalogos/reactivos' icon={<i className='ri-flask-line' />}>
-              Reactivos
-            </MenuItem>
-            <MenuItem href='/catalogos/frascos-reactivo' icon={<i className='ri-inbox-line' />}>
-              Frascos
-            </MenuItem>
-            <MenuItem href='/catalogos/lotes' icon={<i className='ri-stack-line' />}>
-              Lotes (batch)
-            </MenuItem>
-            <MenuItem href='/catalogos/soluciones' icon={<i className='ri-test-tube-line' />}>
-              Soluciones
-            </MenuItem>
-            <MenuItem href='/catalogos/insumos' icon={<i className='ri-shopping-basket-line' />}>
-              Insumos
-            </MenuItem>
-            <MenuItem href='/catalogos/equipos' icon={<i className='ri-tools-line' />}>
-              Equipos
-            </MenuItem>
-          </SubMenu>
-        </MenuSection>
+        {showCatalogs ? (
+          <MenuSection label='Datos maestros'>
+            <SubMenu label='Catálogos' icon={<i className='ri-database-2-line' />}>
+              <MenuItem href='/catalogos/reactivos' icon={<i className='ri-flask-line' />}>
+                Reactivos
+              </MenuItem>
+              <MenuItem href='/catalogos/frascos-reactivo' icon={<i className='ri-inbox-line' />}>
+                Frascos
+              </MenuItem>
+              <MenuItem href='/catalogos/lotes' icon={<i className='ri-stack-line' />}>
+                Lotes (batch)
+              </MenuItem>
+              <MenuItem href='/catalogos/soluciones' icon={<i className='ri-test-tube-line' />}>
+                Soluciones
+              </MenuItem>
+              <MenuItem href='/catalogos/insumos' icon={<i className='ri-shopping-basket-line' />}>
+                Insumos
+              </MenuItem>
+              <MenuItem href='/catalogos/equipos' icon={<i className='ri-tools-line' />}>
+                Equipos
+              </MenuItem>
+            </SubMenu>
+          </MenuSection>
+        ) : null}
 
         <MenuSection label='Operación'>
           <MenuItem href='/alertas' icon={<i className='ri-alarm-warning-line' />}>
@@ -125,15 +136,19 @@ const VerticalMenu = ({ scrollMenu }: { scrollMenu: (container: any, isPerfectSc
         </MenuSection>
 
         <MenuSection label='Administración'>
-          <MenuItem href='/empleados' icon={<i className='ri-team-line' />}>
-            Empleados
-          </MenuItem>
-          <MenuItem href='/roles' icon={<i className='ri-shield-user-line' />}>
-            Roles
-          </MenuItem>
-          <MenuItem href='/configuracion' icon={<i className='ri-settings-3-line' />}>
-            Configuración
-          </MenuItem>
+          {isAdmin ? (
+            <>
+              <MenuItem href='/empleados' icon={<i className='ri-team-line' />}>
+                Empleados
+              </MenuItem>
+              <MenuItem href='/roles' icon={<i className='ri-shield-user-line' />}>
+                Roles
+              </MenuItem>
+              <MenuItem href='/configuracion' icon={<i className='ri-settings-3-line' />}>
+                Configuración
+              </MenuItem>
+            </>
+          ) : null}
           <MenuItem href='/account-settings' icon={<i className='ri-user-settings-line' />}>
             Mi cuenta
           </MenuItem>

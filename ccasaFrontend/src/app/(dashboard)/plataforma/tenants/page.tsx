@@ -1,3 +1,7 @@
+/**
+ * Placeholder para futuro multi-tenancy (laboratorios / tenants).
+ * No está enlazado en el menú; conservar hasta definir el alcance del módulo.
+ */
 import ModulePlaceholder from '@components/ccasa/ModulePlaceholder'
 
 const Page = () => (

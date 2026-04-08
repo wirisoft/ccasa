@@ -1,7 +1,7 @@
 'use client'
 
 // React Imports
-import { useMemo, useRef, useState } from 'react'
+import { useRef, useState } from 'react'
 import type { MouseEvent } from 'react'
 
 // Next Imports
@@ -34,34 +34,6 @@ const BadgeContentSpan = styled('span')({
   boxShadow: '0 0 0 2px var(--mui-palette-background-paper)'
 })
 
-function initialsFromEmail(email: string | null | undefined): string {
-  if (!email || !email.trim()) {
-    return '?'
-  }
-
-  const local = email.split('@')[0]?.trim() || ''
-  if (!local) {
-    return '?'
-  }
-
-  const segments = local.split(/[._\-+]/).filter(s => s.length > 0)
-  if (segments.length >= 2) {
-    return (segments[0].charAt(0) + segments[1].charAt(0)).toUpperCase()
-  }
-
-  if (local.length >= 2) {
-    return local.slice(0, 2).toUpperCase()
-  }
-
-  return local.charAt(0).toUpperCase()
-}
-
-const avatarLetterSx = {
-  bgcolor: 'primary.main',
-  color: 'primary.contrastText',
-  fontWeight: 600
-} as const
-
 const UserDropdown = () => {
   // States
   const [open, setOpen] = useState(false)
@@ -71,9 +43,23 @@ const UserDropdown = () => {
 
   // Hooks
   const router = useRouter()
-  const { email, role, logout } = useAuth()
+  const { email, role, firstName, lastName, logout } = useAuth()
 
-  const initials = useMemo(() => initialsFromEmail(email), [email])
+  const displayName =
+    firstName && lastName ? `${firstName} ${lastName}` : (email ?? 'Usuario')
+
+  const initials =
+    `${firstName?.[0] ?? ''}${lastName?.[0] ?? ''}`.toUpperCase() ||
+    email?.[0]?.toUpperCase() ||
+    'U'
+
+  const avatarSx = {
+    bgcolor: '#1565C0',
+    width: 38,
+    height: 38,
+    fontSize: 15,
+    fontWeight: 600
+  } as const
 
   const handleDropdownOpen = () => {
     !open ? setOpen(true) : setOpen(false)
@@ -99,17 +85,7 @@ const UserDropdown = () => {
           badgeContent={<BadgeContentSpan onClick={handleDropdownOpen} />}
           anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
         >
-          <Avatar
-            alt={email || 'Usuario'}
-            onClick={handleDropdownOpen}
-            sx={{
-              ...avatarLetterSx,
-              width: 38,
-              height: 38,
-              fontSize: '0.8125rem',
-              cursor: 'pointer'
-            }}
-          >
+          <Avatar alt={displayName} onClick={handleDropdownOpen} sx={{ ...avatarSx, cursor: 'pointer' }}>
             {initials}
           </Avatar>
         </Badge>
@@ -134,20 +110,20 @@ const UserDropdown = () => {
                 <MenuList>
                   <div className='flex items-center plb-2 pli-4 gap-2' tabIndex={-1}>
                     <Avatar
-                      alt={email || 'Usuario'}
-                      sx={{
-                        ...avatarLetterSx,
-                        width: 40,
-                        height: 40,
-                        fontSize: '0.875rem'
-                      }}
+                      alt={displayName}
+                      sx={{ bgcolor: '#1565C0', width: 40, height: 40, fontSize: 15, fontWeight: 600 }}
                     >
                       {initials}
                     </Avatar>
                     <div className='flex items-start flex-col'>
                       <Typography className='font-medium' color='text.primary'>
-                        {email || 'Usuario'}
+                        {displayName}
                       </Typography>
+                      {email ? (
+                        <Typography variant='caption' color='text.secondary'>
+                          {email}
+                        </Typography>
+                      ) : null}
                       <Typography variant='caption'>{role || '—'}</Typography>
                     </div>
                   </div>

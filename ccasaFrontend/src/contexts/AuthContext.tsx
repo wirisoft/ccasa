@@ -11,10 +11,18 @@ import type { AuthResponseDTO } from '@/lib/ccasa/types'
 const STORAGE_EMAIL_KEY = 'ccasa_user_email'
 const STORAGE_ROLE_KEY = 'ccasa_user_role'
 const STORAGE_USER_ID_KEY = 'ccasa_user_id'
+const STORAGE_FIRST_NAME_KEY = 'ccasa_user_firstName'
+const STORAGE_LAST_NAME_KEY = 'ccasa_user_lastName'
 
-function readStoredProfile(): { email: string | null; role: string | null; userId: number | null } {
+function readStoredProfile(): {
+  email: string | null
+  role: string | null
+  userId: number | null
+  firstName: string | null
+  lastName: string | null
+} {
   if (typeof window === 'undefined') {
-    return { email: null, role: null, userId: null }
+    return { email: null, role: null, userId: null, firstName: null, lastName: null }
   }
 
   const rawId = window.localStorage.getItem(STORAGE_USER_ID_KEY)
@@ -23,11 +31,19 @@ function readStoredProfile(): { email: string | null; role: string | null; userI
   return {
     email: window.localStorage.getItem(STORAGE_EMAIL_KEY),
     role: window.localStorage.getItem(STORAGE_ROLE_KEY),
-    userId: Number.isFinite(parsedId) ? parsedId : null
+    userId: Number.isFinite(parsedId) ? parsedId : null,
+    firstName: window.localStorage.getItem(STORAGE_FIRST_NAME_KEY),
+    lastName: window.localStorage.getItem(STORAGE_LAST_NAME_KEY)
   }
 }
 
-function writeStoredProfile(email: string | null, role: string | null, userId: number | null): void {
+function writeStoredProfile(
+  email: string | null,
+  role: string | null,
+  userId: number | null,
+  firstName: string | null,
+  lastName: string | null
+): void {
   if (typeof window === 'undefined') return
 
   if (email) {
@@ -47,6 +63,18 @@ function writeStoredProfile(email: string | null, role: string | null, userId: n
   } else {
     window.localStorage.removeItem(STORAGE_USER_ID_KEY)
   }
+
+  if (firstName) {
+    window.localStorage.setItem(STORAGE_FIRST_NAME_KEY, firstName)
+  } else {
+    window.localStorage.removeItem(STORAGE_FIRST_NAME_KEY)
+  }
+
+  if (lastName) {
+    window.localStorage.setItem(STORAGE_LAST_NAME_KEY, lastName)
+  } else {
+    window.localStorage.removeItem(STORAGE_LAST_NAME_KEY)
+  }
 }
 
 type AuthContextValue = {
@@ -54,6 +82,8 @@ type AuthContextValue = {
   userId: number | null
   email: string | null
   role: string | null
+  firstName: string | null
+  lastName: string | null
   hydrated: boolean
   login: (email: string, password: string) => Promise<void>
   register: (firstName: string, lastName: string, email: string, password: string) => Promise<void>
@@ -67,6 +97,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [userId, setUserId] = useState<number | null>(null)
   const [email, setEmail] = useState<string | null>(null)
   const [role, setRole] = useState<string | null>(null)
+  const [firstName, setFirstName] = useState<string | null>(null)
+  const [lastName, setLastName] = useState<string | null>(null)
   const [hydrated, setHydrated] = useState(false)
 
   useEffect(() => {
@@ -79,6 +111,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setEmail(profile.email)
       setRole(profile.role)
       setUserId(profile.userId)
+      setFirstName(profile.firstName)
+      setLastName(profile.lastName)
     }
 
     setHydrated(true)
@@ -96,13 +130,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUserId(res.userId)
     setEmail(res.email)
     setRole(res.role)
-    writeStoredProfile(res.email, res.role, res.userId)
+    setFirstName(res.firstName)
+    setLastName(res.lastName)
+    writeStoredProfile(res.email, res.role, res.userId, res.firstName, res.lastName)
   }, [])
 
-  const register = useCallback(async (firstName: string, lastName: string, email: string, password: string) => {
+  const register = useCallback(async (regFirstName: string, regLastName: string, regEmail: string, password: string) => {
     const res = await apiFetch<AuthResponseDTO>('/api/v1/auth/register', {
       method: 'POST',
-      body: JSON.stringify({ firstName, lastName, email: email.trim(), password }),
+      body: JSON.stringify({
+        firstName: regFirstName,
+        lastName: regLastName,
+        email: regEmail.trim(),
+        password
+      }),
       skipAuth: true
     })
 
@@ -111,7 +152,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUserId(res.userId)
     setEmail(res.email)
     setRole(res.role)
-    writeStoredProfile(res.email, res.role, res.userId)
+    setFirstName(res.firstName)
+    setLastName(res.lastName)
+    writeStoredProfile(res.email, res.role, res.userId, res.firstName, res.lastName)
   }, [])
 
   const logout = useCallback(() => {
@@ -120,12 +163,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUserId(null)
     setEmail(null)
     setRole(null)
-    writeStoredProfile(null, null, null)
+    setFirstName(null)
+    setLastName(null)
+    writeStoredProfile(null, null, null, null, null)
   }, [])
 
   const value = useMemo(
-    () => ({ token, userId, email, role, hydrated, login, register, logout }),
-    [token, userId, email, role, hydrated, login, register, logout]
+    () => ({
+      token,
+      userId,
+      email,
+      role,
+      firstName,
+      lastName,
+      hydrated,
+      login,
+      register,
+      logout
+    }),
+    [token, userId, email, role, firstName, lastName, hydrated, login, register, logout]
   )
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

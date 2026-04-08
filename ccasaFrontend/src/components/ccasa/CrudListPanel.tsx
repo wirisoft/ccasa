@@ -42,6 +42,7 @@ import { useAuth } from '@/contexts/AuthContext'
 // Component Imports
 import CrudDeleteDialog from './CrudDeleteDialog'
 import CrudFormDialog from './CrudFormDialog'
+import SignEntryButton from './SignEntryButton'
 
 export type CrudListPanelProps = {
 
@@ -142,6 +143,7 @@ const CrudListPanel = ({
   useEffect(() => {
     if (!fields || fields.length === 0) {
       setFkLookups({})
+
       return
     }
 
@@ -394,25 +396,38 @@ const CrudListPanel = ({
                         {hasWrite ? (
                           <TableCell align='center'>
                             <Stack direction='row' spacing={0.5} justifyContent='flex-end' alignItems='center'>
+                              {apiPath === '/api/v1/entries' && row.values?.status ? (
+                                <SignEntryButton
+                                  entryId={row.id}
+                                  currentStatus={String(row.values.status)}
+                                  onSigned={fetchRows}
+                                />
+                              ) : null}
                               <Tooltip title='Editar'>
-                                <IconButton
-                                  color='default'
-                                  aria-label='Editar'
-                                  sx={{ width: 32, height: 32 }}
-                                  onClick={() => handleOpenEdit(row)}
-                                >
-                                  <i className='ri-pencil-line' />
-                                </IconButton>
+                                <span>
+                                  <IconButton
+                                    color='default'
+                                    aria-label='Editar'
+                                    sx={{ width: 32, height: 32 }}
+                                    onClick={() => handleOpenEdit(row)}
+                                    disabled={apiPath.includes('entries') && row.values?.status === 'Locked'}
+                                  >
+                                    <i className='ri-pencil-line' />
+                                  </IconButton>
+                                </span>
                               </Tooltip>
                               <Tooltip title='Eliminar'>
-                                <IconButton
-                                  color='error'
-                                  aria-label='Eliminar'
-                                  sx={{ width: 32, height: 32 }}
-                                  onClick={() => handleOpenDelete(row)}
-                                >
-                                  <i className='ri-delete-bin-line' />
-                                </IconButton>
+                                <span>
+                                  <IconButton
+                                    color='error'
+                                    aria-label='Eliminar'
+                                    sx={{ width: 32, height: 32 }}
+                                    onClick={() => handleOpenDelete(row)}
+                                    disabled={apiPath.includes('entries') && row.values?.status === 'Locked'}
+                                  >
+                                    <i className='ri-delete-bin-line' />
+                                  </IconButton>
+                                </span>
                               </Tooltip>
                             </Stack>
                           </TableCell>
