@@ -9,6 +9,7 @@ import Stack from '@mui/material/Stack'
 import Typography from '@mui/material/Typography'
 
 // Component Imports
+import ConductivityPanel from '@components/ccasa/ConductivityPanel'
 import CrudListPanel from '@components/ccasa/CrudListPanel'
 import DistilledWaterPanel from '@components/ccasa/DistilledWaterPanel'
 
@@ -38,13 +39,24 @@ const EntradaTipoClient = ({ slug }: EntradaTipoClientProps) => {
         </Button>
       </div>
 
-      <CrudListPanel
-        title={`Registros — ${mod.label}`}
-        apiPath={mod.backend.crudBasePath}
-        {...(entryConfig ? { fields: entryConfig.fields, resourceLabel: entryConfig.label } : {})}
-      />
-
-      {slug === 'agua-destilada' ? <DistilledWaterPanel /> : null}
+      {slug === 'conductividad' ? (
+        <ConductivityPanel />
+      ) : slug === 'agua-destilada' ? (
+        <>
+          <CrudListPanel
+            title={`Registros — ${mod.label}`}
+            apiPath={mod.backend.crudBasePath}
+            {...(entryConfig ? { fields: entryConfig.fields, resourceLabel: entryConfig.label } : {})}
+          />
+          <DistilledWaterPanel />
+        </>
+      ) : (
+        <CrudListPanel
+          title={`Registros — ${mod.label}`}
+          apiPath={mod.backend.crudBasePath}
+          {...(entryConfig ? { fields: entryConfig.fields, resourceLabel: entryConfig.label } : {})}
+        />
+      )}
     </Stack>
   )
 }

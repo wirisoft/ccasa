@@ -18,13 +18,13 @@ import AuthRootProvider from '@components/ccasa/AuthRootProvider'
 import ServiceWorkerRegistrar from '@components/ccasa/ServiceWorkerRegistrar'
 
 export const metadata: Metadata = {
-  title: 'CCASA Lab — Bitácoras de laboratorio',
+  title: 'Bitácoras Servicios Ambientales',
   description: 'Sistema de gestión digital de bitácoras de laboratorio.',
   manifest: '/manifest.json',
   appleWebApp: {
     capable: true,
     statusBarStyle: 'default',
-    title: 'CCASA Lab'
+    title: 'BSA Lab'
   },
   formatDetection: {
     telephone: false

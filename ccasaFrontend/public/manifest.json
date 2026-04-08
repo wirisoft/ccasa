@@ -1,7 +1,7 @@
 {
-  "name": "CCASA Lab — Bitácoras de laboratorio",
-  "short_name": "CCASA Lab",
-  "description": "Sistema de gestión digital de bitácoras de laboratorio",
+  "name": "Bitácoras Servicios Ambientales",
+  "short_name": "BSA Lab",
+  "description": "Sistema de gestión digital de bitácoras de servicios ambientales",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#FAFBFC",

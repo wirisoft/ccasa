@@ -13,7 +13,9 @@ import CardHeader from '@mui/material/CardHeader'
 import CircularProgress from '@mui/material/CircularProgress'
 import Grid from '@mui/material/Grid'
 import Snackbar from '@mui/material/Snackbar'
+import Stack from '@mui/material/Stack'
 import TextField from '@mui/material/TextField'
+import Typography from '@mui/material/Typography'
 
 // Lib Imports
 import { apiFetch } from '@/lib/ccasa/api'
@@ -157,67 +159,113 @@ const AccountDetails = () => {
 
   return (
     <>
-      <Card>
-        <CardHeader title='Información de la cuenta' titleTypographyProps={{ variant: 'h6' }} />
-        <CardContent>
-          {error ? (
-            <Alert severity='error' sx={{ mb: 3 }}>
-              {error}
-            </Alert>
-          ) : null}
+      <Stack spacing={4}>
+        <Card>
+          <CardHeader title='Información de la cuenta' titleTypographyProps={{ variant: 'h6' }} />
+          <CardContent>
+            {error ? (
+              <Alert severity='error' sx={{ mb: 3 }}>
+                {error}
+              </Alert>
+            ) : null}
 
-          <Grid container spacing={4}>
-            <Grid item xs={12} sm={6}>
-              <TextField
-                fullWidth
-                label='Nombre'
-                value={formData.firstName}
-                placeholder='Nombre'
-                onChange={e => handleChange('firstName', e.target.value)}
-                disabled={saving}
-              />
+            <Grid container spacing={4}>
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  fullWidth
+                  label='Nombre'
+                  value={formData.firstName}
+                  placeholder='Nombre'
+                  onChange={e => handleChange('firstName', e.target.value)}
+                  disabled={saving}
+                />
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  fullWidth
+                  label='Apellido'
+                  value={formData.lastName}
+                  placeholder='Apellido'
+                  onChange={e => handleChange('lastName', e.target.value)}
+                  disabled={saving}
+                />
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  fullWidth
+                  label='Correo electrónico'
+                  value={formData.email}
+                  placeholder='correo@ejemplo.com'
+                  onChange={e => handleChange('email', e.target.value)}
+                  disabled={saving}
+                />
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  fullWidth
+                  label='Rol'
+                  value={formatRoleLabel(role)}
+                  disabled
+                  helperText='El rol se administra desde el módulo de empleados'
+                  InputProps={{ readOnly: true }}
+                />
+              </Grid>
+              <Grid item xs={12} className='flex gap-4 flex-wrap'>
+                <Button variant='contained' onClick={() => void handleSave()} disabled={saving || !hasChanges}>
+                  {saving ? 'Guardando...' : 'Guardar cambios'}
+                </Button>
+                <Button variant='outlined' color='secondary' onClick={handleReset} disabled={saving || !hasChanges}>
+                  Restablecer
+                </Button>
+              </Grid>
             </Grid>
-            <Grid item xs={12} sm={6}>
-              <TextField
-                fullWidth
-                label='Apellido'
-                value={formData.lastName}
-                placeholder='Apellido'
-                onChange={e => handleChange('lastName', e.target.value)}
-                disabled={saving}
-              />
-            </Grid>
-            <Grid item xs={12} sm={6}>
-              <TextField
-                fullWidth
-                label='Correo electrónico'
-                value={formData.email}
-                placeholder='correo@ejemplo.com'
-                onChange={e => handleChange('email', e.target.value)}
-                disabled={saving}
-              />
-            </Grid>
-            <Grid item xs={12} sm={6}>
-              <TextField
-                fullWidth
-                label='Rol'
-                value={formatRoleLabel(role)}
-                disabled
-                helperText='El rol se administra desde el módulo de empleados'
-                InputProps={{ readOnly: true }}
-              />
-            </Grid>
-            <Grid item xs={12} className='flex gap-4 flex-wrap'>
-              <Button variant='contained' onClick={() => void handleSave()} disabled={saving || !hasChanges}>
-                {saving ? 'Guardando...' : 'Guardar cambios'}
-              </Button>
-              <Button variant='outlined' color='secondary' onClick={handleReset} disabled={saving || !hasChanges}>
-                Restablecer
-              </Button>
-            </Grid>
-          </Grid>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader title='Firma digital' titleTypographyProps={{ variant: 'h6' }} />
+          <CardContent>
+            <Alert severity='info' sx={{ mb: 3 }}>
+              Esta función estará disponible próximamente. Podrás subir tu firma para que aparezca en los reportes y
+              registros del sistema.
+            </Alert>
+
+            <Box
+              sx={{
+                border: '2px dashed',
+                borderColor: 'divider',
+                borderRadius: 2,
+                p: 4,
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+                minHeight: 160,
+                bgcolor: 'action.hover',
+                mb: 3
+              }}
+            >
+              <Box component='i' className='ri-image-line' sx={{ fontSize: 40, opacity: 0.5, mb: 1 }} />
+              <Typography variant='body2' color='text.secondary' textAlign='center'>
+                Vista previa de tu firma aparecerá aquí
+              </Typography>
+            </Box>
+
+            <Button
+              variant='contained'
+              disabled
+              startIcon={<Box component='i' className='ri-upload-cloud-2-line' />}
+              sx={{ mb: 2 }}
+            >
+              Subir firma (PNG o JPG)
+            </Button>
+
+            <Alert severity='warning' variant='outlined'>
+              Formatos aceptados: PNG, JPG. Tamaño máximo: 2 MB.
+            </Alert>
+          </CardContent>
+        </Card>
+      </Stack>
 
       <Snackbar
         open={snackbar != null}

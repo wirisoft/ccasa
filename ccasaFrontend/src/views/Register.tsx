@@ -145,7 +145,7 @@ const Register = () => {
             </Box>
 
             <Typography variant='h4' sx={{ color: '#FFFFFF', fontWeight: 800, mb: 2, lineHeight: 1.3 }}>
-              Únete a CCASA Lab
+              Únete a Bitácoras Servicios Ambientales
             </Typography>
 
             <Typography variant='body1' sx={{ color: 'rgba(255, 255, 255, 0.8)', lineHeight: 1.8 }}>
@@ -353,7 +353,7 @@ const Register = () => {
               variant='caption'
               sx={{ display: 'block', textAlign: 'center', mt: 3, color: 'text.disabled' }}
             >
-              © {new Date().getFullYear()} CCASA Lab — Bitácoras de laboratorio
+              © {new Date().getFullYear()} Bitácoras Servicios Ambientales
             </Typography>
           </Box>
         </Fade>

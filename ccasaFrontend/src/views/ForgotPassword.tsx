@@ -193,7 +193,7 @@ const ForgotPassword = () => {
         variant='caption'
         sx={{ display: 'block', textAlign: 'center', mt: 4, color: 'rgba(255, 255, 255, 0.5)' }}
       >
-        © {new Date().getFullYear()} CCASA Lab — Bitácoras de laboratorio
+        © {new Date().getFullYear()} Bitácoras Servicios Ambientales
       </Typography>
     </Box>
   )

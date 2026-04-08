@@ -11,7 +11,7 @@ const FooterContent = () => {
   return (
     <div className={classnames(verticalLayoutClasses.footerContent, 'flex items-center flex-wrap gap-4')}>
       <Typography variant='body2' color='text.secondary'>
-        © 2026 CCASA Lab — Sistema de gestión de bitácoras de laboratorio
+        © {new Date().getFullYear()} Bitácoras Servicios Ambientales
       </Typography>
     </div>
   )

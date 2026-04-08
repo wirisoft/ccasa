@@ -313,7 +313,7 @@ const Login = () => {
               variant='caption'
               sx={{ display: 'block', textAlign: 'center', mt: 3, color: 'text.disabled' }}
             >
-              © {new Date().getFullYear()} CCASA Lab — Bitácoras de laboratorio
+              © {new Date().getFullYear()} Bitácoras Servicios Ambientales
             </Typography>
           </Box>
         </Fade>

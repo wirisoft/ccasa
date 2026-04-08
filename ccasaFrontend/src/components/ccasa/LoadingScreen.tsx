@@ -123,7 +123,7 @@ const LoadingScreen = ({ fadeOut = false, onFadeOutComplete }: LoadingScreenProp
           opacity: opacity
         }}
       >
-        CCASA Lab
+        Bitácoras Servicios Ambientales
       </Typography>
 
       {/* Barra de progreso */}
