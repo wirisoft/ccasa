@@ -43,13 +43,13 @@ public class UserCrudController {
 	}
 
 	@GetMapping("/{id}")
-	@PreAuthorize("hasAnyRole('ADMIN', 'SUPERVISOR')")
+	@PreAuthorize("hasAnyRole('ADMIN', 'SUPERVISOR') or @ccasaUserSecurity.isSelf(#id)")
 	public ResponseEntity<CrudResponseDTO> getById(@PathVariable Long id) {
 		return ResponseEntity.ok(service.findById(id));
 	}
 
 	@PutMapping("/{id}")
-	@PreAuthorize("hasRole('ADMIN')")
+	@PreAuthorize("hasRole('ADMIN') or @ccasaUserSecurity.isSelf(#id)")
 	public ResponseEntity<CrudResponseDTO> update(@PathVariable Long id, @RequestBody CrudRequestDTO request) {
 		return ResponseEntity.ok(service.update(id, request));
 	}
