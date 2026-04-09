@@ -256,23 +256,6 @@ const Login = () => {
                   }}
                 />
 
-                <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
-                  <Typography
-                    component={Link}
-                    href='/forgot-password'
-                    variant='body2'
-                    sx={{
-                      color: '#1565C0',
-                      fontWeight: 500,
-                      textDecoration: 'none',
-                      fontSize: '0.8rem',
-                      '&:hover': { textDecoration: 'underline' }
-                    }}
-                  >
-                    ¿Olvidaste tu contraseña?
-                  </Typography>
-                </Box>
-
                 <Button
                   fullWidth
                   variant='contained'
