@@ -338,7 +338,7 @@ private static final Font SMALL_FONT = new Font(Font.HELVETICA, 8, Font.NORMAL);
 			conductivityLowKclComputation.apply(record, referenceParameterService);
 		}
 		if (record.getCalculatedMol() != null) {
-			record.setCalculatedMol(record.getCalculatedMol().setScale(6, RoundingMode.HALF_UP));
+			record.setCalculatedMol(record.getCalculatedMol().setScale(8, RoundingMode.HALF_UP));
 		}
 		if (record.getCalculatedValue() != null) {
 			record.setCalculatedValue(record.getCalculatedValue().setScale(0, RoundingMode.HALF_UP));
@@ -562,7 +562,7 @@ private static final Font SMALL_FONT = new Font(Font.HELVETICA, 8, Font.NORMAL);
 		calc.addCell(cell("7.4565", LABEL_FONT, Element.ALIGN_CENTER, true));
 		calc.addCell(cell("0.1", LABEL_FONT, Element.ALIGN_CENTER, true));
 		calc.addCell(cell(fixed(dto.referenceUScm(), 4), LABEL_FONT, Element.ALIGN_CENTER, true));
-		calc.addCell(cell(fixed(dto.referenceMol(), 2), LABEL_FONT, Element.ALIGN_CENTER, true));
+		calc.addCell(cell(fixed(dto.referenceMol(), 4), LABEL_FONT, Element.ALIGN_CENTER, true));
 		calc.addCell(cell("x", LABEL_FONT, Element.ALIGN_CENTER, true));
 		calc.addCell(cell("0.01", LABEL_FONT, Element.ALIGN_CENTER, true));
 		calc.addCell(cell(fixed(dto.weightGrams(), 4), LABEL_FONT, Element.ALIGN_CENTER, true));
@@ -570,11 +570,11 @@ private static final Font SMALL_FONT = new Font(Font.HELVETICA, 8, Font.NORMAL);
 		calc.addCell(cell("x=", LABEL_FONT, Element.ALIGN_RIGHT, false));
 		calc.addCell(cell(fixed(dto.referenceUScm(), 4) + " uS/cm", LABEL_FONT, Element.ALIGN_CENTER, true));
 		calc.addCell(cell("X=", LABEL_FONT, Element.ALIGN_RIGHT, false));
-		calc.addCell(cell(fixed(dto.calculatedMol(), 6), LABEL_FONT, Element.ALIGN_CENTER, true));
-		calc.addCell(cell(fixed(dto.referenceMol(), 2) + " mol", LABEL_FONT, Element.ALIGN_CENTER, true, 2));
+		calc.addCell(cell(fixed(dto.calculatedMol(), 8), LABEL_FONT, Element.ALIGN_CENTER, true));
+		calc.addCell(cell(fixed(dto.referenceMol(), 4) + " mol", LABEL_FONT, Element.ALIGN_CENTER, true, 2));
 		calc.addCell(cell(fixed(dto.referenceStandardUScm(), 0), LABEL_FONT, Element.ALIGN_CENTER, true));
 		calc.addCell(cell("uS/cm", SMALL_FONT, Element.ALIGN_LEFT, false));
-		calc.addCell(cell(fixed(dto.calculatedMol(), 6) + " mol", LABEL_FONT, Element.ALIGN_CENTER, true, 2));
+		calc.addCell(cell(fixed(dto.calculatedMol(), 8) + " mol", LABEL_FONT, Element.ALIGN_CENTER, true, 2));
 		calc.addCell(cell("X", LABEL_FONT, Element.ALIGN_CENTER, true));
 		calc.addCell(cell("", BODY_FONT, Element.ALIGN_LEFT, false));
 		calc.addCell(cell("X=", LABEL_FONT, Element.ALIGN_RIGHT, false));
