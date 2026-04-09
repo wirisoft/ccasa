@@ -441,10 +441,11 @@ export const USER_FIELDS: CrudFieldDef[] = [
     label: 'Nomenclatura',
     type: 'select',
     gridCols: 6,
-    helperText: 'Requerido para revisar registros de conductividad.',
+    helperText:
+      'TCM: Técnico de Control de Muestras · TMC: Técnico de Monitoreo y Control. Requerido para poder revisar y aprobar registros de conductividad.',
     options: [
-      { value: 'TCM', label: 'TCM' },
-      { value: 'TMC', label: 'TMC' }
+      { value: 'TCM', label: 'TCM — Técnico de Control de Muestras' },
+      { value: 'TMC', label: 'TMC — Técnico de Monitoreo y Control' }
     ]
   },
   {
