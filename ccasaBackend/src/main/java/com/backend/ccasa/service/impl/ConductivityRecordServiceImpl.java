@@ -574,7 +574,7 @@ private static final Font SMALL_FONT = new Font(Font.HELVETICA, 8, Font.NORMAL);
 		calc.addCell(cell(fixed(dto.referenceMol(), 4) + " mol", LABEL_FONT, Element.ALIGN_CENTER, true, 2));
 		calc.addCell(cell(fixed(dto.referenceStandardUScm(), 0), LABEL_FONT, Element.ALIGN_CENTER, true));
 		calc.addCell(cell("uS/cm", SMALL_FONT, Element.ALIGN_LEFT, false));
-		calc.addCell(cell(fixed(dto.calculatedMol(), 7) + " mol", LABEL_FONT, Element.ALIGN_CENTER, true, 2));
+		calc.addCell(cell(fixed(dto.calculatedMol(), 6) + " mol", LABEL_FONT, Element.ALIGN_CENTER, true, 2));
 		calc.addCell(cell("X", LABEL_FONT, Element.ALIGN_CENTER, true));
 		calc.addCell(cell("", BODY_FONT, Element.ALIGN_LEFT, false));
 		calc.addCell(cell("X=", LABEL_FONT, Element.ALIGN_RIGHT, false));
