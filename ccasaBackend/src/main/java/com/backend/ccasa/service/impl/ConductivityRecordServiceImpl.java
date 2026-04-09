@@ -168,8 +168,8 @@ private static final Font SMALL_FONT = new Font(Font.HELVETICA, 8, Font.NORMAL);
 			normalizeBlank(folio),
 			fromDate,
 			toDate,
-			type,
-			status,
+			type != null ? type.name() : null,
+			status != null ? status.name() : null,
 			createdByUserId,
 			reviewerUserId
 		)
