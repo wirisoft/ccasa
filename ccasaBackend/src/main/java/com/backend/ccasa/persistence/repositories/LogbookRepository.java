@@ -11,4 +11,7 @@ public interface LogbookRepository extends ActiveRepository<LogbookEntity, Long>
 	List<LogbookEntity> findAllActive();
 
 	Optional<LogbookEntity> findByCodeAndDeletedAtIsNull(Integer code);
+
+	/** Por {@code code} sin filtrar borrado lógico (la columna {@code code} es única en BD). */
+	Optional<LogbookEntity> findByCode(Integer code);
 }

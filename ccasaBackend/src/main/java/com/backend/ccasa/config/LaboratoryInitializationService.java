@@ -4,6 +4,7 @@ import com.backend.ccasa.persistence.entities.LaboratoryEquipmentEntity;
 import com.backend.ccasa.persistence.entities.LogbookEntity;
 import com.backend.ccasa.persistence.entities.ReferenceParameterEntity;
 import com.backend.ccasa.persistence.entities.SolutionEntity;
+import com.backend.ccasa.persistence.entities.audit.Auditable;
 import com.backend.ccasa.persistence.repositories.LaboratoryEquipmentRepository;
 import com.backend.ccasa.persistence.repositories.LogbookRepository;
 import com.backend.ccasa.persistence.repositories.ReferenceParameterRepository;
@@ -11,6 +12,7 @@ import com.backend.ccasa.persistence.repositories.SolutionRepository;
 import com.backend.ccasa.service.impl.support.ReferenceParameterCodes;
 import com.backend.ccasa.service.impl.support.ReferenceParameterDefaults;
 import java.math.BigDecimal;
+import java.util.Optional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -86,14 +88,24 @@ public class LaboratoryInitializationService {
 	}
 
 	/**
-	 * Idempotencia por código: crea cada bitácora 1..15 solo si no existe fila activa con ese {@code code}
-	 * (evita duplicados si la BD quedó a medias o se borró parte del catálogo).
+	 * Idempotencia por código único en BD: si ya hay fila con ese {@code code} (activa o borrada lógicamente),
+	 * no se inserta otra; si solo existe borrada, se reactiva y actualiza metadatos.
 	 */
 	private void ensureLogbooksForCodesInRange() {
 		LOGGER.info("Asegurando bitácoras códigos {}..{} (idempotente por código)", LOGBOOK_CODE_MIN, LOGBOOK_CODE_MAX);
 		int created = 0;
 		for (int code = LOGBOOK_CODE_MIN; code <= LOGBOOK_CODE_MAX; code++) {
-			if (logbookRepository.findByCodeAndDeletedAtIsNull(code).isPresent()) {
+			Optional<LogbookEntity> existing = logbookRepository.findByCode(code);
+			if (existing.isPresent()) {
+				LogbookEntity l = existing.get();
+				if (l.getDeletedAt() != null) {
+					clearSoftDeleteIfPresent(l);
+					l.setName("Bitácora " + code);
+					l.setDescription("Bitácora de laboratorio código " + code);
+					l.setMaxEntries(200);
+					logbookRepository.save(l);
+					created++;
+				}
 				continue;
 			}
 			LogbookEntity l = new LogbookEntity();
@@ -104,7 +116,7 @@ public class LaboratoryInitializationService {
 			logbookRepository.save(l);
 			created++;
 		}
-		LOGGER.info("Bitácoras: {} creadas; resto ya existían o catálogo completo", created);
+		LOGGER.info("Bitácoras: {} creadas o reactivadas; resto ya activas", created);
 	}
 
 	/**
@@ -367,11 +379,12 @@ public class LaboratoryInitializationService {
 			);
 			return;
 		}
-		ReferenceParameterEntity e = referenceParameterRepository.findByCodeAndDeletedAtIsNull(code).orElseGet(() -> {
+		ReferenceParameterEntity e = referenceParameterRepository.findByCode(code).orElseGet(() -> {
 			ReferenceParameterEntity n = new ReferenceParameterEntity();
 			n.setCode(code);
 			return n;
 		});
+		clearSoftDeleteIfPresent(e);
 		e.setMinValue(min);
 		e.setMaxValue(max);
 		e.setDescription(description);
@@ -388,11 +401,12 @@ public class LaboratoryInitializationService {
 			LOGGER.warn("ensureFormulaRow omitido para código {}: descripción o rule_detail vacíos", code);
 			return;
 		}
-		ReferenceParameterEntity e = referenceParameterRepository.findByCodeAndDeletedAtIsNull(code).orElseGet(() -> {
+		ReferenceParameterEntity e = referenceParameterRepository.findByCode(code).orElseGet(() -> {
 			ReferenceParameterEntity n = new ReferenceParameterEntity();
 			n.setCode(code);
 			return n;
 		});
+		clearSoftDeleteIfPresent(e);
 		e.setMinValue(null);
 		e.setMaxValue(null);
 		e.setDescription(description);
@@ -413,7 +427,14 @@ public class LaboratoryInitializationService {
 			}
 			String conc = normalizeConcentration(seed.concentration());
 			String concKey = conc.isEmpty() ? null : conc;
-			if (solutionRepository.findByNameAndConcentrationAndDeletedAtIsNull(name, concKey).isPresent()) {
+			Optional<SolutionEntity> existingSol = solutionRepository.findFirstByNameAndConcentrationOrderByIdAsc(name, concKey);
+			if (existingSol.isPresent()) {
+				SolutionEntity s = existingSol.get();
+				if (s.getDeletedAt() != null) {
+					clearSoftDeleteIfPresent(s);
+					solutionRepository.save(s);
+					added++;
+				}
 				continue;
 			}
 			SolutionEntity s = new SolutionEntity();
@@ -444,7 +465,15 @@ public class LaboratoryInitializationService {
 				skipped++;
 				continue;
 			}
-			if (laboratoryEquipmentRepository.findByDenominationAndDeletedAtIsNull(denom).isPresent()) {
+			Optional<LaboratoryEquipmentEntity> existingEq = laboratoryEquipmentRepository.findByDenomination(denom);
+			if (existingEq.isPresent()) {
+				LaboratoryEquipmentEntity e = existingEq.get();
+				if (e.getDeletedAt() != null) {
+					clearSoftDeleteIfPresent(e);
+					e.setEquipmentType(type);
+					laboratoryEquipmentRepository.save(e);
+					added++;
+				}
 				continue;
 			}
 			LaboratoryEquipmentEntity e = new LaboratoryEquipmentEntity();
@@ -458,5 +487,12 @@ public class LaboratoryInitializationService {
 
 	private static boolean isBlank(String s) {
 		return s == null || s.trim().isEmpty();
+	}
+
+	private static void clearSoftDeleteIfPresent(Auditable a) {
+		if (a.getDeletedAt() != null) {
+			a.setDeletedAt(null);
+			a.setDeletedByUser(null);
+		}
 	}
 }
