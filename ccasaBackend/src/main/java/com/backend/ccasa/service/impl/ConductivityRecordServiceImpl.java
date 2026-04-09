@@ -164,12 +164,18 @@ private static final Font SMALL_FONT = new Font(Font.HELVETICA, 8, Font.NORMAL);
 		Long createdByUserId,
 		Long reviewerUserId
 	) {
+		String folioForQuery = normalizeBlank(folio);
+
+		if (folioForQuery == null) {
+			folioForQuery = "";
+		}
+
 		return entryConductivityRepository.searchRecords(
-			normalizeBlank(folio),
+			folioForQuery,
 			fromDate,
 			toDate,
-			type != null ? type.name() : null,
-			status != null ? status.name() : null,
+			type,
+			status,
 			createdByUserId,
 			reviewerUserId
 		)
