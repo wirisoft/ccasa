@@ -439,9 +439,13 @@ export const USER_FIELDS: CrudFieldDef[] = [
   {
     key: 'nomenclature',
     label: 'Nomenclatura',
-    type: 'text',
+    type: 'select',
     gridCols: 6,
-    helperText: 'Ej: TCM, TMC. Requerido para revisar registros de conductividad.'
+    helperText: 'Requerido para revisar registros de conductividad.',
+    options: [
+      { value: 'TCM', label: 'TCM' },
+      { value: 'TMC', label: 'TMC' }
+    ]
   },
   {
     key: 'passwordHash',
