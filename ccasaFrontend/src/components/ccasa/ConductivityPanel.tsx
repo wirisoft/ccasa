@@ -229,6 +229,7 @@ const ConductivityPanel = () => {
 
   const [snackbar, setSnackbar] = useState<string | null>(null)
   const [snackbarSeverity, setSnackbarSeverity] = useState<'success' | 'error'>('success')
+  const [formError, setFormError] = useState<string | null>(null)
 
   const fetchRecords = useCallback(async () => {
     if (!token) {
@@ -307,6 +308,7 @@ return filteredRecords.slice(start, start + rowsPerPage)
   }, [filterFromDate, filterStatus, filterToDate, filterType])
 
   const handleOpenDialog = useCallback(() => {
+    setFormError(null)
     setFormType('High')
     setFormWeight('')
     setFormPreparationTime('')
@@ -326,17 +328,30 @@ return filteredRecords.slice(start, start + rowsPerPage)
       return
     }
 
+    setFormError(null)
     setDialogOpen(false)
   }, [submitting])
 
   const handleCreate = useCallback(async () => {
-    if (formWeight.trim() === '') {
+    setFormError(null)
+
+    if (formType !== 'High' && formType !== 'Low') {
+      setFormError('El tipo es obligatorio.')
+
       return
     }
 
-    const w = parseFloat(formWeight)
+    const weightNum = parseFloat(formWeight)
 
-    if (Number.isNaN(w) || w <= 0) {
+    if (!formWeight || Number.isNaN(weightNum) || weightNum <= 0) {
+      setFormError('El peso debe ser un número mayor a cero.')
+
+      return
+    }
+
+    if (!formLogbookId) {
+      setFormError('Debes seleccionar una bitácora.')
+
       return
     }
 
@@ -345,21 +360,17 @@ return filteredRecords.slice(start, start + rowsPerPage)
     try {
       const body: CreateConductivityRequest = {
         type: formType,
-        weightGrams: w,
+        weightGrams: weightNum,
         preparationTime: formPreparationTime.trim() || null,
-        observation: formObservation.trim() || null
-      }
-
-      if (formLogbookId !== '') {
-        body.logbookId = Number(formLogbookId)
-      } else {
-        body.logbookId = null
+        observation: formObservation.trim() || null,
+        logbookId: Number(formLogbookId)
       }
 
       await apiFetch<ConductivityRecord>(CONDUCTIVITY_API, {
         method: 'POST',
         body: JSON.stringify(body)
       })
+      setFormError(null)
       setDialogOpen(false)
       setSnackbarSeverity('success')
       setSnackbar('Registro creado correctamente')
@@ -451,8 +462,14 @@ return
     setPage(0)
   }, [])
 
+  const weightNumPreview = parseFloat(formWeight)
+
   const formValid =
-    formWeight.trim() !== '' && !Number.isNaN(parseFloat(formWeight)) && parseFloat(formWeight) > 0
+    (formType === 'High' || formType === 'Low') &&
+    formLogbookId !== '' &&
+    formWeight.trim() !== '' &&
+    !Number.isNaN(weightNumPreview) &&
+    weightNumPreview > 0
 
   return (
     <>
@@ -534,14 +551,22 @@ return
               <Button variant='outlined' startIcon={<Box component='i' className='ri-filter-3-line' />} onClick={handleSearchFilters}>
                 Buscar
               </Button>
-              <Button
-                variant='contained'
-                startIcon={<Box component='i' className='ri-add-line' />}
-                onClick={handleOpenDialog}
-                disabled={!token}
+              <Tooltip
+                title='Registra una medición de conductividad KCl. Solo necesitas seleccionar el tipo (Alta o Baja) e ingresar el peso en gramos. El sistema calcula automáticamente la conductividad y verifica si está en rango.'
+                arrow
+                placement='left'
               >
-                Nuevo registro
-              </Button>
+                <span>
+                  <Button
+                    variant='contained'
+                    startIcon={<Box component='i' className='ri-add-line' />}
+                    onClick={handleOpenDialog}
+                    disabled={!token}
+                  >
+                    Nuevo registro
+                  </Button>
+                </span>
+              </Tooltip>
             </Stack>
             <Typography variant='body2' color='text.secondary'>
               {search.trim()
@@ -674,7 +699,10 @@ return (
                 labelId='form-type-label'
                 label='Tipo'
                 value={formType}
-                onChange={(e: SelectChangeEvent<ConductivityType>) => setFormType(e.target.value as ConductivityType)}
+                onChange={(e: SelectChangeEvent<ConductivityType>) => {
+                  setFormError(null)
+                  setFormType(e.target.value as ConductivityType)
+                }}
               >
                 <MenuItem value='High'>Alta (High)</MenuItem>
                 <MenuItem value='Low'>Baja (Low)</MenuItem>
@@ -687,20 +715,28 @@ return (
               type='number'
               label='Peso (g)'
               value={formWeight}
-              onChange={e => setFormWeight(e.target.value)}
+              onChange={e => {
+                setFormError(null)
+                setFormWeight(e.target.value)
+              }}
               inputProps={{ step: 0.0001, min: 0 }}
             />
-            <FormControl fullWidth size='small'>
+            <FormControl fullWidth required size='small'>
               <InputLabel id='form-logbook-label'>Bitácora</InputLabel>
               <Select
                 labelId='form-logbook-label'
                 label='Bitácora'
                 value={formLogbookId}
-                onChange={(e: SelectChangeEvent) => setFormLogbookId(e.target.value)}
+                onChange={(e: SelectChangeEvent) => {
+                  setFormError(null)
+                  setFormLogbookId(e.target.value)
+                }}
               >
-                <MenuItem value=''>
-                  <em>Predeterminada (primera activa)</em>
-                </MenuItem>
+                {logbooks.length === 0 ? (
+                  <MenuItem value='' disabled>
+                    No hay bitácoras disponibles
+                  </MenuItem>
+                ) : null}
                 {logbooks.map(lb => (
                   <MenuItem key={lb.id} value={String(lb.id)}>
                     {lb.name} (ID {lb.id})
@@ -731,6 +767,13 @@ return (
             </Alert>
           </Stack>
         </DialogContent>
+        {formError ? (
+          <Box sx={{ px: 3, pt: 0, pb: 1 }}>
+            <Alert severity='error' onClose={() => setFormError(null)}>
+              {formError}
+            </Alert>
+          </Box>
+        ) : null}
         <DialogActions sx={{ borderTop: '1px solid', borderColor: 'divider', px: 3, py: 2 }}>
           <Button variant='outlined' onClick={handleCloseDialog} disabled={submitting}>
             Cancelar

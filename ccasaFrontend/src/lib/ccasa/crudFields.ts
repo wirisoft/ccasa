@@ -248,7 +248,8 @@ export const FOLIO_BLOCK_FIELDS: CrudFieldDef[] = [
     type: 'number',
     required: true,
     gridCols: 3,
-    placeholder: 'Ej. 1'
+    placeholder: 'Ej. 1',
+    helperText: 'Debe ser un número mayor a 0'
   },
   {
     key: 'endNumber',
@@ -256,7 +257,8 @@ export const FOLIO_BLOCK_FIELDS: CrudFieldDef[] = [
     type: 'number',
     required: true,
     gridCols: 3,
-    placeholder: 'Ej. 200'
+    placeholder: 'Ej. 200',
+    helperText: 'Debe ser un número mayor a 0'
   },
   { key: 'coverGenerated', label: 'Portada generada', type: 'boolean' }
 ]
@@ -417,7 +419,15 @@ export const SIGNATURE_CONFIG: CrudResourceConfig = {
 export const USER_FIELDS: CrudFieldDef[] = [
   { key: 'firstName', label: 'Nombre', type: 'text', required: true, gridCols: 6 },
   { key: 'lastName', label: 'Apellido', type: 'text', required: true, gridCols: 6 },
-  { key: 'email', label: 'Correo electrónico', type: 'text', required: true, gridCols: 6 },
+  {
+    key: 'email',
+    label: 'Correo electrónico',
+    type: 'text',
+    required: true,
+    gridCols: 6,
+    placeholder: 'correo@ejemplo.com',
+    helperText: 'Ingresa un correo electrónico válido'
+  },
   {
     key: 'passwordHash',
     label: 'Contraseña',
@@ -551,7 +561,7 @@ export const ENTRY_CONDUCTIVITY_FIELDS: CrudFieldDef[] = [
     ]
   },
   { key: 'measuredValue', label: 'Valor medido', type: 'number', gridCols: 6 },
-  { key: 'weightGrams', label: 'Peso (g)', type: 'number', gridCols: 6 },
+  { key: 'weightGrams', label: 'Peso (g)', type: 'number', required: true, gridCols: 6 },
   { key: 'calculatedMol', label: 'Mol calculado', type: 'number', gridCols: 6 },
   { key: 'calculatedValue', label: 'Valor calculado', type: 'number', gridCols: 6 },
   { key: 'inRange', label: '¿En rango?', type: 'boolean' },
@@ -955,8 +965,22 @@ export const REAGENT_JAR_FIELDS: CrudFieldDef[] = [
     required: true,
     gridCols: 6
   },
-  { key: 'initialAmountG', label: 'Cantidad inicial (g)', type: 'number', required: true, gridCols: 6 },
-  { key: 'currentAmountG', label: 'Cantidad actual (g)', type: 'number', required: true, gridCols: 6 },
+  {
+    key: 'initialAmountG',
+    label: 'Cantidad inicial (g)',
+    type: 'number',
+    required: true,
+    gridCols: 6,
+    helperText: 'Debe ser mayor a 0'
+  },
+  {
+    key: 'currentAmountG',
+    label: 'Cantidad actual (g)',
+    type: 'number',
+    required: true,
+    gridCols: 6,
+    helperText: 'Debe ser mayor a 0'
+  },
   { key: 'openedAt', label: 'Fecha de apertura', type: 'date', required: false, gridCols: 6 }
 ]
 

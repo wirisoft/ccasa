@@ -44,6 +44,7 @@ import { useAuth } from '@/contexts/AuthContext'
 // Component Imports
 import CrudDeleteDialog from './CrudDeleteDialog'
 import CrudFormDialog from './CrudFormDialog'
+import { getTooltipText } from './CrudListPanel'
 
 type LogbooksPanelProps = {
   title?: string
@@ -294,14 +295,23 @@ const LogbooksPanel = ({ title = 'Bitácoras activas', showCard = true }: Logboo
                     : {})
                 }}
               />
-              <Button
-                variant='contained'
-                startIcon={<i className='ri-add-line' />}
-                onClick={handleOpenCreate}
-                disabled={!token}
+              <Tooltip
+                title={getTooltipText(LOGBOOK_CONFIG.label, LOGBOOK_CONFIG.apiPath)}
+                arrow
+                placement='left'
               >
-                Nueva bitácora
-              </Button>
+                <span>
+                  <Button
+                    variant='contained'
+                    size='small'
+                    startIcon={<i className='ri-add-line' />}
+                    onClick={handleOpenCreate}
+                    disabled={!token}
+                  >
+                    Nueva bitácora
+                  </Button>
+                </span>
+              </Tooltip>
             </Stack>
           </Stack>
           {rows.length > 0 && filteredRows.length === 0 ? (

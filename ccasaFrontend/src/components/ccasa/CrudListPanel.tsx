@@ -78,6 +78,110 @@ function rowDisplayName(values: Record<string, unknown> | undefined, nameColumn:
   return s === '' ? undefined : s
 }
 
+export function getTooltipText(resourceLabel: string, apiPath: string): string {
+  if (apiPath.includes('logbooks')) {
+    return 'Crea una nueva bitácora. Necesitas definir código, nombre y descripción.'
+  }
+
+  if (apiPath.includes('folios')) {
+    return 'Crea un folio. Requiere seleccionar una bitácora y un bloque de folios activo.'
+  }
+
+  if (apiPath.includes('folio-blocks')) {
+    return 'Crea un bloque de folios con rango de números (inicio y fin).'
+  }
+
+  if (apiPath.includes('reagents')) {
+    return 'Registra un nuevo reactivo con nombre y descripción.'
+  }
+
+  if (apiPath.includes('batches')) {
+    return 'Registra un lote de reactivo. Necesitas tener un reactivo creado.'
+  }
+
+  if (apiPath.includes('solutions')) {
+    return 'Registra una solución con nombre y concentración.'
+  }
+
+  if (apiPath.includes('supplies')) {
+    return 'Registra un insumo de laboratorio.'
+  }
+
+  if (apiPath.includes('reagent-jars')) {
+    return 'Registra un frasco de reactivo. Necesitas tener un reactivo creado y definir las cantidades inicial y actual.'
+  }
+
+  if (apiPath.includes('equipment')) {
+    return 'Registra un equipo de laboratorio con tipo y denominación.'
+  }
+
+  if (apiPath.includes('reference-parameters')) {
+    return 'Registra un parámetro de referencia con código y valores min/max.'
+  }
+
+  if (apiPath.includes('roles')) {
+    return 'Crea un rol de usuario nuevo.'
+  }
+
+  if (apiPath.includes('alerts')) {
+    return 'Crea una alerta. Requiere tipo, mensaje y estado.'
+  }
+
+  if (apiPath.includes('signatures')) {
+    return 'Registra una firma de entrada. Requiere tipo de firma y seleccionar una entrada.'
+  }
+
+  if (apiPath.includes('users')) {
+    return 'Crea un nuevo usuario. Necesitas nombre, apellido, correo, contraseña y rol.'
+  }
+
+  if (apiPath.includes('entries')) {
+    return 'Crea una nueva entrada de registro. Requiere seleccionar una bitácora activa.'
+  }
+
+  if (apiPath.includes('entry-distilled-water')) {
+    return 'Registra una entrada de agua destilada.'
+  }
+
+  if (apiPath.includes('entry-conductivity')) {
+    return 'Registra una medición de conductividad. Solo necesitas el tipo (Alta/Baja) y el peso en gramos.'
+  }
+
+  if (apiPath.includes('entry-oven-temp')) {
+    return 'Registra temperatura de horno. Requiere una entrada base.'
+  }
+
+  if (apiPath.includes('entry-drying-oven')) {
+    return 'Registra una entrada de horno de secado.'
+  }
+
+  if (apiPath.includes('entry-expense-chart')) {
+    return 'Registra un gasto o carta.'
+  }
+
+  if (apiPath.includes('entry-material-wash')) {
+    return 'Registra un lavado de material.'
+  }
+
+  if (apiPath.includes('entry-solution-prep')) {
+    return 'Registra una preparación de solución.'
+  }
+
+  if (apiPath.includes('entry-weighing')) {
+    return 'Registra una pesada.'
+  }
+
+  if (apiPath.includes('entry-accuracy')) {
+    return 'Registra una medición de precisión.'
+  }
+
+  if (apiPath.includes('entry-flask-treatment')) {
+    return 'Registra un tratamiento de matraz.'
+  }
+
+  return `Crear nuevo registro de ${resourceLabel ?? 'este módulo'}`
+}
+
 const CrudListPanel = ({
   apiPath,
   title = 'Registros',
@@ -292,6 +396,8 @@ const CrudListPanel = ({
 
   const formTitle = editingRow ? `Editar ${resourceLabel.toLowerCase()}` : `Nuevo ${resourceLabel.toLowerCase()}`
 
+  const newRecordTooltip = getTooltipText(resourceLabel, apiPath)
+
   const inner = (
     <>
       {subtitle ? (
@@ -352,14 +458,19 @@ const CrudListPanel = ({
                 }}
               />
               {hasWrite ? (
-                <Button
-                  variant='contained'
-                  startIcon={<i className='ri-add-line' />}
-                  onClick={handleOpenCreate}
-                  disabled={!token}
-                >
-                  Nuevo
-                </Button>
+                <Tooltip title={newRecordTooltip} arrow placement='left'>
+                  <span>
+                    <Button
+                      variant='contained'
+                      size='small'
+                      onClick={handleOpenCreate}
+                      disabled={!token}
+                      startIcon={<i className='ri-add-line' />}
+                    >
+                      Nuevo registro
+                    </Button>
+                  </span>
+                </Tooltip>
               ) : null}
             </Stack>
           </Stack>
