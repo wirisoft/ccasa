@@ -596,7 +596,7 @@ return
                 </Typography>
               ) : (
                 <>
-                  <TableContainer sx={{ maxHeight: 440, overflowX: 'auto' }}>
+                  <TableContainer sx={{ maxHeight: 440, overflow: 'auto' }}>
                     <Table size='small' stickyHeader>
                       <TableHead>
                         <TableRow>
