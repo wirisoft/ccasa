@@ -50,6 +50,9 @@ export type CrudFieldDef = {
   /** Si true, el campo no se edita en actualización (solo creación). */
   readOnlyOnEdit?: boolean
 
+  /** Si true, el campo no se muestra en el diálogo de edición (sí en creación). */
+  hideOnEdit?: boolean
+
   /**
    * Si true y type es `date`, el payload usa ISO-8601 instant (ej. `2026-04-07T00:00:00Z`) para `Instant.parse` en el backend.
    * Si false u omitido, se envía `YYYY-MM-DD` para campos mapeados a `LocalDate`.
@@ -420,7 +423,8 @@ export const USER_FIELDS: CrudFieldDef[] = [
     label: 'Contraseña',
     type: 'text',
     gridCols: 6,
-    helperText: 'Solo necesaria al crear un usuario nuevo.'
+    helperText: 'Solo necesaria al crear un usuario nuevo.',
+    hideOnEdit: true
   },
   { key: 'active', label: 'Activo', type: 'boolean', defaultValue: true },
   {

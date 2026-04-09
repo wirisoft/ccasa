@@ -2,7 +2,7 @@
 
 // React Imports
 import type { FormEvent } from 'react'
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 
 // MUI Imports
 import Alert from '@mui/material/Alert'
@@ -218,31 +218,39 @@ const CrudFormDialog = ({
 }: CrudFormDialogProps) => {
   const { token } = useAuth()
 
+  const isEditMode = initialValues != null
+
+  const visibleFields = useMemo(
+    () => fields.filter(f => !(isEditMode && f.hideOnEdit)),
+    [fields, isEditMode]
+  )
+
   const [formState, setFormState] = useState<Record<string, unknown>>(() =>
-    buildInitialFormState(fields, initialValues)
+    buildInitialFormState(
+      fields.filter(f => !(initialValues != null && f.hideOnEdit)),
+      initialValues
+    )
   )
 
   const [touchedKeys, setTouchedKeys] = useState<Set<string>>(() => new Set())
 
   const [asyncOptions, setAsyncOptions] = useState<Record<string, { value: number; label: string }[]>>({})
 
-  const isEditMode = initialValues != null
-
   useEffect(() => {
     if (!open) {
       return
     }
 
-    setFormState(buildInitialFormState(fields, initialValues))
+    setFormState(buildInitialFormState(visibleFields, initialValues))
     setTouchedKeys(new Set())
-  }, [open, initialValues, fields])
+  }, [open, initialValues, visibleFields])
 
   useEffect(() => {
     if (!open) {
       return
     }
 
-    const asyncFields = fields.filter(f => f.type === 'async-select' && f.optionsApiPath)
+    const asyncFields = visibleFields.filter(f => f.type === 'async-select' && f.optionsApiPath)
 
     asyncFields.forEach(field => {
       apiFetch<CrudResponseDTO[]>(field.optionsApiPath!, { token: token ?? undefined })
@@ -271,7 +279,7 @@ const CrudFormDialog = ({
           setAsyncOptions(prev => ({ ...prev, [field.key]: [] }))
         })
     })
-  }, [open, fields, token])
+  }, [open, visibleFields, token])
 
   const setValue = useCallback((key: string, value: unknown) => {
     setFormState(prev => ({ ...prev, [key]: value }))
@@ -292,7 +300,7 @@ const CrudFormDialog = ({
   }, [])
 
   const validateAll = useCallback((): boolean => {
-    for (const field of fields) {
+    for (const field of visibleFields) {
       if (!field.required) {
         continue
       }
@@ -303,12 +311,12 @@ const CrudFormDialog = ({
     }
 
     return true
-  }, [fields, formState])
+  }, [visibleFields, formState])
 
   const handleSubmit = async (event: FormEvent) => {
     event.preventDefault()
 
-    const all = new Set(fields.map(f => f.key))
+    const all = new Set(visibleFields.map(f => f.key))
 
     setTouchedKeys(all)
 
@@ -316,7 +324,7 @@ const CrudFormDialog = ({
       return
     }
 
-    const payload = buildCleanPayload(fields, formState)
+    const payload = buildCleanPayload(visibleFields, formState)
 
     await Promise.resolve(onSave(payload))
   }
@@ -350,7 +358,7 @@ const CrudFormDialog = ({
             </Alert>
           ) : null}
           <Grid container spacing={3}>
-            {fields.map(field => {
+            {visibleFields.map(field => {
               const value = formState[field.key]
               const touched = touchedKeys.has(field.key)
               const errMsg = fieldErrorMessage(field, value, touched)

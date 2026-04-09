@@ -15,7 +15,8 @@ const HIDDEN_COLUMNS = new Set([
   'signatureStoragePath',
   'signatureContentType',
   'signatureFileName',
-  'signatureUploadedAt'
+  'signatureUploadedAt',
+  'nomenclature'
 ])
 
 const COLUMN_LABELS: Record<string, string> = {
