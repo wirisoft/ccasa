@@ -11,4 +11,7 @@ public interface SolutionRepository extends ActiveRepository<SolutionEntity, Lon
 	List<SolutionEntity> findAllActive();
 
 	Optional<SolutionEntity> findByNameAndConcentrationAndDeletedAtIsNull(String name, String concentration);
+
+	/** Primera coincidencia por nombre y concentración sin filtrar borrado lógico (evita duplicar si hubo soft delete). */
+	Optional<SolutionEntity> findFirstByNameAndConcentrationOrderByIdAsc(String name, String concentration);
 }
