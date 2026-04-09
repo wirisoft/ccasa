@@ -9,9 +9,6 @@ import styled from '@emotion/styled'
 // Component Imports
 import MaterioLogo from '@core/svg/Logo'
 
-// Config Imports
-import themeConfig from '@configs/themeConfig'
-
 type LogoTextProps = {
   color?: CSSProperties['color']
 }
@@ -37,7 +34,7 @@ const Logo = ({ color, variant = 'dark' }: LogoProps) => {
   return (
     <div className='flex items-center min-bs-[24px]'>
       <MaterioLogo />
-      <LogoText color={color ?? (isLight ? '#FFFFFF' : undefined)}>{themeConfig.templateName}</LogoText>
+      <LogoText color={color ?? (isLight ? '#FFFFFF' : undefined)}>BSA Lab</LogoText>
     </div>
   )
 }
