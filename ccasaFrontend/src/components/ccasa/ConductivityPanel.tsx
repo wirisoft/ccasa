@@ -79,9 +79,6 @@ interface CreateConductivityRequest {
 const CONDUCTIVITY_API = '/api/v1/conductivity-records'
 const LOGBOOKS_API = '/api/v1/logbooks'
 
-const FORMULA_INFO =
-  'Fórmula: mol = peso × F24/C26 → conductividad = mol × F28/D28 (µS/cm) | Rango: ~1400–1420 µS/cm'
-
 function typeLabel(t: ConductivityType | null | undefined): string {
   if (t === 'High') return 'Alta'
   if (t === 'Low') return 'Baja'
@@ -762,9 +759,25 @@ return (
               value={formObservation}
               onChange={e => setFormObservation(e.target.value)}
             />
-            <Alert severity='info' variant='outlined'>
-              {formType === 'High' ? `Alta: ${FORMULA_INFO}` : `Baja: ${FORMULA_INFO}`}
-            </Alert>
+            {formType ? (
+              <Alert severity='info' sx={{ mb: 2, fontSize: '0.82rem' }}>
+                <strong>¿Cómo funciona?</strong>
+                <br />
+                1. Ingresa el peso en gramos del KCl pesado.
+                <br />
+                2. El sistema calcula automáticamente la conductividad teórica (µS/cm).
+                <br />
+                3. Se verifica si el resultado está en el rango de aceptación (~1400–1420 µS/cm).
+                <br />
+                <br />
+                <strong>Fórmula ({formType === 'High' ? 'Alta' : 'Baja'}):</strong>{' '}
+                mol = peso × F24 / C26 → conductividad = mol × F28 / D28 (µS/cm)
+              </Alert>
+            ) : (
+              <Alert severity='info' sx={{ mb: 2, fontSize: '0.82rem' }}>
+                Selecciona el tipo de conductividad para ver la fórmula aplicada.
+              </Alert>
+            )}
           </Stack>
         </DialogContent>
         {formError ? (

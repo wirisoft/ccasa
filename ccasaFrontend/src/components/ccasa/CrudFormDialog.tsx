@@ -206,6 +206,68 @@ function buildCleanPayload(fields: CrudFieldDef[], formState: Record<string, unk
   return out
 }
 
+function getFormHelperText(title: string): string | null {
+  const t = title.toLowerCase()
+
+  if (t.includes('bitácora') || t.includes('bitacora')) {
+    return 'Define el código único y el nombre de la bitácora. El código no se puede repetir.'
+  }
+
+  if (t.includes('folio')) {
+    return 'Selecciona la bitácora y el bloque al que pertenece este folio. El número de folio debe ser único dentro del bloque.'
+  }
+
+  if (t.includes('reactivo')) {
+    return 'Registra el nombre del reactivo. Puedes agregar descripción y unidad de medida.'
+  }
+
+  if (t.includes('lote')) {
+    return 'Asocia este lote a un reactivo existente e ingresa el código de lote.'
+  }
+
+  if (t.includes('solución') || t.includes('solucion')) {
+    return 'Define el nombre y la concentración de la solución.'
+  }
+
+  if (t.includes('insumo')) {
+    return 'Registra el nombre y descripción del insumo.'
+  }
+
+  if (t.includes('frasco')) {
+    return 'Selecciona el reactivo y define las cantidades inicial y actual en gramos. La cantidad actual no puede ser mayor a la inicial.'
+  }
+
+  if (t.includes('equipo')) {
+    return 'Define el tipo y la denominación del equipo para su identificación en el laboratorio.'
+  }
+
+  if (t.includes('parámetro') || t.includes('parametro')) {
+    return 'Los parámetros de referencia afectan directamente los cálculos de conductividad. Modifícalos con precaución.'
+  }
+
+  if (t.includes('usuario') || t.includes('empleado')) {
+    return 'Completa todos los campos obligatorios. La contraseña solo es necesaria al crear un usuario nuevo.'
+  }
+
+  if (t.includes('alerta')) {
+    return 'Registra el tipo, mensaje y estado inicial de la alerta.'
+  }
+
+  if (t.includes('firma')) {
+    return 'Selecciona el tipo de firma y la entrada a la que corresponde.'
+  }
+
+  if (t.includes('entrada')) {
+    return 'Selecciona la bitácora a la que pertenece esta entrada.'
+  }
+
+  if (t.includes('conductividad')) {
+    return 'Solo necesitas el tipo y el peso. El sistema calcula automáticamente la conductividad teórica.'
+  }
+
+  return null
+}
+
 const CrudFormDialog = ({
   open,
   onClose,
@@ -341,6 +403,8 @@ const CrudFormDialog = ({
 
   const primaryLabel = isEditMode ? 'Actualizar' : 'Crear'
 
+  const helperText = getFormHelperText(title)
+
   return (
     <Dialog
       open={open}
@@ -352,6 +416,11 @@ const CrudFormDialog = ({
       <DialogTitle sx={{ borderBottom: '1px solid', borderColor: 'divider', pb: 3 }}>{title}</DialogTitle>
       <form onSubmit={e => void handleSubmit(e)} noValidate>
         <DialogContent sx={{ pt: '24px !important' }}>
+          {helperText ? (
+            <Alert severity='info' variant='outlined' sx={{ mb: 2, fontSize: '0.82rem' }}>
+              {helperText}
+            </Alert>
+          ) : null}
           {error ? (
             <Alert severity='error' className='mbe-4'>
               {error}
