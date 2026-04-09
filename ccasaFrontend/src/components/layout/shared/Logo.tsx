@@ -36,7 +36,7 @@ const Logo = ({ color, variant = 'dark' }: LogoProps) => {
 
   return (
     <div className='flex items-center min-bs-[24px]'>
-      <MaterioLogo className={`text-[22px] ${isLight ? 'text-white' : 'text-primary'}`} />
+      <MaterioLogo />
       <LogoText color={color ?? (isLight ? '#FFFFFF' : undefined)}>{themeConfig.templateName}</LogoText>
     </div>
   )

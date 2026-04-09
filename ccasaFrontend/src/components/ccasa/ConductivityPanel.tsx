@@ -3,9 +3,6 @@
 import type { ChangeEvent } from 'react'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 
-import { jsPDF } from 'jspdf'
-import autoTable from 'jspdf-autotable'
-
 import Alert from '@mui/material/Alert'
 import Box from '@mui/material/Box'
 import Button from '@mui/material/Button'
@@ -38,60 +35,87 @@ import TextField from '@mui/material/TextField'
 import Tooltip from '@mui/material/Tooltip'
 import Typography from '@mui/material/Typography'
 
-import CrudDeleteDialog from '@components/ccasa/CrudDeleteDialog'
 import { useAuth } from '@/contexts/AuthContext'
-import { useCrudOperations } from '@/hooks/ccasa/useCrudOperations'
-import { apiFetch } from '@/lib/ccasa/api'
-import type { CrudResponseDTO } from '@/lib/ccasa/types'
+import { apiFetch, getApiBaseUrl } from '@/lib/ccasa/api'
+import type { LogbookDTO } from '@/lib/ccasa/types'
 
-const API_PATH = '/api/v1/entry-conductivity'
-const ENTRIES_PATH = '/api/v1/entries'
+type ConductivityType = 'High' | 'Low'
+type EntryStatus = 'Draft' | 'Signed' | 'Locked'
 
-type ConductivityTypeValue = 'High' | 'Low'
-
-function typeLabel(raw: unknown): string {
-  if (raw === 'High') return 'Alta'
-  if (raw === 'Low') return 'Baja'
-
-  return String(raw ?? '')
+interface ConductivityRecord {
+  conductivityId: number
+  entryId: number | null
+  displayFolio: string | null
+  type: ConductivityType
+  weightGrams: number
+  referenceUScm: number | null
+  referenceMol: number | null
+  calculatedMol: number | null
+  referenceStandardUScm: number | null
+  calculatedValue: number | null
+  inRange: boolean | null
+  recordedAt: string | null
+  preparationTime: string | null
+  observation: string | null
+  status: EntryStatus | null
+  createdByUserId: number | null
+  createdByName: string | null
+  createdByNomenclature: string | null
+  reviewerUserId: number | null
+  reviewerName: string | null
+  reviewerNomenclature: string | null
+  reviewedAt: string | null
 }
 
-function formatMol(v: unknown): string {
-  if (v === null || v === undefined || v === '') return '—'
-  const n = typeof v === 'number' ? v : Number(v)
-
-  if (Number.isNaN(n)) return '—'
-
-  return n.toFixed(4)
+interface CreateConductivityRequest {
+  type: ConductivityType
+  weightGrams: number
+  logbookId?: number | null
+  recordedAt?: string | null
+  preparationTime?: string | null
+  observation?: string | null
 }
 
-function formatConductivity(v: unknown): string {
-  if (v === null || v === undefined || v === '') return '—'
-  const n = typeof v === 'number' ? v : Number(v)
+const CONDUCTIVITY_API = '/api/v1/conductivity-records'
+const LOGBOOKS_API = '/api/v1/logbooks'
 
-  if (Number.isNaN(n)) return '—'
+const FORMULA_INFO =
+  'Fórmula: mol = peso × F24/C26 → conductividad = mol × F28/D28 (µS/cm) | Rango: ~1400–1420 µS/cm'
 
-  return n.toFixed(2)
+function typeLabel(t: ConductivityType | null | undefined): string {
+  if (t === 'High') return 'Alta'
+  if (t === 'Low') return 'Baja'
+  
+return String(t ?? '')
 }
 
-function formatDateDdMmYyyy(iso: unknown): string {
+function formatWeight(v: number | null | undefined): string {
+  if (v == null || Number.isNaN(Number(v))) return '—'
+  
+return Number(v).toFixed(4)
+}
+
+function formatConductivityZero(v: number | null | undefined): string {
+  if (v == null || Number.isNaN(Number(v))) return '—'
+  
+return Math.round(Number(v)).toString()
+}
+
+function formatDateDdMmYyyy(iso: string | null | undefined): string {
   if (iso == null || iso === '') return '—'
   const s = String(iso)
-
-  if (!/^\d{4}-\d{2}-\d{2}/.test(s) && !s.includes('T')) return s
-
   const d = new Date(s)
 
   if (Number.isNaN(d.getTime())) return '—'
-
   const day = String(d.getUTCDate()).padStart(2, '0')
   const month = String(d.getUTCMonth() + 1).padStart(2, '0')
   const year = d.getUTCFullYear()
 
-  return `${day}/${month}/${year}`
+  
+return `${day}/${month}/${year}`
 }
 
-function inRangeChip(inRange: unknown) {
+function inRangeChip(inRange: boolean | null | undefined) {
   if (inRange === true) {
     return <Chip size='small' color='success' label='Sí' />
   }
@@ -100,230 +124,323 @@ function inRangeChip(inRange: unknown) {
     return <Chip size='small' color='error' label='No' />
   }
 
-  return <Chip size='small' variant='outlined' label='—' />
+  
+return <Chip size='small' variant='outlined' label='—' />
 }
 
-function rowSearchText(row: CrudResponseDTO): string {
-  const v = row.values ?? {}
-  const ir = v.inRange
+function statusChip(status: EntryStatus | null | undefined) {
+  if (status === 'Draft') {
+    return <Chip size='small' color='default' label='Borrador' />
+  }
 
-  const rangeTxt = ir === true ? 'sí' : ir === false ? 'no' : ''
+  if (status === 'Signed') {
+    return <Chip size='small' color='warning' label='Firmado' />
+  }
 
-  const parts = [
-    typeLabel(v.type),
-    v.weightGrams != null ? String(v.weightGrams) : '',
-    formatMol(v.calculatedMol),
-    formatConductivity(v.calculatedValue),
-    rangeTxt,
-    formatDateDdMmYyyy(v.autoDate),
-    v.entryId != null ? String(v.entryId) : ''
-  ]
+  if (status === 'Locked') {
+    return <Chip size='small' color='success' label='Aprobado' />
+  }
 
-  return parts.join(' ').toLowerCase()
+  
+return <Chip size='small' variant='outlined' label='—' />
+}
+
+function recordMatchesSearch(record: ConductivityRecord, q: string): boolean {
+  if (!q) return true
+  const nq = q.trim().toLowerCase()
+  const folio = (record.displayFolio ?? '').toLowerCase()
+  const tipo = typeLabel(record.type).toLowerCase()
+  const creador = (record.createdByName ?? '').toLowerCase()
+  const revisor = (record.reviewerName ?? '').toLowerCase()
+
+  
+return (
+    folio.includes(nq) ||
+    tipo.includes(nq) ||
+    creador.includes(nq) ||
+    revisor.includes(nq)
+  )
+}
+
+function buildListQuery(
+  filterType: string,
+  filterStatus: string,
+  filterFromDate: string,
+  filterToDate: string
+): string {
+  const params = new URLSearchParams()
+
+  if (filterType === 'High' || filterType === 'Low') {
+    params.set('type', filterType)
+  }
+
+  if (filterStatus === 'Draft' || filterStatus === 'Signed' || filterStatus === 'Locked') {
+    params.set('status', filterStatus)
+  }
+
+  if (filterFromDate) {
+    params.set('fromDate', filterFromDate)
+  }
+
+  if (filterToDate) {
+    params.set('toDate', filterToDate)
+  }
+
+  const qs = params.toString()
+
+  
+return qs ? `${CONDUCTIVITY_API}?${qs}` : CONDUCTIVITY_API
 }
 
 const ConductivityPanel = () => {
   const { token } = useAuth()
-  const { loading: crudLoading, error: crudError, create, update, remove, clearError } = useCrudOperations()
 
-  const [rows, setRows] = useState<CrudResponseDTO[] | null>(null)
-  const [loadError, setLoadError] = useState<string | null>(null)
-  const [searchQuery, setSearchQuery] = useState('')
+  const [records, setRecords] = useState<ConductivityRecord[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const [search, setSearch] = useState('')
   const [page, setPage] = useState(0)
   const [rowsPerPage, setRowsPerPage] = useState(10)
+  const [dialogOpen, setDialogOpen] = useState(false)
+  const [reviewing, setReviewing] = useState<number | null>(null)
+  const [submitting, setSubmitting] = useState(false)
 
-  const [formOpen, setFormOpen] = useState(false)
-  const [editingRow, setEditingRow] = useState<CrudResponseDTO | null>(null)
-  const [formType, setFormType] = useState<ConductivityTypeValue | ''>('')
+  /** Filtros en la barra (UI); se aplican al servidor solo al pulsar Buscar. */
+  const [filterType, setFilterType] = useState('')
+  const [filterStatus, setFilterStatus] = useState('')
+  const [filterFromDate, setFilterFromDate] = useState('')
+  const [filterToDate, setFilterToDate] = useState('')
+
+
+  /** Filtros ya enviados al backend (incluye carga inicial vacía). */
+  const [appliedFilters, setAppliedFilters] = useState({
+    type: '',
+    status: '',
+    fromDate: '',
+    toDate: ''
+  })
+
+  const [formType, setFormType] = useState<ConductivityType>('High')
   const [formWeight, setFormWeight] = useState('')
-  const [formEntryId, setFormEntryId] = useState<number | ''>('')
-
-  const [entryOptions, setEntryOptions] = useState<CrudResponseDTO[]>([])
-  const [entriesLoadError, setEntriesLoadError] = useState<string | null>(null)
-
-  const [deleteOpen, setDeleteOpen] = useState(false)
-  const [deletingRow, setDeletingRow] = useState<CrudResponseDTO | null>(null)
+  const [formPreparationTime, setFormPreparationTime] = useState('')
+  const [formObservation, setFormObservation] = useState('')
+  const [logbooks, setLogbooks] = useState<LogbookDTO[]>([])
+  const [formLogbookId, setFormLogbookId] = useState('')
 
   const [snackbar, setSnackbar] = useState<string | null>(null)
+  const [snackbarSeverity, setSnackbarSeverity] = useState<'success' | 'error'>('success')
 
-  const fetchRows = useCallback(async () => {
+  const fetchRecords = useCallback(async () => {
+    if (!token) {
+      setLoading(false)
+      
+return
+    }
+
+    setLoading(true)
+    setError(null)
+
+    try {
+      const url = buildListQuery(
+        appliedFilters.type,
+        appliedFilters.status,
+        appliedFilters.fromDate,
+        appliedFilters.toDate
+      )
+
+      const data = await apiFetch<ConductivityRecord[]>(url)
+
+      setRecords(Array.isArray(data) ? data : [])
+    } catch (e) {
+      setRecords([])
+      setError(e instanceof Error ? e.message : 'Error al cargar registros')
+    } finally {
+      setLoading(false)
+    }
+  }, [token, appliedFilters])
+
+  const fetchLogbooks = useCallback(async () => {
     if (!token) {
       return
     }
 
-    setLoadError(null)
-
     try {
-      const data = await apiFetch<CrudResponseDTO[]>(API_PATH)
+      const data = await apiFetch<LogbookDTO[]>(LOGBOOKS_API)
 
-      setRows(Array.isArray(data) ? data : [])
-    } catch (e) {
-      setRows([])
-      setLoadError(e instanceof Error ? e.message : 'Error al cargar datos')
+      setLogbooks(Array.isArray(data) ? data : [])
+    } catch {
+      setLogbooks([])
     }
   }, [token])
 
   useEffect(() => {
-    void fetchRows()
-  }, [fetchRows])
-
-  const loadEntries = useCallback(async () => {
-    if (!token) {
-      return
-    }
-
-    setEntriesLoadError(null)
-
-    try {
-      const data = await apiFetch<CrudResponseDTO[]>(ENTRIES_PATH)
-
-      setEntryOptions(Array.isArray(data) ? data : [])
-    } catch (e) {
-      setEntryOptions([])
-      setEntriesLoadError(e instanceof Error ? e.message : 'Error al cargar entradas')
-    }
-  }, [token])
+    void fetchLogbooks()
+  }, [fetchLogbooks])
 
   useEffect(() => {
-    if (formOpen) {
-      void loadEntries()
-    }
-  }, [formOpen, loadEntries])
+    void fetchRecords()
+  }, [fetchRecords])
 
-  const filteredRows = useMemo(() => {
-    if (!rows) {
-      return []
-    }
+  const filteredRecords = useMemo(() => {
+    return records.filter(r => recordMatchesSearch(r, search))
+  }, [records, search])
 
-    const q = searchQuery.trim().toLowerCase()
-
-    if (!q) {
-      return rows
-    }
-
-    return rows.filter(row => rowSearchText(row).includes(q))
-  }, [rows, searchQuery])
-
-  const paginatedRows = useMemo(() => {
+  const paginatedRecords = useMemo(() => {
     const start = page * rowsPerPage
 
-    return filteredRows.slice(start, start + rowsPerPage)
-  }, [filteredRows, page, rowsPerPage])
+    
+return filteredRecords.slice(start, start + rowsPerPage)
+  }, [filteredRecords, page, rowsPerPage])
 
   useEffect(() => {
     setPage(0)
-  }, [searchQuery])
+  }, [search])
 
-  const handleOpenCreate = useCallback(() => {
-    clearError()
-    setEditingRow(null)
-    setFormType('')
+  const handleSearchFilters = useCallback(() => {
+    setPage(0)
+    setAppliedFilters({
+      type: filterType,
+      status: filterStatus,
+      fromDate: filterFromDate,
+      toDate: filterToDate
+    })
+  }, [filterFromDate, filterStatus, filterToDate, filterType])
+
+  const handleOpenDialog = useCallback(() => {
+    setFormType('High')
     setFormWeight('')
-    setFormEntryId('')
-    setFormOpen(true)
-  }, [clearError])
+    setFormPreparationTime('')
+    setFormObservation('')
 
-  const handleOpenEdit = useCallback(
-    (row: CrudResponseDTO) => {
-      clearError()
-      setEditingRow(row)
-      const v = row.values ?? {}
-      const t = v.type === 'High' || v.type === 'Low' ? v.type : ''
-
-      setFormType(t)
-      setFormWeight(v.weightGrams != null ? String(v.weightGrams) : '')
-      const eid = v.entryId
-
-      setFormEntryId(typeof eid === 'number' ? eid : eid != null ? Number(eid) : '')
-      setFormOpen(true)
-    },
-    [clearError]
-  )
-
-  const handleCloseForm = useCallback(() => {
-    if (crudLoading) {
-      return
-    }
-
-    clearError()
-    setFormOpen(false)
-    setEditingRow(null)
-  }, [clearError, crudLoading])
-
-  const handleSave = useCallback(async () => {
-    if (formType === '' || formEntryId === '' || formWeight.trim() === '') {
-      return
-    }
-
-    const weightNum = Number(formWeight)
-
-    if (Number.isNaN(weightNum)) {
-      return
-    }
-
-    const values: Record<string, unknown> = {
-      type: formType,
-      weightGrams: weightNum,
-      entryId: formEntryId
-    }
-
-    if (editingRow) {
-      const res = await update(API_PATH, editingRow.id, values)
-
-      if (res) {
-        setFormOpen(false)
-        setEditingRow(null)
-        clearError()
-        setSnackbar('Registro actualizado correctamente')
-        void fetchRows()
-      }
+    if (logbooks.length === 1) {
+      setFormLogbookId(String(logbooks[0].id))
     } else {
-      const res = await create(API_PATH, values)
+      setFormLogbookId('')
+    }
 
-      if (res) {
-        setFormOpen(false)
-        setEditingRow(null)
-        clearError()
-        setSnackbar('Registro creado correctamente')
-        void fetchRows()
+    setDialogOpen(true)
+  }, [logbooks])
+
+  const handleCloseDialog = useCallback(() => {
+    if (submitting) {
+      return
+    }
+
+    setDialogOpen(false)
+  }, [submitting])
+
+  const handleCreate = useCallback(async () => {
+    if (formWeight.trim() === '') {
+      return
+    }
+
+    const w = parseFloat(formWeight)
+
+    if (Number.isNaN(w) || w <= 0) {
+      return
+    }
+
+    setSubmitting(true)
+
+    try {
+      const body: CreateConductivityRequest = {
+        type: formType,
+        weightGrams: w,
+        preparationTime: formPreparationTime.trim() || null,
+        observation: formObservation.trim() || null
       }
-    }
-  }, [clearError, create, editingRow, fetchRows, formEntryId, formType, formWeight, update])
 
-  const handleOpenDelete = useCallback(
-    (row: CrudResponseDTO) => {
-      clearError()
-      setDeletingRow(row)
-      setDeleteOpen(true)
+      if (formLogbookId !== '') {
+        body.logbookId = Number(formLogbookId)
+      } else {
+        body.logbookId = null
+      }
+
+      await apiFetch<ConductivityRecord>(CONDUCTIVITY_API, {
+        method: 'POST',
+        body: JSON.stringify(body)
+      })
+      setDialogOpen(false)
+      setSnackbarSeverity('success')
+      setSnackbar('Registro creado correctamente')
+      void fetchRecords()
+    } catch (e) {
+      setSnackbarSeverity('error')
+      setSnackbar(e instanceof Error ? e.message : 'Error al crear registro')
+    } finally {
+      setSubmitting(false)
+    }
+  }, [
+    fetchRecords,
+    formLogbookId,
+    formObservation,
+    formPreparationTime,
+    formType,
+    formWeight
+  ])
+
+  const handleDownloadPdf = useCallback(async (id: number) => {
+    const authToken = typeof window !== 'undefined' ? localStorage.getItem('ccasa_access_token') : null
+
+    try {
+      const res = await fetch(`${getApiBaseUrl()}/api/v1/conductivity-records/${id}/pdf`, {
+        headers: authToken ? { Authorization: `Bearer ${authToken}` } : {}
+      })
+
+      if (!res.ok) {
+        let msg = res.statusText
+
+        try {
+          const errJson = (await res.json()) as { message?: string; error?: string }
+
+          msg = errJson.message || errJson.error || msg
+        } catch {
+          /* ignore */
+        }
+
+        setSnackbarSeverity('error')
+        setSnackbar(msg || `Error HTTP ${res.status}`)
+        
+return
+      }
+
+      const blob = await res.blob()
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+
+      a.href = url
+      a.download = `conductividad-${id}.pdf`
+      a.click()
+      URL.revokeObjectURL(url)
+      setSnackbarSeverity('success')
+      setSnackbar('PDF descargado')
+    } catch (e) {
+      setSnackbarSeverity('error')
+      setSnackbar(e instanceof Error ? e.message : 'Error al descargar PDF')
+    }
+  }, [])
+
+  const handleReview = useCallback(
+    async (id: number) => {
+      setReviewing(id)
+
+      try {
+        await apiFetch<ConductivityRecord>(`${CONDUCTIVITY_API}/${id}/review`, {
+          method: 'POST',
+          body: JSON.stringify({})
+        })
+        setSnackbarSeverity('success')
+        setSnackbar('Registro revisado correctamente')
+        void fetchRecords()
+      } catch (e) {
+        setSnackbarSeverity('error')
+        setSnackbar(e instanceof Error ? e.message : 'Error al revisar')
+      } finally {
+        setReviewing(null)
+      }
     },
-    [clearError]
+    [fetchRecords]
   )
-
-  const handleCloseDelete = useCallback(() => {
-    if (crudLoading) {
-      return
-    }
-
-    clearError()
-    setDeleteOpen(false)
-    setDeletingRow(null)
-  }, [clearError, crudLoading])
-
-  const handleConfirmDelete = useCallback(async () => {
-    if (!deletingRow) {
-      return
-    }
-
-    const ok = await remove(API_PATH, deletingRow.id)
-
-    if (ok) {
-      setDeleteOpen(false)
-      setDeletingRow(null)
-      clearError()
-      setSnackbar('Registro eliminado correctamente')
-      void fetchRows()
-    }
-  }, [clearError, deletingRow, fetchRows, remove])
 
   const handleChangePage = useCallback((_event: unknown, newPage: number) => {
     setPage(newPage)
@@ -335,217 +452,125 @@ const ConductivityPanel = () => {
   }, [])
 
   const formValid =
-    formType !== '' && formEntryId !== '' && formWeight.trim() !== '' && !Number.isNaN(Number(formWeight))
-
-  const formulaAlertText =
-    formType === 'High'
-      ? 'Fórmula Alta: mol = peso × F24 / C26 → conductividad = mol × F28 / D28 (µS/cm) | Rango de aceptación: ~1400–1420 µS/cm'
-      : formType === 'Low'
-        ? 'Fórmula Baja: mol = peso × F24 / C26 → conductividad = mol × F28 / D28 (µS/cm) | Rango de aceptación: ~1400–1420 µS/cm'
-        : null
-
-  const handleExportPdf = useCallback(() => {
-    if (!rows || rows.length === 0) {
-      return
-    }
-
-    const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' })
-    const pageWidth = doc.internal.pageSize.getWidth()
-
-    doc.setFontSize(14)
-    doc.setFont('helvetica', 'bold')
-    doc.text('Bitácoras Servicios Ambientales', pageWidth / 2, 15, { align: 'center' })
-
-    doc.setFontSize(10)
-    doc.setFont('helvetica', 'normal')
-    doc.text('Registros de Conductividad (KCl)', pageWidth / 2, 22, { align: 'center' })
-
-    const now = new Date()
-
-    const fechaGen = now.toLocaleDateString('es-MX', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    })
-
-    doc.setFontSize(8)
-    doc.text(`Generado: ${fechaGen}`, 14, 29)
-
-    doc.setFontSize(8)
-    doc.setFont('helvetica', 'bold')
-    doc.text('Fórmulas aplicadas (KCl Alta y Baja):', 14, 36)
-    doc.setFont('helvetica', 'normal')
-    doc.text('mol = peso(g) × F24 / C26', 14, 41)
-    doc.text('conductividad(µS/cm) = mol × F28 / D28', 14, 46)
-    doc.text('Rango de aceptación teórico: ~1400–1420 µS/cm', 14, 51)
-
-    const tableRows = rows.map((item, idx) => {
-      const v = item.values ?? {}
-      const tipo = v.type === 'High' ? 'Alta' : v.type === 'Low' ? 'Baja' : String(v.type ?? '—')
-      const peso = v.weightGrams != null ? Number(v.weightGrams).toFixed(4) : '—'
-      const mol = v.calculatedMol != null ? Number(v.calculatedMol).toFixed(6) : '—'
-      const cond = v.calculatedValue != null ? Number(v.calculatedValue).toFixed(2) : '—'
-      const rango = v.inRange === true ? 'Sí' : v.inRange === false ? 'No' : '—'
-
-      const fecha = v.autoDate
-        ? new Date(String(v.autoDate)).toLocaleDateString('es-MX', {
-            day: '2-digit',
-            month: '2-digit',
-            year: 'numeric'
-          })
-        : '—'
-
-      const entrada = v.entryId != null ? `#${v.entryId}` : '—'
-      const creadoPor = v.createdByUserId != null ? `Usuario #${v.createdByUserId}` : '—'
-
-      return [idx + 1, tipo, peso, mol, cond, rango, fecha, entrada, creadoPor]
-    })
-
-    autoTable(doc, {
-      startY: 56,
-      head: [
-        [
-          '#',
-          'Tipo',
-          'Peso (g)',
-          'Mol calculado',
-          'Conductividad (µS/cm)',
-          '¿En rango?',
-          'Fecha',
-          'Entrada',
-          'Creado por'
-        ]
-      ],
-      body: tableRows,
-      styles: { fontSize: 7, cellPadding: 2 },
-      headStyles: {
-        fillColor: [21, 101, 192],
-        textColor: 255,
-        fontStyle: 'bold',
-        fontSize: 7
-      },
-      alternateRowStyles: { fillColor: [245, 247, 250] },
-      columnStyles: {
-        0: { cellWidth: 8 },
-        4: { cellWidth: 32 }
-      },
-      didParseCell: data => {
-        if (data.section === 'body' && data.column.index === 5) {
-          if (data.cell.raw === 'Sí') {
-            data.cell.styles.textColor = [46, 125, 50]
-            data.cell.styles.fontStyle = 'bold'
-          } else if (data.cell.raw === 'No') {
-            data.cell.styles.textColor = [211, 47, 47]
-            data.cell.styles.fontStyle = 'bold'
-          }
-        }
-      }
-    })
-
-    const pageCount = (doc as unknown as { internal: { getNumberOfPages: () => number } }).internal.getNumberOfPages()
-
-    for (let i = 1; i <= pageCount; i++) {
-      doc.setPage(i)
-      doc.setFontSize(7)
-      doc.setFont('helvetica', 'normal')
-      doc.text(
-        `Página ${i} de ${pageCount}`,
-        pageWidth / 2,
-        doc.internal.pageSize.getHeight() - 8,
-        { align: 'center' }
-      )
-    }
-
-    doc.save(`conductividad_${now.toISOString().slice(0, 10)}.pdf`)
-  }, [rows])
-
-  const loadingList = rows === null
-  const dialogTitle = editingRow ? 'Editar registro' : 'Nuevo registro'
+    formWeight.trim() !== '' && !Number.isNaN(parseFloat(formWeight)) && parseFloat(formWeight) > 0
 
   return (
     <>
       <Card variant='outlined'>
-        <CardHeader title='Registros' titleTypographyProps={{ variant: 'subtitle1' }} />
+        <CardHeader title='Registros de conductividad' titleTypographyProps={{ variant: 'subtitle1' }} />
         <CardContent>
-          {loadingList ? (
+          <Stack spacing={2} sx={{ mb: 2 }}>
+            <Stack direction='row' flexWrap='wrap' useFlexGap spacing={1} alignItems='center'>
+              <TextField
+                size='small'
+                placeholder='Buscar en tabla…'
+                value={search}
+                onChange={e => setSearch(e.target.value)}
+                sx={{ minWidth: 200, flex: '1 1 180px' }}
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position='start'>
+                      <Box component='i' className='ri-search-line' sx={{ fontSize: 18, opacity: 0.5 }} />
+                    </InputAdornment>
+                  ),
+                  ...(search
+                    ? {
+                        endAdornment: (
+                          <InputAdornment position='end'>
+                            <IconButton size='small' onClick={() => setSearch('')} aria-label='Limpiar búsqueda'>
+                              <Box component='i' className='ri-close-line' sx={{ fontSize: 16 }} />
+                            </IconButton>
+                          </InputAdornment>
+                        )
+                      }
+                    : {})
+                }}
+              />
+              <FormControl size='small' sx={{ minWidth: 120 }}>
+                <InputLabel id='filter-type-label'>Tipo</InputLabel>
+                <Select
+                  labelId='filter-type-label'
+                  label='Tipo'
+                  value={filterType}
+                  onChange={(e: SelectChangeEvent) => setFilterType(e.target.value)}
+                >
+                  <MenuItem value=''>Todos</MenuItem>
+                  <MenuItem value='High'>Alta</MenuItem>
+                  <MenuItem value='Low'>Baja</MenuItem>
+                </Select>
+              </FormControl>
+              <FormControl size='small' sx={{ minWidth: 140 }}>
+                <InputLabel id='filter-status-label'>Estado</InputLabel>
+                <Select
+                  labelId='filter-status-label'
+                  label='Estado'
+                  value={filterStatus}
+                  onChange={(e: SelectChangeEvent) => setFilterStatus(e.target.value)}
+                >
+                  <MenuItem value=''>Todos</MenuItem>
+                  <MenuItem value='Draft'>Borrador</MenuItem>
+                  <MenuItem value='Signed'>Firmado</MenuItem>
+                  <MenuItem value='Locked'>Aprobado</MenuItem>
+                </Select>
+              </FormControl>
+              <TextField
+                size='small'
+                type='date'
+                label='Desde'
+                InputLabelProps={{ shrink: true }}
+                value={filterFromDate}
+                onChange={e => setFilterFromDate(e.target.value)}
+                sx={{ width: 150 }}
+              />
+              <TextField
+                size='small'
+                type='date'
+                label='Hasta'
+                InputLabelProps={{ shrink: true }}
+                value={filterToDate}
+                onChange={e => setFilterToDate(e.target.value)}
+                sx={{ width: 150 }}
+              />
+              <Button variant='outlined' startIcon={<Box component='i' className='ri-filter-3-line' />} onClick={handleSearchFilters}>
+                Buscar
+              </Button>
+              <Button
+                variant='contained'
+                startIcon={<Box component='i' className='ri-add-line' />}
+                onClick={handleOpenDialog}
+                disabled={!token}
+              >
+                Nuevo registro
+              </Button>
+            </Stack>
+            <Typography variant='body2' color='text.secondary'>
+              {search.trim()
+                ? `${filteredRecords.length} de ${records.length} registro${records.length === 1 ? '' : 's'}`
+                : `${records.length} registro${records.length === 1 ? '' : 's'}`}
+            </Typography>
+          </Stack>
+
+          {error ? (
+            <Alert severity='error' sx={{ mb: 2 }}>
+              {error}
+            </Alert>
+          ) : null}
+
+          {loading ? (
             <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
               <CircularProgress size={28} />
             </Box>
           ) : null}
-          {loadError ? (
-            <Alert severity='error' sx={{ mb: 2 }}>
-              {loadError}
-            </Alert>
-          ) : null}
-          {!loadingList && !loadError && rows ? (
+
+          {!loading && !error ? (
             <>
-              <Stack
-                direction='row'
-                justifyContent='space-between'
-                alignItems='center'
-                flexWrap='wrap'
-                useFlexGap
-                spacing={1}
-                sx={{ mb: 2 }}
-              >
+              {records.length === 0 ? (
                 <Typography variant='body2' color='text.secondary'>
-                  {searchQuery.trim()
-                    ? `${filteredRows.length} de ${rows.length} registro${rows.length === 1 ? '' : 's'}`
-                    : `${rows.length} registro${rows.length === 1 ? '' : 's'}`}
+                  No hay registros.
                 </Typography>
-                <Stack direction='row' spacing={1} alignItems='center'>
-                  <TextField
-                    size='small'
-                    placeholder='Buscar...'
-                    value={searchQuery}
-                    onChange={e => setSearchQuery(e.target.value)}
-                    sx={{ minWidth: 220 }}
-                    InputProps={{
-                      startAdornment: (
-                        <InputAdornment position='start'>
-                          <Box component='i' className='ri-search-line' sx={{ fontSize: 18, opacity: 0.5 }} />
-                        </InputAdornment>
-                      ),
-                      ...(searchQuery
-                        ? {
-                            endAdornment: (
-                              <InputAdornment position='end'>
-                                <IconButton size='small' onClick={() => setSearchQuery('')} aria-label='Limpiar búsqueda'>
-                                  <Box component='i' className='ri-close-line' sx={{ fontSize: 16 }} />
-                                </IconButton>
-                              </InputAdornment>
-                            )
-                          }
-                        : {})
-                    }}
-                  />
-                  <Button
-                    variant='contained'
-                    startIcon={<Box component='i' className='ri-add-line' />}
-                    onClick={handleOpenCreate}
-                    disabled={!token}
-                  >
-                    Nuevo registro
-                  </Button>
-                  <Button
-                    variant='outlined'
-                    startIcon={<Box component='i' className='ri-file-pdf-2-line' />}
-                    onClick={handleExportPdf}
-                    disabled={!rows || rows.length === 0}
-                  >
-                    Exportar PDF
-                  </Button>
-                </Stack>
-              </Stack>
-              {rows.length === 0 ? (
+              ) : filteredRecords.length === 0 ? (
                 <Typography variant='body2' color='text.secondary'>
-                  No hay registros activos.
-                </Typography>
-              ) : filteredRows.length === 0 ? (
-                <Typography variant='body2' color='text.secondary'>
-                  No se encontraron registros que coincidan con la búsqueda.
+                  No hay coincidencias con la búsqueda.
                 </Typography>
               ) : (
                 <>
@@ -553,57 +578,66 @@ const ConductivityPanel = () => {
                     <Table size='small' stickyHeader>
                       <TableHead>
                         <TableRow>
-                          <TableCell sx={{ width: 56 }}>#</TableCell>
+                          <TableCell sx={{ width: 48 }}>#</TableCell>
+                          <TableCell>Folio</TableCell>
                           <TableCell>Tipo</TableCell>
                           <TableCell>Peso (g)</TableCell>
-                          <TableCell>Mol calculado</TableCell>
                           <TableCell>Conductividad (µS/cm)</TableCell>
                           <TableCell>¿En rango?</TableCell>
+                          <TableCell>Estado</TableCell>
+                          <TableCell>Creado por</TableCell>
+                          <TableCell>Revisor</TableCell>
                           <TableCell>Fecha</TableCell>
-                          <TableCell>Entrada ID</TableCell>
                           <TableCell align='center'>Acciones</TableCell>
                         </TableRow>
                       </TableHead>
                       <TableBody>
-                        {paginatedRows.map((row, index) => {
-                          const v = row.values ?? {}
+                        {paginatedRecords.map((row, index) => {
+                          const createdLabel =
+                            row.createdByName?.trim() ||
+                            (row.createdByNomenclature ? row.createdByNomenclature : '—')
 
-                          return (
-                            <TableRow key={row.id} hover>
-                              <TableCell sx={{ color: 'text.secondary' }}>{page * rowsPerPage + index + 1}</TableCell>
-                              <TableCell>{typeLabel(v.type)}</TableCell>
-                              <TableCell>{v.weightGrams != null ? String(v.weightGrams) : '—'}</TableCell>
-                              <TableCell>{formatMol(v.calculatedMol)}</TableCell>
-                              <TableCell>{formatConductivity(v.calculatedValue)}</TableCell>
-                              <TableCell>{inRangeChip(v.inRange)}</TableCell>
-                              <TableCell>{formatDateDdMmYyyy(v.autoDate)}</TableCell>
-                              <TableCell>{v.entryId != null ? String(v.entryId) : '—'}</TableCell>
+                          
+return (
+                            <TableRow key={row.conductivityId} hover>
+                              <TableCell sx={{ color: 'text.secondary' }}>
+                                {page * rowsPerPage + index + 1}
+                              </TableCell>
+                              <TableCell>{row.displayFolio ?? '—'}</TableCell>
+                              <TableCell>{typeLabel(row.type)}</TableCell>
+                              <TableCell>{formatWeight(row.weightGrams)}</TableCell>
+                              <TableCell>{formatConductivityZero(row.calculatedValue)}</TableCell>
+                              <TableCell>{inRangeChip(row.inRange)}</TableCell>
+                              <TableCell>{statusChip(row.status)}</TableCell>
+                              <TableCell>{createdLabel}</TableCell>
+                              <TableCell>{row.reviewerName ?? '—'}</TableCell>
+                              <TableCell>{formatDateDdMmYyyy(row.recordedAt)}</TableCell>
                               <TableCell align='center'>
-                                <Stack direction='row' spacing={0.5} justifyContent='flex-end'>
-                                  <Tooltip title='Editar'>
-                                    <span>
-                                      <IconButton
-                                        color='default'
-                                        aria-label='Editar'
-                                        sx={{ width: 32, height: 32 }}
-                                        onClick={() => handleOpenEdit(row)}
-                                      >
-                                        <Box component='i' className='ri-pencil-line' />
-                                      </IconButton>
-                                    </span>
+                                <Stack direction='row' spacing={0.5} justifyContent='center'>
+                                  <Tooltip title='Descargar PDF'>
+                                    <IconButton
+                                      size='small'
+                                      aria-label='PDF'
+                                      onClick={() => void handleDownloadPdf(row.conductivityId)}
+                                    >
+                                      <Box component='i' className='ri-file-pdf-line' />
+                                    </IconButton>
                                   </Tooltip>
-                                  <Tooltip title='Eliminar'>
-                                    <span>
-                                      <IconButton
-                                        color='error'
-                                        aria-label='Eliminar'
-                                        sx={{ width: 32, height: 32 }}
-                                        onClick={() => handleOpenDelete(row)}
-                                      >
-                                        <Box component='i' className='ri-delete-bin-line' />
-                                      </IconButton>
-                                    </span>
-                                  </Tooltip>
+                                  {row.status !== 'Locked' ? (
+                                    <Tooltip title='Revisar / aprobar'>
+                                      <span>
+                                        <IconButton
+                                          size='small'
+                                          color='primary'
+                                          aria-label='Revisar'
+                                          disabled={reviewing === row.conductivityId}
+                                          onClick={() => void handleReview(row.conductivityId)}
+                                        >
+                                          <Box component='i' className='ri-check-double-line' />
+                                        </IconButton>
+                                      </span>
+                                    </Tooltip>
+                                  ) : null}
                                 </Stack>
                               </TableCell>
                             </TableRow>
@@ -614,7 +648,7 @@ const ConductivityPanel = () => {
                   </TableContainer>
                   <TablePagination
                     component='div'
-                    count={filteredRows.length}
+                    count={filteredRecords.length}
                     page={page}
                     onPageChange={handleChangePage}
                     rowsPerPage={rowsPerPage}
@@ -630,35 +664,20 @@ const ConductivityPanel = () => {
         </CardContent>
       </Card>
 
-      <Dialog open={formOpen} onClose={handleCloseForm} fullWidth maxWidth='sm' PaperProps={{ sx: { borderRadius: 3 } }}>
-        <DialogTitle sx={{ borderBottom: '1px solid', borderColor: 'divider', pb: 2 }}>{dialogTitle}</DialogTitle>
+      <Dialog open={dialogOpen} onClose={handleCloseDialog} fullWidth maxWidth='sm' PaperProps={{ sx: { borderRadius: 3 } }}>
+        <DialogTitle sx={{ borderBottom: '1px solid', borderColor: 'divider', pb: 2 }}>Nuevo registro</DialogTitle>
         <DialogContent sx={{ pt: 3 }}>
-          {entriesLoadError ? (
-            <Alert severity='warning' sx={{ mb: 2 }}>
-              {entriesLoadError}
-            </Alert>
-          ) : null}
-          {crudError ? (
-            <Alert severity='error' sx={{ mb: 2 }}>
-              {crudError}
-            </Alert>
-          ) : null}
           <Stack spacing={2} sx={{ mt: 1 }}>
             <FormControl fullWidth required size='small'>
-              <InputLabel id='conductivity-type-label'>Tipo</InputLabel>
-              <Select<ConductivityTypeValue | ''>
-                labelId='conductivity-type-label'
+              <InputLabel id='form-type-label'>Tipo</InputLabel>
+              <Select<ConductivityType>
+                labelId='form-type-label'
                 label='Tipo'
                 value={formType}
-                onChange={(e: SelectChangeEvent<ConductivityTypeValue | ''>) =>
-                  setFormType(e.target.value as ConductivityTypeValue | '')
-                }
+                onChange={(e: SelectChangeEvent<ConductivityType>) => setFormType(e.target.value as ConductivityType)}
               >
-                <MenuItem value=''>
-                  <em>Seleccione…</em>
-                </MenuItem>
-                <MenuItem value='High'>Alta (KCl)</MenuItem>
-                <MenuItem value='Low'>Baja (KCl)</MenuItem>
+                <MenuItem value='High'>Alta (High)</MenuItem>
+                <MenuItem value='Low'>Baja (Low)</MenuItem>
               </Select>
             </FormControl>
             <TextField
@@ -669,64 +688,69 @@ const ConductivityPanel = () => {
               label='Peso (g)'
               value={formWeight}
               onChange={e => setFormWeight(e.target.value)}
-              inputProps={{ step: 'any' }}
+              inputProps={{ step: 0.0001, min: 0 }}
             />
-            {formulaAlertText ? (
-              <Alert severity='info' variant='outlined'>
-                {formulaAlertText}
-              </Alert>
-            ) : null}
-            <FormControl fullWidth required size='small'>
-              <InputLabel id='conductivity-entry-label'>Entrada</InputLabel>
-              <Select<number | ''>
-                labelId='conductivity-entry-label'
-                label='Entrada'
-                value={formEntryId}
-                onChange={(e: SelectChangeEvent<number | ''>) => {
-                  const val = e.target.value
-
-                  setFormEntryId(val === '' ? '' : Number(val))
-                }}
+            <FormControl fullWidth size='small'>
+              <InputLabel id='form-logbook-label'>Bitácora</InputLabel>
+              <Select
+                labelId='form-logbook-label'
+                label='Bitácora'
+                value={formLogbookId}
+                onChange={(e: SelectChangeEvent) => setFormLogbookId(e.target.value)}
               >
                 <MenuItem value=''>
-                  <em>Seleccione…</em>
+                  <em>Predeterminada (primera activa)</em>
                 </MenuItem>
-                {entryOptions.map(opt => (
-                  <MenuItem key={opt.id} value={opt.id}>
-                    {`Entrada #${opt.id}`}
+                {logbooks.map(lb => (
+                  <MenuItem key={lb.id} value={String(lb.id)}>
+                    {lb.name} (ID {lb.id})
                   </MenuItem>
                 ))}
               </Select>
             </FormControl>
+            <TextField
+              fullWidth
+              size='small'
+              type='time'
+              label='Hora de preparación'
+              InputLabelProps={{ shrink: true }}
+              value={formPreparationTime}
+              onChange={e => setFormPreparationTime(e.target.value)}
+            />
+            <TextField
+              fullWidth
+              size='small'
+              label='Observaciones'
+              multiline
+              rows={2}
+              value={formObservation}
+              onChange={e => setFormObservation(e.target.value)}
+            />
+            <Alert severity='info' variant='outlined'>
+              {formType === 'High' ? `Alta: ${FORMULA_INFO}` : `Baja: ${FORMULA_INFO}`}
+            </Alert>
           </Stack>
         </DialogContent>
         <DialogActions sx={{ borderTop: '1px solid', borderColor: 'divider', px: 3, py: 2 }}>
-          <Button variant='outlined' onClick={handleCloseForm} disabled={crudLoading}>
+          <Button variant='outlined' onClick={handleCloseDialog} disabled={submitting}>
             Cancelar
           </Button>
-          <Button variant='contained' onClick={() => void handleSave()} disabled={!formValid || crudLoading}>
-            Guardar
+          <Button variant='contained' onClick={() => void handleCreate()} disabled={!formValid || submitting}>
+            {submitting ? 'Guardando…' : 'Guardar'}
           </Button>
         </DialogActions>
       </Dialog>
 
-      <CrudDeleteDialog
-        open={deleteOpen}
-        onClose={handleCloseDelete}
-        onConfirm={handleConfirmDelete}
-        resourceLabel='registro de conductividad'
-        itemLabel={deletingRow ? `ID ${deletingRow.id}` : undefined}
-        loading={crudLoading}
-        error={crudError}
-      />
-
       <Snackbar
         open={snackbar != null}
-        autoHideDuration={3000}
+        autoHideDuration={4000}
         onClose={() => setSnackbar(null)}
-        message={snackbar ?? ''}
         anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-      />
+      >
+        <Alert onClose={() => setSnackbar(null)} severity={snackbarSeverity} sx={{ width: '100%' }}>
+          {snackbar ?? ''}
+        </Alert>
+      </Snackbar>
     </>
   )
 }
