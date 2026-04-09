@@ -11,7 +11,11 @@ const HIDDEN_COLUMNS = new Set([
   'createdByUserId',
   'updatedByUserId',
   'deletedByUserId',
-  'passwordHash'
+  'passwordHash',
+  'signatureStoragePath',
+  'signatureContentType',
+  'signatureFileName',
+  'signatureUploadedAt'
 ])
 
 const COLUMN_LABELS: Record<string, string> = {
@@ -82,7 +86,12 @@ const COLUMN_LABELS: Record<string, string> = {
   denomination: 'Denominación',
   minValue: 'Valor mínimo',
   maxValue: 'Valor máximo',
-  ruleDetail: 'Detalle de regla'
+  ruleDetail: 'Detalle de regla',
+  nomenclature: 'Nomenclatura',
+  signatureFileName: 'Archivo de firma',
+  signatureContentType: 'Tipo de archivo',
+  signatureStoragePath: 'Ruta de firma',
+  signatureUploadedAt: 'Firma subida el'
 }
 
 /** Etiquetas en español para valores de estado/enums que el backend envía en inglés. */
