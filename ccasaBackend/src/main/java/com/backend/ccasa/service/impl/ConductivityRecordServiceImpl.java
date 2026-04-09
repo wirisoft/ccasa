@@ -7,6 +7,7 @@ import com.backend.ccasa.persistence.entities.FolioEntity;
 import com.backend.ccasa.persistence.entities.LogbookEntity;
 import com.backend.ccasa.persistence.entities.UserEntity;
 import com.backend.ccasa.persistence.entities.entry.EntryConductivityEntity;
+import com.backend.ccasa.persistence.repositories.ConductivitySpecifications;
 import com.backend.ccasa.persistence.repositories.EntryConductivityRepository;
 import com.backend.ccasa.persistence.repositories.EntryRepository;
 import com.backend.ccasa.persistence.repositories.FolioBlockRepository;
@@ -164,21 +165,18 @@ private static final Font SMALL_FONT = new Font(Font.HELVETICA, 8, Font.NORMAL);
 		Long createdByUserId,
 		Long reviewerUserId
 	) {
-		String folioForQuery = normalizeBlank(folio);
-
-		if (folioForQuery == null) {
-			folioForQuery = "";
-		}
-
-		return entryConductivityRepository.searchRecords(
-			folioForQuery,
-			fromDate,
-			toDate,
-			type,
-			status,
-			createdByUserId,
-			reviewerUserId
-		)
+		return entryConductivityRepository
+			.findAll(
+				ConductivitySpecifications.search(
+					normalizeBlank(folio),
+					fromDate,
+					toDate,
+					type,
+					status,
+					createdByUserId,
+					reviewerUserId
+				)
+			)
 			.stream()
 			.map(this::toDto)
 			.toList();
