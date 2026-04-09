@@ -32,25 +32,25 @@ const tableData: TableDataType[] = [
     app: true,
     email: true,
     browser: true,
-    type: 'New for you'
+    type: 'Novedades para ti'
   },
   {
     app: true,
     email: true,
     browser: true,
-    type: 'Account activity'
+    type: 'Actividad de la cuenta'
   },
   {
     app: false,
     email: true,
     browser: true,
-    type: 'A new browser used to sign in'
+    type: 'Se usó un navegador nuevo para iniciar sesión'
   },
   {
     app: false,
     email: true,
     browser: false,
-    type: 'A new device is linked'
+    type: 'Se vinculó un dispositivo nuevo'
   }
 ]
 
@@ -61,11 +61,11 @@ const Notifications = () => {
         Próximamente: esta sección no está conectada al laboratorio.
       </Alert>
       <CardHeader
-        title='Recent Devices'
+        title='Dispositivos recientes'
         subheader={
           <>
-            We need permission from your browser to show notifications.
-            <Link className='text-primary'> Request Permission</Link>
+            Necesitamos permiso del navegador para mostrar notificaciones.
+            <Link className='text-primary'> Solicitar permiso</Link>
           </>
         }
       />
@@ -74,9 +74,9 @@ const Notifications = () => {
           <table className={tableStyles.table}>
             <thead>
               <tr>
-                <th>Type</th>
-                <th>Email</th>
-                <th>Browser</th>
+                <th>Tipo</th>
+                <th>Correo</th>
+                <th>Navegador</th>
                 <th>App</th>
               </tr>
             </thead>
@@ -101,20 +101,20 @@ const Notifications = () => {
           </table>
         </div>
         <CardContent>
-          <Typography className='mbe-6 font-medium'>When should we send you notifications?</Typography>
+          <Typography className='mbe-6 font-medium'>¿Cuándo debemos enviarte notificaciones?</Typography>
           <Grid container spacing={6}>
             <Grid item xs={12} sm={6} md={4}>
               <Select fullWidth defaultValue='online'>
-                <MenuItem value='online'>Only when I&#39;m online</MenuItem>
-                <MenuItem value='anytime'>Anytime</MenuItem>
+                <MenuItem value='online'>Solo cuando estoy en línea</MenuItem>
+                <MenuItem value='anytime'>En cualquier momento</MenuItem>
               </Select>
             </Grid>
             <Grid item xs={12} className='flex gap-4 flex-wrap'>
               <Button variant='contained' type='submit'>
-                Save Changes
+                Guardar cambios
               </Button>
               <Button variant='outlined' color='secondary' type='reset'>
-                Reset
+                Restablecer
               </Button>
             </Grid>
           </Grid>

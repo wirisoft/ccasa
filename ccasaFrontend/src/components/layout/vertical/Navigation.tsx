@@ -2,6 +2,7 @@
 
 // React Imports
 import { useRef } from 'react'
+import type { UIEvent } from 'react'
 
 // Next Imports
 import Link from 'next/link'
@@ -43,19 +44,24 @@ const Navigation = () => {
   const { isBreakpointReached, toggleVerticalNav } = useVerticalNav()
 
   // Refs
-  const shadowRef = useRef(null)
+  const shadowRef = useRef<HTMLDivElement | null>(null)
 
-  const scrollMenu = (container: any, isPerfectScrollbar: boolean) => {
-    container = isBreakpointReached || !isPerfectScrollbar ? container.target : container
+  const scrollMenu = (container: UIEvent<HTMLElement> | HTMLElement, isPerfectScrollbar: boolean) => {
+    const scrollEl: HTMLElement | null = (() => {
+      if (isBreakpointReached || !isPerfectScrollbar) {
+        const t = (container as UIEvent<HTMLElement>).target
 
-    if (shadowRef && container.scrollTop > 0) {
-      // @ts-ignore
+        return t instanceof HTMLElement ? t : null
+      }
+
+      return container as HTMLElement
+    })()
+
+    if (shadowRef.current && scrollEl && scrollEl.scrollTop > 0) {
       if (!shadowRef.current.classList.contains('scrolled')) {
-        // @ts-ignore
         shadowRef.current.classList.add('scrolled')
       }
-    } else {
-      // @ts-ignore
+    } else if (shadowRef.current) {
       shadowRef.current.classList.remove('scrolled')
     }
   }

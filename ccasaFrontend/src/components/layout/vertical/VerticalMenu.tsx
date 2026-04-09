@@ -1,5 +1,8 @@
 'use client'
 
+// React Imports
+import type { UIEvent } from 'react'
+
 // MUI Imports
 import { useTheme } from '@mui/material/styles'
 
@@ -47,7 +50,11 @@ const RenderExpandIcon = ({ open, transitionDuration }: RenderExpandIconProps) =
   </StyledVerticalNavExpandIcon>
 )
 
-const VerticalMenu = ({ scrollMenu }: { scrollMenu: (container: any, isPerfectScrollbar: boolean) => void }) => {
+const VerticalMenu = ({
+  scrollMenu
+}: {
+  scrollMenu: (container: UIEvent<HTMLElement> | HTMLElement, isPerfectScrollbar: boolean) => void
+}) => {
   const theme = useTheme()
   const { isBreakpointReached, transitionDuration } = useVerticalNav()
   const { role } = useAuth()

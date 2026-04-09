@@ -176,6 +176,9 @@ export function formatCrudCell(value: unknown): string {
   }
 }
 
+/** Fila devuelta por GET de opciones FK: CrudResponseDTO o DTO plano (p. ej. logbooks). */
+type FkOptionsApiRow = Record<string, unknown> & { id?: number; values?: Record<string, unknown> }
+
 function labelFromCrudItem(
   item: Record<string, unknown> & { id?: number; values?: Record<string, unknown> },
   labelKey: string | string[]
@@ -206,7 +209,7 @@ export async function buildFkLookupMap(fields: CrudFieldDef[]): Promise<FkLookup
   const entries = await Promise.all(
     fkFields.map(async f => {
       try {
-        const data = await apiFetch<any[]>(f.optionsApiPath!)
+        const data = await apiFetch<FkOptionsApiRow[]>(f.optionsApiPath!)
         const lookup: Record<number | string, string> = {}
         const labelKey = f.optionLabelKey ?? 'name'
 
@@ -222,9 +225,8 @@ export async function buildFkLookupMap(fields: CrudFieldDef[]): Promise<FkLookup
         }
 
         return [f.key, lookup] as [string, Record<number | string, string>]
-      } catch (err) {
-        console.warn(`[buildFkLookupMap] Error cargando ${f.optionsApiPath}:`, err)
-
+      } catch {
+        // Fallo al cargar opciones FK: lookup vacío para esta columna (sin log en cliente).
         return [f.key, {}] as [string, Record<number | string, string>]
       }
     })

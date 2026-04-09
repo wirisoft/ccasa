@@ -38,14 +38,15 @@ const ModeDropdown = () => {
     }
   }
 
+  const modeTooltip = settings.mode === 'dark' ? 'Modo oscuro' : 'Modo claro'
+
   return (
     <>
       <Tooltip
-        title={settings.mode + ' Mode'}
+        title={modeTooltip}
         onOpen={() => setTooltipOpen(true)}
         onClose={() => setTooltipOpen(false)}
         open={tooltipOpen}
-        PopperProps={{ className: 'capitalize' }}
       >
         <IconButton ref={anchorRef} onClick={handleToggle} className='text-textPrimary'>
           <i className={getModeIcon()} />

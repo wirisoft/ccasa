@@ -12,14 +12,7 @@ const ServiceWorkerRegistrar = () => {
       return
     }
 
-    void navigator.serviceWorker
-      .register('/sw.js')
-      .then(registration => {
-        console.debug('[SW] Registrado con scope:', registration.scope)
-      })
-      .catch(error => {
-        console.error('[SW] Error al registrar:', error)
-      })
+    void navigator.serviceWorker.register('/sw.js')
   }, [])
 
   return null
