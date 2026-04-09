@@ -13,6 +13,7 @@ import java.nio.file.StandardCopyOption;
 import java.time.Instant;
 import java.util.Locale;
 import java.util.Set;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -31,9 +32,14 @@ public class UserSignatureServiceImpl implements IUserSignatureService {
 	);
 
 	private final UserRepository userRepository;
+	private final String signaturesDir;
 
-	public UserSignatureServiceImpl(UserRepository userRepository) {
+	public UserSignatureServiceImpl(
+		UserRepository userRepository,
+		@Value("${ccasa.uploads.signatures:./uploads/signatures}") String signaturesDir
+	) {
 		this.userRepository = userRepository;
+		this.signaturesDir = signaturesDir;
 	}
 
 	@Override
@@ -52,7 +58,7 @@ public class UserSignatureServiceImpl implements IUserSignatureService {
 
 		String extension = resolveExtension(file.getOriginalFilename(), file.getContentType());
 		String fileName = "user-" + userId + "-signature-" + Instant.now().toEpochMilli() + "." + extension;
-		Path storageDir = Path.of("c:\\Users\\misju\\ccasa\\ccasaBackend\\uploads\\signatures");
+		Path storageDir = Path.of(signaturesDir);
 		Path destination = storageDir.resolve(fileName);
 		try {
 			Files.createDirectories(storageDir);
