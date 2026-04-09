@@ -429,6 +429,21 @@ export const USER_FIELDS: CrudFieldDef[] = [
     helperText: 'Ingresa un correo electrónico válido'
   },
   {
+    key: 'roleId',
+    label: 'Rol',
+    type: 'async-select',
+    gridCols: 6,
+    optionsApiPath: '/api/v1/roles',
+    optionLabelKey: 'name'
+  },
+  {
+    key: 'nomenclature',
+    label: 'Nomenclatura',
+    type: 'text',
+    gridCols: 6,
+    helperText: 'Ej: TCM, TMC. Requerido para revisar registros de conductividad.'
+  },
+  {
     key: 'passwordHash',
     label: 'Contraseña',
     type: 'text',
@@ -436,15 +451,7 @@ export const USER_FIELDS: CrudFieldDef[] = [
     helperText: 'Solo necesaria al crear un usuario nuevo.',
     hideOnEdit: true
   },
-  { key: 'active', label: 'Activo', type: 'boolean', defaultValue: true },
-  {
-    key: 'roleId',
-    label: 'Rol',
-    type: 'async-select',
-    gridCols: 6,
-    optionsApiPath: '/api/v1/roles',
-    optionLabelKey: 'name'
-  }
+  { key: 'active', label: 'Activo', type: 'boolean', defaultValue: true }
 ]
 
 export const USER_CONFIG: CrudResourceConfig = {
