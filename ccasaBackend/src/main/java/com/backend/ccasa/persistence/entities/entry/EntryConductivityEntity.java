@@ -46,10 +46,10 @@ public class EntryConductivityEntity extends Auditable {
 	@Column(name = "weight_grams", precision = 12, scale = 6)
 	private BigDecimal weightGrams;
 
-	@Column(name = "calculated_mol", precision = 10, scale = 6)
+	@Column(name = "calculated_mol", precision = 14, scale = 8)
 	private BigDecimal calculatedMol;
 
-	@Column(name = "calculated_value", precision = 10, scale = 6)
+	@Column(name = "calculated_value", precision = 12, scale = 2)
 	private BigDecimal calculatedValue;
 
 	@Column(name = "in_range")
@@ -74,13 +74,13 @@ public class EntryConductivityEntity extends Auditable {
 	@Column(name = "reviewed_at")
 	private Instant reviewedAt;
 
-	@Column(name = "reference_u_scm", precision = 12, scale = 6)
+	@Column(name = "reference_u_scm", precision = 12, scale = 4)
 	private BigDecimal referenceUScm;
 
 	@Column(name = "reference_mol", precision = 12, scale = 6)
 	private BigDecimal referenceMol;
 
-	@Column(name = "reference_standard_u_scm", precision = 12, scale = 6)
+	@Column(name = "reference_standard_u_scm", precision = 10, scale = 2)
 	private BigDecimal referenceStandardUScm;
 
 	public Long getId() { return id; }
