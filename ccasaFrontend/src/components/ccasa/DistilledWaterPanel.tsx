@@ -62,27 +62,11 @@ const EMPTY_FORM: Record<string, string> = {
   waterBatchId: ''
 }
 
-type FormFieldConfig = {
-  key: keyof typeof EMPTY_FORM
-  label: string
-  required?: boolean
-  md: number
+const FORM_SECTION_CAPTION_SX = {
+  fontWeight: 600,
+  textTransform: 'uppercase' as const,
+  letterSpacing: 0.5
 }
-
-const FORM_FIELDS: FormFieldConfig[] = [
-  { key: 'phReading1', label: 'pH Lectura 1', md: 4 },
-  { key: 'phReading2', label: 'pH Lectura 2', md: 4 },
-  { key: 'phReading3', label: 'pH Lectura 3', md: 4 },
-  { key: 'ceReading1', label: 'CE Lectura 1', md: 4 },
-  { key: 'ceReading2', label: 'CE Lectura 2', md: 4 },
-  { key: 'ceReading3', label: 'CE Lectura 3', md: 4 },
-  { key: 'referenceDifference', label: 'Diferencia referencia', md: 6 },
-  { key: 'controlStandardPct', label: 'Estándar control %', md: 6 }
-]
-
-const PH_FORM_FIELDS = FORM_FIELDS.slice(0, 3)
-const CE_FORM_FIELDS = FORM_FIELDS.slice(3, 6)
-const QC_FORM_FIELDS = FORM_FIELDS.slice(6, 8)
 
 type Option = { value: number; label: string }
 
@@ -770,80 +754,129 @@ const DistilledWaterPanel = () => {
               </Grid>
 
               <Grid item xs={12}>
-                <Typography
-                  variant='caption'
-                  color='text.secondary'
-                  sx={{ fontWeight: 600, textTransform: 'uppercase', letterSpacing: 0.5 }}
-                >
+                <Typography variant='caption' color='text.secondary' sx={FORM_SECTION_CAPTION_SX}>
                   Lecturas de pH
                 </Typography>
                 <Divider sx={{ mt: 0.5 }} />
               </Grid>
-              {PH_FORM_FIELDS.map(f => (
-                <Grid key={f.key} item xs={12} md={f.md}>
-                  <TextField
-                    label={f.label}
-                    name={f.key}
-                    type='text'
-                    fullWidth
-                    size='small'
-                    value={formState[f.key] ?? ''}
-                    onChange={ev => setFormState(prev => ({ ...prev, [f.key]: ev.target.value }))}
-                    disabled={!token || creating}
-                    inputProps={{ inputMode: 'decimal' }}
-                  />
-                </Grid>
-              ))}
+              <Grid item xs={12} md={4}>
+                <TextField
+                  label='pH Lectura 1'
+                  name='phReading1'
+                  type='text'
+                  fullWidth
+                  size='small'
+                  value={formState.phReading1 ?? ''}
+                  onChange={ev => setFormState(prev => ({ ...prev, phReading1: ev.target.value }))}
+                  disabled={!token || creating}
+                  inputProps={{ inputMode: 'decimal' }}
+                />
+              </Grid>
+              <Grid item xs={12} md={4}>
+                <TextField
+                  label='pH Lectura 2'
+                  name='phReading2'
+                  type='text'
+                  fullWidth
+                  size='small'
+                  value={formState.phReading2 ?? ''}
+                  onChange={ev => setFormState(prev => ({ ...prev, phReading2: ev.target.value }))}
+                  disabled={!token || creating}
+                  inputProps={{ inputMode: 'decimal' }}
+                />
+              </Grid>
+              <Grid item xs={12} md={4}>
+                <TextField
+                  label='pH Lectura 3'
+                  name='phReading3'
+                  type='text'
+                  fullWidth
+                  size='small'
+                  value={formState.phReading3 ?? ''}
+                  onChange={ev => setFormState(prev => ({ ...prev, phReading3: ev.target.value }))}
+                  disabled={!token || creating}
+                  inputProps={{ inputMode: 'decimal' }}
+                />
+              </Grid>
+
               <Grid item xs={12}>
-                <Typography
-                  variant='caption'
-                  color='text.secondary'
-                  sx={{ fontWeight: 600, textTransform: 'uppercase', letterSpacing: 0.5 }}
-                >
+                <Typography variant='caption' color='text.secondary' sx={FORM_SECTION_CAPTION_SX}>
                   Lecturas de CE (µS/cm)
                 </Typography>
                 <Divider sx={{ mt: 0.5 }} />
               </Grid>
-              {CE_FORM_FIELDS.map(f => (
-                <Grid key={f.key} item xs={12} md={f.md}>
-                  <TextField
-                    label={f.label}
-                    name={f.key}
-                    type='text'
-                    fullWidth
-                    size='small'
-                    value={formState[f.key] ?? ''}
-                    onChange={ev => setFormState(prev => ({ ...prev, [f.key]: ev.target.value }))}
-                    disabled={!token || creating}
-                    inputProps={{ inputMode: 'decimal' }}
-                  />
-                </Grid>
-              ))}
+              <Grid item xs={12} md={4}>
+                <TextField
+                  label='CE Lectura 1'
+                  name='ceReading1'
+                  type='text'
+                  fullWidth
+                  size='small'
+                  value={formState.ceReading1 ?? ''}
+                  onChange={ev => setFormState(prev => ({ ...prev, ceReading1: ev.target.value }))}
+                  disabled={!token || creating}
+                  inputProps={{ inputMode: 'decimal' }}
+                />
+              </Grid>
+              <Grid item xs={12} md={4}>
+                <TextField
+                  label='CE Lectura 2'
+                  name='ceReading2'
+                  type='text'
+                  fullWidth
+                  size='small'
+                  value={formState.ceReading2 ?? ''}
+                  onChange={ev => setFormState(prev => ({ ...prev, ceReading2: ev.target.value }))}
+                  disabled={!token || creating}
+                  inputProps={{ inputMode: 'decimal' }}
+                />
+              </Grid>
+              <Grid item xs={12} md={4}>
+                <TextField
+                  label='CE Lectura 3'
+                  name='ceReading3'
+                  type='text'
+                  fullWidth
+                  size='small'
+                  value={formState.ceReading3 ?? ''}
+                  onChange={ev => setFormState(prev => ({ ...prev, ceReading3: ev.target.value }))}
+                  disabled={!token || creating}
+                  inputProps={{ inputMode: 'decimal' }}
+                />
+              </Grid>
+
               <Grid item xs={12}>
-                <Typography
-                  variant='caption'
-                  color='text.secondary'
-                  sx={{ fontWeight: 600, textTransform: 'uppercase', letterSpacing: 0.5 }}
-                >
+                <Typography variant='caption' color='text.secondary' sx={FORM_SECTION_CAPTION_SX}>
                   Control de calidad
                 </Typography>
                 <Divider sx={{ mt: 0.5 }} />
               </Grid>
-              {QC_FORM_FIELDS.map(f => (
-                <Grid key={f.key} item xs={12} md={f.md}>
-                  <TextField
-                    label={f.label}
-                    name={f.key}
-                    type='text'
-                    fullWidth
-                    size='small'
-                    value={formState[f.key] ?? ''}
-                    onChange={ev => setFormState(prev => ({ ...prev, [f.key]: ev.target.value }))}
-                    disabled={!token || creating}
-                    inputProps={{ inputMode: 'decimal' }}
-                  />
-                </Grid>
-              ))}
+              <Grid item xs={12} md={6}>
+                <TextField
+                  label='Diferencia referencia'
+                  name='referenceDifference'
+                  type='text'
+                  fullWidth
+                  size='small'
+                  value={formState.referenceDifference ?? ''}
+                  onChange={ev => setFormState(prev => ({ ...prev, referenceDifference: ev.target.value }))}
+                  disabled={!token || creating}
+                  inputProps={{ inputMode: 'decimal' }}
+                />
+              </Grid>
+              <Grid item xs={12} md={6}>
+                <TextField
+                  label='Estándar control %'
+                  name='controlStandardPct'
+                  type='text'
+                  fullWidth
+                  size='small'
+                  value={formState.controlStandardPct ?? ''}
+                  onChange={ev => setFormState(prev => ({ ...prev, controlStandardPct: ev.target.value }))}
+                  disabled={!token || creating}
+                  inputProps={{ inputMode: 'decimal' }}
+                />
+              </Grid>
 
               <Grid item xs={12} md={6}>
                 <FormControl fullWidth size='small' disabled={!token || creating}>

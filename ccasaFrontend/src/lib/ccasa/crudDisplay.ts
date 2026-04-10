@@ -40,7 +40,8 @@ const HIDDEN_COLUMNS = new Set([
   'signatureStoragePath',
   'signatureContentType',
   'signatureFileName',
-  'signatureUploadedAt'
+  'signatureUploadedAt',
+  'entryId'
 ])
 
 const COLUMN_LABELS: Record<string, string> = {
@@ -73,6 +74,9 @@ const COLUMN_LABELS: Record<string, string> = {
   folioBlockId: 'Bloque',
   logbookId: 'Bitácora',
   entryId: 'Entrada',
+  waterBatchId: 'Lote de agua',
+  referenceDifference: 'Diferencia referencia',
+  controlStandardPct: 'Control estándar %',
   userId: 'Usuario',
   folioId: 'Folio',
   reagentId: 'Reactivo',
@@ -99,14 +103,14 @@ const COLUMN_LABELS: Record<string, string> = {
   isAcceptable: '¿Aceptable?',
   rawTemperature: 'Temp. cruda',
   correctedTemperature: 'Temp. corregida',
-  phReading1: 'pH L1',
-  phReading2: 'pH L2',
-  phReading3: 'pH L3',
-  phAverage: 'pH Prom.',
-  ceReading1: 'CE L1',
-  ceReading2: 'CE L2',
-  ceReading3: 'CE L3',
-  ceAverage: 'CE Prom.',
+  phReading1: 'pH Lectura 1',
+  phReading2: 'pH Lectura 2',
+  phReading3: 'pH Lectura 3',
+  phAverage: 'pH Promedio',
+  ceReading1: 'CE Lectura 1',
+  ceReading2: 'CE Lectura 2',
+  ceReading3: 'CE Lectura 3',
+  ceAverage: 'CE Promedio',
   equipmentType: 'Tipo de equipo',
   denomination: 'Denominación',
   minValue: 'Valor mínimo',
