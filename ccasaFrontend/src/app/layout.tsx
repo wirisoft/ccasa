@@ -30,8 +30,8 @@ export const metadata: Metadata = {
     telephone: false
   },
   icons: {
-    icon: [{ url: '/icons/icon-192x192.png', sizes: '192x192', type: 'image/png' }],
-    apple: [{ url: '/icons/icon-192x192.png', sizes: '192x192', type: 'image/png' }]
+    icon: [{ url: '/logo.png', type: 'image/png' }],
+    apple: [{ url: '/logo.png', type: 'image/png' }]
   }
 }
 
