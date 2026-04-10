@@ -730,6 +730,10 @@ public class ConductivityRecordServiceImpl implements IConductivityRecordService
 			"Peso: " + fixed(dto.weightGrams(), 4) + " g · Balanza M-BAD-01 F:25",
 			r++);
 		addPrepFullRow(table, "Horno: M-HS-01 F:05", r++);
+		addPrepFullRow(
+			table,
+			"Matraz Vol. 1000 ml. 01-FQ · Disolvente 1-MT/02 F:22 · Aforo 1000 ml",
+			r++);
 		Color bgConc = r % 2 == 0 ? COLOR_WHITE : COLOR_ROW_ALT;
 		PdfPCell concLabel = prepCell("obteniendo la concentración final de", F_9_NORMAL_BLACK, bgConc, Element.ALIGN_LEFT);
 		concLabel.setColspan(3);
@@ -737,11 +741,6 @@ public class ConductivityRecordServiceImpl implements IConductivityRecordService
 		PdfPCell concValue = prepCell(fixed(dto.calculatedValue(), 0) + " \u00B5S/cm", F_9_BOLD_NAVY, bgConc, Element.ALIGN_CENTER);
 		concValue.setColspan(2);
 		table.addCell(concValue);
-		r++;
-		addPrepFullRow(
-			table,
-			"Matraz Vol. 1000 ml. 01-FQ · Disolvente 1-MT/02 F:22 · Aforo 1000 ml",
-			r);
 		return table;
 	}
 
