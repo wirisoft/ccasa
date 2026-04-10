@@ -158,7 +158,7 @@ const Login = () => {
                   >
                     <i className={item.icon} style={{ fontSize: 22, color: '#FFFFFF' }} />
                   </Box>
-                  <Typography variant='caption' sx={{ color: 'rgba(255, 255, 255, 0.7)', fontSize: '0.7rem' }}>
+                  <Typography variant='caption' sx={{ color: 'rgba(255, 255, 255, 0.7)', fontSize: '0.75rem' }}>
                     {item.label}
                   </Typography>
                 </Box>

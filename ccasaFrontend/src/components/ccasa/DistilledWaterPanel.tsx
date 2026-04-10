@@ -1,7 +1,7 @@
 'use client'
 
 // React Imports
-import type { FormEvent } from 'react'
+import type { FormEvent, ReactNode } from 'react'
 import { useCallback, useEffect, useState } from 'react'
 
 // MUI Imports
@@ -11,6 +11,7 @@ import Button from '@mui/material/Button'
 import Card from '@mui/material/Card'
 import CardContent from '@mui/material/CardContent'
 import CardHeader from '@mui/material/CardHeader'
+import Chip from '@mui/material/Chip'
 import CircularProgress from '@mui/material/CircularProgress'
 import FormControl from '@mui/material/FormControl'
 import IconButton from '@mui/material/IconButton'
@@ -98,7 +99,19 @@ function formatEntryStatus(status: string | null | undefined): string {
   return ENTRY_STATUS_LABELS[status] ?? status
 }
 
-function responseToTableRows(d: DistilledWaterResponseDTO): { label: string; value: string }[] {
+function acceptableValueCell(v: boolean | null): ReactNode {
+  if (v === true) {
+    return <Chip label='Sí' color='success' size='small' />
+  }
+
+  if (v === false) {
+    return <Chip label='No' color='error' size='small' />
+  }
+
+  return <span>—</span>
+}
+
+function responseToTableRows(d: DistilledWaterResponseDTO): { label: string; value: ReactNode }[] {
   return [
     { label: 'Entrada', value: formatCell(d.entryId) },
     { label: 'ID registro', value: formatCell(d.distilledWaterEntryId) },
@@ -112,10 +125,7 @@ function responseToTableRows(d: DistilledWaterResponseDTO): { label: string; val
     { label: 'CE Promedio', value: formatCell(d.ceAverage) },
     { label: 'Diferencia referencia', value: formatCell(d.referenceDifference) },
     { label: 'Estándar control %', value: formatCell(d.controlStandardPct) },
-    {
-      label: '¿Aceptable?',
-      value: d.isAcceptable === null ? '—' : d.isAcceptable ? 'Sí' : 'No'
-    },
+    { label: '¿Aceptable?', value: acceptableValueCell(d.isAcceptable) },
     { label: 'Lote de agua', value: formatCell(d.waterBatchId) },
     { label: 'Estado', value: formatEntryStatus(d.entryStatus) }
   ]
@@ -374,7 +384,7 @@ const DistilledWaterPanel = () => {
         a.click()
         URL.revokeObjectURL(url)
         setSnackbarSeverity('success')
-        setSnackbarMessage('PDF descargado')
+        setSnackbarMessage('PDF de agua destilada descargado correctamente')
         setSnackbarOpen(true)
       } catch (e) {
         setSnackbarSeverity('error')

@@ -58,7 +58,7 @@ const Illustrations = (props: IllustrationsProp) => {
       <>
         {typeof image1 === 'undefined' || isImageObj(image1) ? (
           <img
-            alt={image1?.alt || 'tree-1'}
+            alt={image1?.alt ?? ''}
             src={image1?.src || '/images/illustrations/objects/tree-1.png'}
             className={image1?.className || 'absolute inline-start-0 block-end-0'}
             width={image1?.width}
@@ -80,7 +80,7 @@ const Illustrations = (props: IllustrationsProp) => {
         )}
         {typeof image2 === 'undefined' || isImageObj(image2) ? (
           <img
-            alt={image2?.alt || 'tree-2'}
+            alt={image2?.alt ?? ''}
             src={image2?.src || '/images/illustrations/objects/tree-2.png'}
             className={image2?.className || 'absolute inline-end-0 block-end-0'}
             width={image2?.width}

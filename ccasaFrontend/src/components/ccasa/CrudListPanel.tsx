@@ -29,7 +29,13 @@ import Typography from '@mui/material/Typography'
 
 // Lib Imports
 import { apiFetch, getApiBaseUrl, getErrorMessage, getHttpErrorMessage, PDF_DOWNLOAD_ERROR } from '@/lib/ccasa/api'
-import { buildFkLookupMap, collectCrudColumns, getColumnLabel, resolveFkDisplay } from '@/lib/ccasa/crudDisplay'
+import {
+  buildFkLookupMap,
+  collectCrudColumns,
+  getColumnLabel,
+  resolveFkDisplay,
+  resolveFkDisplayPlain
+} from '@/lib/ccasa/crudDisplay'
 import type { CrudFieldDef } from '@/lib/ccasa/crudFields'
 import type { CrudResponseDTO, FkLookupMap } from '@/lib/ccasa/types'
 
@@ -63,7 +69,24 @@ export type CrudListPanelProps = {
 }
 
 function rowDisplayName(values: Record<string, unknown> | undefined, nameColumn: string): string | undefined {
-  if (!values || !(nameColumn in values)) {
+  if (!values) {
+    return undefined
+  }
+
+  if (nameColumn === 'firstName' && 'firstName' in values && 'lastName' in values) {
+    const fn = values.firstName
+    const ln = values.lastName
+
+    if (fn == null && ln == null) {
+      return undefined
+    }
+
+    const s = `${fn != null ? String(fn).trim() : ''} ${ln != null ? String(ln).trim() : ''}`.trim()
+
+    return s === '' ? undefined : s
+  }
+
+  if (!(nameColumn in values)) {
     return undefined
   }
 
@@ -429,7 +452,7 @@ const CrudListPanel = ({
         a.download = `${pdfDownloadPrefix}-${rowId}.pdf`
         a.click()
         URL.revokeObjectURL(url)
-        setSnackbar('PDF descargado')
+        setSnackbar('PDF exportado correctamente')
       } catch (e) {
         setSnackbar(getErrorMessage(e, PDF_DOWNLOAD_ERROR))
       }
@@ -453,7 +476,7 @@ const CrudListPanel = ({
       columns
         .filter(col => col !== 'id')
         .some(col => {
-          const displayValue = resolveFkDisplay(row.values?.[col], col, fkLookups)
+          const displayValue = resolveFkDisplayPlain(row.values?.[col], col, fkLookups)
 
           return displayValue.toLowerCase().includes(query)
         })

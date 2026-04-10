@@ -96,7 +96,8 @@ export async function apiFetch<T>(path: string, options: ApiFetchOptions = {}): 
   return JSON.parse(text) as T
 }
 
-export const PDF_DOWNLOAD_ERROR = 'Error al descargar el PDF. Intenta nuevamente.'
+export const PDF_DOWNLOAD_ERROR =
+  'No se pudo descargar el PDF del registro. Comprueba la conexión e inténtalo de nuevo.'
 
 export function getErrorMessage(err: unknown, fallback = 'Ocurrió un error inesperado.'): string {
   if (err instanceof Error) return err.message

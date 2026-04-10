@@ -352,44 +352,51 @@ return filteredRecords.slice(start, start + rowsPerPage)
     formWeight
   ])
 
-  const handleDownloadPdf = useCallback(async (id: number) => {
-    try {
-      const res = await fetch(`${getApiBaseUrl()}/api/v1/conductivity-records/${id}/pdf`, {
-        headers: token ? { Authorization: `Bearer ${token}` } : {}
-      })
+  const handleDownloadPdf = useCallback(
+    async (id: number) => {
+      try {
+        const res = await fetch(`${getApiBaseUrl()}/api/v1/conductivity-records/${id}/pdf`, {
+          headers: token ? { Authorization: `Bearer ${token}` } : {}
+        })
 
-      if (!res.ok) {
-        let msg = ''
+        if (!res.ok) {
+          let msg = ''
 
-        try {
-          const errJson = (await res.json()) as { message?: string; error?: string }
+          try {
+            const errJson = (await res.json()) as { message?: string; error?: string }
 
-          msg = errJson.message || errJson.error || ''
-        } catch {
-          /* ignore */
+            msg = errJson.message || errJson.error || ''
+          } catch {
+            /* ignore */
+          }
+
+          setSnackbarSeverity('error')
+          setSnackbar(msg || getHttpErrorMessage(res.status))
+
+          return
         }
 
+        const blob = await res.blob()
+        const url = URL.createObjectURL(blob)
+        const a = document.createElement('a')
+
+        a.href = url
+        a.download = `conductividad-${id}.pdf`
+        a.click()
+        URL.revokeObjectURL(url)
+        const record = records.find(r => r.conductivityId === id)
+        const folio = record?.displayFolio?.trim()
+        const refLabel = folio && folio !== '' ? folio : String(id)
+
+        setSnackbarSeverity('success')
+        setSnackbar(`PDF del registro ${refLabel} descargado correctamente`)
+      } catch (e) {
         setSnackbarSeverity('error')
-        setSnackbar(msg || getHttpErrorMessage(res.status))
-
-        return
+        setSnackbar(getErrorMessage(e, PDF_DOWNLOAD_ERROR))
       }
-
-      const blob = await res.blob()
-      const url = URL.createObjectURL(blob)
-      const a = document.createElement('a')
-
-      a.href = url
-      a.download = `conductividad-${id}.pdf`
-      a.click()
-      URL.revokeObjectURL(url)
-      setSnackbarSeverity('success')
-      setSnackbar('PDF descargado')
-    } catch (e) {
-      setSnackbarSeverity('error')
-      setSnackbar(getErrorMessage(e, PDF_DOWNLOAD_ERROR))
-    }
-  }, [token])
+    },
+    [token, records]
+  )
 
   const handleReview = useCallback(
     async (id: number) => {

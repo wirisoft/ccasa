@@ -1,3 +1,8 @@
+import * as React from 'react'
+import type { ReactNode } from 'react'
+
+import Chip from '@mui/material/Chip'
+
 import { apiFetch } from '@/lib/ccasa/api'
 import { formatDateDdMmYyyy } from '@/lib/ccasa/formatters'
 import type { CrudFieldDef } from '@/lib/ccasa/crudFields'
@@ -156,7 +161,8 @@ export function collectCrudColumns(rows: CrudResponseDTO[]): string[] {
   return ['id', ...filtered]
 }
 
-export function formatCrudCell(value: unknown, column?: string): string {
+/** Texto plano para búsqueda y accesibilidad (misma lógica que la celda, sin Chips). */
+export function formatCrudCellPlain(value: unknown, column?: string): string {
   if (value === null || value === undefined) {
     return '—'
   }
@@ -198,6 +204,16 @@ export function formatCrudCell(value: unknown, column?: string): string {
   }
 
   return String(value)
+}
+
+export function formatCrudCell(value: unknown, column?: string): ReactNode {
+  if (typeof value === 'boolean') {
+    return value
+      ? React.createElement(Chip, { label: 'Sí', color: 'success', size: 'small' })
+      : React.createElement(Chip, { label: 'No', color: 'error', size: 'small' })
+  }
+
+  return formatCrudCellPlain(value, column)
 }
 
 /** Fila devuelta por GET de opciones FK: CrudResponseDTO o DTO plano (p. ej. logbooks). */
@@ -263,7 +279,19 @@ export async function buildFkLookupMap(fields: CrudFieldDef[]): Promise<FkLookup
  * Dado un valor de celda, la columna, y el mapa de lookups FK,
  * retorna el label legible si existe, o el valor formateado normal.
  */
-export function resolveFkDisplay(value: unknown, column: string, fkLookups: FkLookupMap): string {
+export function resolveFkDisplayPlain(value: unknown, column: string, fkLookups: FkLookupMap): string {
+  const lookup = fkLookups[column]
+
+  if (lookup && value != null) {
+    const resolved = lookup[value as number | string]
+
+    if (resolved) return resolved
+  }
+
+  return formatCrudCellPlain(value, column)
+}
+
+export function resolveFkDisplay(value: unknown, column: string, fkLookups: FkLookupMap): ReactNode {
   const lookup = fkLookups[column]
 
   if (lookup && value != null) {
