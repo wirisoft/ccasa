@@ -69,7 +69,7 @@ public class ConductivityRecordServiceImpl implements IConductivityRecordService
 	private static final String REVIEWER_NOMENCLATURE = "TCM";
 	private static final String ALT_REVIEWER_NOMENCLATURE = "TMC";
 	private static final MathContext MC = new MathContext(14, RoundingMode.HALF_UP);
-	private static final DateTimeFormatter PDF_DATE = DateTimeFormatter.ofPattern("yyyyMMdd").withZone(ZoneOffset.UTC);
+	private static final DateTimeFormatter PDF_DATE = DateTimeFormatter.ofPattern("dd/MM/yyyy").withZone(ZoneOffset.UTC);
 	private static final String PDF_LOGO_CLASSPATH = "static/images/lab-logo.png";
 
 	private static final Color COLOR_NAVY = new Color(44, 62, 80);
@@ -237,7 +237,7 @@ public class ConductivityRecordServiceImpl implements IConductivityRecordService
 	public byte[] generatePdf(Long conductivityId) {
 		EntryConductivityEntity record = requireRecord(conductivityId);
 		ByteArrayOutputStream output = new ByteArrayOutputStream();
-		Document document = new Document(PageSize.A4, 36, 36, 36, 36);
+		Document document = new Document(PageSize.A4, 32, 32, 28, 22);
 		try {
 			PdfWriter.getInstance(document, output);
 			document.open();
@@ -502,23 +502,14 @@ public class ConductivityRecordServiceImpl implements IConductivityRecordService
 		ConductivityRecordResponseDTO dto = toDto(record);
 		document.add(headerLine(dto));
 		document.add(headerDividerThick());
-		document.add(new Paragraph(" "));
 		document.add(conductivityTypeBanner(dto));
-		document.add(new Paragraph(" "));
 		document.add(sectionTitleTable("PREPARACIÓN DEL ESTÁNDAR DE CONTROL DE CALIDAD"));
-		document.add(new Paragraph(" "));
 		document.add(preparationTable(dto));
-		document.add(new Paragraph(" "));
 		addVerificationBlock(document);
-		document.add(new Paragraph(" "));
 		document.add(signaturesBlock(dto, record));
-		document.add(new Paragraph(" "));
 		document.add(observationsBlock(dto));
-		document.add(new Paragraph(" "));
 		document.add(sectionTitleTable("CÁLCULOS"));
-		document.add(new Paragraph(" "));
 		document.add(calculationsBlock(dto));
-		document.add(new Paragraph(" "));
 		document.add(pdfFooter());
 	}
 
@@ -554,14 +545,19 @@ public class ConductivityRecordServiceImpl implements IConductivityRecordService
 		return logoCell;
 	}
 
-	private PdfPCell folioDateBox(String label, String value) {
+	private PdfPCell folioDateBox(String label, String value, boolean folioValueSingleLine) {
 		PdfPCell c = new PdfPCell();
 		c.setBorder(Rectangle.BOX);
 		c.setBorderColor(COLOR_GRAY_MID);
 		c.setPadding(6f);
 		c.setBackgroundColor(COLOR_WHITE);
 		c.addElement(new Paragraph(label, F_8_NORMAL_GRAY));
-		c.addElement(new Paragraph(value, F_9_BOLD_BLACK));
+		if (folioValueSingleLine) {
+			c.addElement(new Paragraph(safe(value), F_9_BOLD_BLACK));
+			c.setNoWrap(true);
+		} else {
+			c.addElement(new Paragraph(value, F_9_BOLD_BLACK));
+		}
 		return c;
 	}
 
@@ -578,12 +574,13 @@ public class ConductivityRecordServiceImpl implements IConductivityRecordService
 		leftTitles.addElement(new Paragraph("BITÁCORAS SERVICIOS AMBIENTALES", F_11_BOLD_NAVY));
 		leftTitles.addElement(new Paragraph("Laboratorio de análisis ambiental · Control de calidad", F_8_NORMAL_GRAY_DARK));
 
-		PdfPTable boxes = new PdfPTable(new float[] { 1f, 1f });
+		PdfPTable boxes = new PdfPTable(new float[] { 1.75f, 1f });
 		boxes.setWidthPercentage(100);
-		boxes.addCell(folioDateBox("Folio No.", safe(dto.displayFolio())));
+		boxes.addCell(folioDateBox("Folio No.", safe(dto.displayFolio()), true));
 		boxes.addCell(folioDateBox(
 			"Fecha",
-			safe(PDF_DATE.format(dto.recordedAt() != null ? dto.recordedAt() : Instant.now()))));
+			safe(PDF_DATE.format(dto.recordedAt() != null ? dto.recordedAt() : Instant.now())),
+			false));
 
 		PdfPCell rightBoxes = new PdfPCell(boxes);
 		rightBoxes.setBorder(Rectangle.NO_BORDER);
@@ -600,7 +597,7 @@ public class ConductivityRecordServiceImpl implements IConductivityRecordService
 
 	private PdfPTable headerDividerThick() {
 		PdfPTable t = new PdfPTable(1);
-		t.setSpacingBefore(4f);
+		t.setSpacingBefore(2f);
 		t.setWidthPercentage(100);
 		PdfPCell c = new PdfPCell();
 		c.setFixedHeight(2.5f);
@@ -634,13 +631,16 @@ public class ConductivityRecordServiceImpl implements IConductivityRecordService
 
 		PdfPCell right = new PdfPCell();
 		right.setBorder(Rectangle.BOX);
-		right.setBorderColor(COLOR_GRAY_MID);
+		right.setBorderColor(COLOR_GRAY_DARK);
+		right.setBorderWidth(1f);
 		right.setBackgroundColor(COLOR_GRAY_LIGHT);
 		right.setPadding(8f);
 		right.setVerticalAlignment(Element.ALIGN_MIDDLE);
 		right.setHorizontalAlignment(Element.ALIGN_CENTER);
 		Boolean ir = dto.inRange();
 		if (ir == null) {
+			right.setBorderColor(COLOR_GRAY_MID);
+			right.setBorderWidth(1f);
 			right.addElement(new Paragraph(" ", F_9_NORMAL_BLACK));
 		} else if (Boolean.TRUE.equals(ir)) {
 			Paragraph ok = new Paragraph("\u2713 En rango aceptable", F_9_BOLD_NAVY);
@@ -679,7 +679,7 @@ public class ConductivityRecordServiceImpl implements IConductivityRecordService
 		c.setBackgroundColor(bg);
 		c.setBorder(Rectangle.BOX);
 		c.setBorderColor(COLOR_GRAY_MID);
-		c.setPadding(6f);
+		c.setPadding(5f);
 		c.setHorizontalAlignment(align);
 		c.setVerticalAlignment(Element.ALIGN_MIDDLE);
 		return c;
@@ -729,9 +729,15 @@ public class ConductivityRecordServiceImpl implements IConductivityRecordService
 			"Se analiza de acuerdo al procedimiento de control de calidad con las siguientes muestras:",
 			F_9_NORMAL_GRAY);
 		p.setAlignment(Element.ALIGN_CENTER);
+		p.setSpacingBefore(2f);
+		p.setSpacingAfter(0f);
+		p.setLeading(11f);
 		document.add(p);
 		Paragraph v = new Paragraph("VERIFICACIÓN", F_9_BOLD_BLACK);
 		v.setAlignment(Element.ALIGN_CENTER);
+		v.setSpacingBefore(0f);
+		v.setSpacingAfter(0f);
+		v.setLeading(12f);
 		document.add(v);
 	}
 
@@ -739,23 +745,23 @@ public class ConductivityRecordServiceImpl implements IConductivityRecordService
 		PdfPTable signatures = new PdfPTable(new float[] { 1f, 1f, 1f });
 		signatures.setWidthPercentage(100);
 		signatures.addCell(signatureBlockCell("PREPARA", dto.createdByNomenclature(), dto.createdByName(), entryUser(record)));
-		signatures.addCell(signatureBlockCell("ANALIZA", "MUESTREO", "MUESTREO", null));
+		signatures.addCell(signatureBlockCell("ANALIZA", "", "MUESTREO", null));
 		signatures.addCell(signatureBlockCell("REVISA", dto.reviewerNomenclature(), dto.reviewerName(), record.getReviewerUser()));
 		return signatures;
 	}
 
 	private PdfPCell signatureBlockCell(String roleHeader, String nomenclature, String name, UserEntity user) {
 		PdfPCell cell = new PdfPCell();
-		cell.setPadding(12f);
+		cell.setPadding(9f);
 		cell.setBorder(Rectangle.BOX);
 		cell.setBorderColor(COLOR_GRAY_MID);
-		cell.setMinimumHeight(115f);
+		cell.setMinimumHeight(92f);
 
 		cell.addElement(new Paragraph(roleHeader, F_8_BOLD_NAVY));
 		PdfPTable sep = new PdfPTable(1);
 		sep.setWidthPercentage(100);
 		PdfPCell sepc = new PdfPCell();
-		sepc.setFixedHeight(2f);
+		sepc.setFixedHeight(1f);
 		sepc.setBorder(Rectangle.BOTTOM);
 		sepc.setBorderColorBottom(COLOR_GRAY_MID);
 		sepc.setBorderWidthBottom(1f);
@@ -764,9 +770,14 @@ public class ConductivityRecordServiceImpl implements IConductivityRecordService
 		cell.addElement(sep);
 
 		cell.addElement(new Paragraph(safe(name), F_10_BOLD_BLACK));
-		cell.addElement(new Paragraph(safe(nomenclature), F_8_NORMAL_GRAY));
+		String rol = safe(nomenclature);
+		if (!rol.isEmpty()) {
+			cell.addElement(new Paragraph(rol, F_8_NORMAL_GRAY));
+		}
 
-		addSignatureImage(cell, user);
+		if (!"ANALIZA".equals(roleHeader)) {
+			addSignatureImage(cell, user);
+		}
 
 		Paragraph sigLine = new Paragraph("_____________________________", F_8_NORMAL_GRAY);
 		sigLine.setAlignment(Element.ALIGN_CENTER);
@@ -808,7 +819,7 @@ public class ConductivityRecordServiceImpl implements IConductivityRecordService
 		c.setBackgroundColor(bg);
 		c.setBorder(Rectangle.BOX);
 		c.setBorderColor(COLOR_GRAY_MID);
-		c.setPadding(5f);
+		c.setPadding(4f);
 		c.setHorizontalAlignment(align);
 		c.setVerticalAlignment(Element.ALIGN_MIDDLE);
 		return c;
@@ -858,7 +869,7 @@ public class ConductivityRecordServiceImpl implements IConductivityRecordService
 		finalRow.setBackgroundColor(COLOR_NAVY);
 		finalRow.setBorder(Rectangle.BOX);
 		finalRow.setBorderColor(COLOR_NAVY);
-		finalRow.setPadding(10f);
+		finalRow.setPadding(7f);
 		finalRow.setHorizontalAlignment(Element.ALIGN_CENTER);
 		finalRow.setVerticalAlignment(Element.ALIGN_MIDDLE);
 		calc.addCell(finalRow);
@@ -878,12 +889,12 @@ public class ConductivityRecordServiceImpl implements IConductivityRecordService
 
 		PdfPCell left = new PdfPCell(new Phrase("Bitácoras Servicios Ambientales · Sistema BSA Lab", F_8_NORMAL_GRAY));
 		left.setBorder(Rectangle.NO_BORDER);
-		left.setPaddingTop(6f);
+		left.setPaddingTop(3f);
 
 		PdfPCell right = new PdfPCell(new Phrase("Documento generado automáticamente", F_8_NORMAL_GRAY));
 		right.setBorder(Rectangle.NO_BORDER);
 		right.setHorizontalAlignment(Element.ALIGN_RIGHT);
-		right.setPaddingTop(6f);
+		right.setPaddingTop(3f);
 
 		t.addCell(left);
 		t.addCell(right);
