@@ -87,7 +87,7 @@ public class SecurityConfiguration {
 				"http://localhost:3000",
 				"http://127.0.0.1:3000",
 				"http://localhost:3002",
-				"http://76.13.96.56",
+				"http://194.163.172.164",
 				"http://ccasa.hexvorn.cloud",
 				"https://ccasa.hexvorn.cloud"
 		));

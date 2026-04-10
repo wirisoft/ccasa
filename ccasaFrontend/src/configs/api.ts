@@ -12,8 +12,8 @@ export const API_CONFIG = {
           }
 
           // IP directa
-          if (hostname === '76.13.96.56') {
-            return 'http://76.13.96.56/api'
+          if (hostname === '194.163.172.164') {
+            return 'http://194.163.172.164/api'
           }
 
           // Local
