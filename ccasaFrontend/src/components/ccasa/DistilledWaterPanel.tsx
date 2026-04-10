@@ -42,6 +42,13 @@ import type {
 // Context Imports
 import { useAuth } from '@/contexts/AuthContext'
 
+const STATUS_LABELS: Record<string, string> = {
+  Draft: 'Borrador',
+  Signed: 'Firmado',
+  Locked: 'Bloqueado',
+  Approved: 'Aprobado'
+}
+
 const EMPTY_FORM: Record<string, string> = {
   folioId: '',
   logbookId: '',
@@ -89,6 +96,14 @@ function formatCell(value: number | string | boolean | null | undefined): string
   return String(value)
 }
 
+function formatEntryStatus(status: string | null | undefined): string {
+  if (status == null || status === '') {
+    return '—'
+  }
+
+  return STATUS_LABELS[status] ?? status
+}
+
 function responseToTableRows(d: DistilledWaterResponseDTO): { label: string; value: string }[] {
   return [
     { label: 'Entrada', value: formatCell(d.entryId) },
@@ -108,7 +123,7 @@ function responseToTableRows(d: DistilledWaterResponseDTO): { label: string; val
       value: d.isAcceptable === null ? '—' : d.isAcceptable ? 'Sí' : 'No'
     },
     { label: 'Lote de agua', value: formatCell(d.waterBatchId) },
-    { label: 'Estado', value: formatCell(d.entryStatus) }
+    { label: 'Estado', value: formatEntryStatus(d.entryStatus) }
   ]
 }
 

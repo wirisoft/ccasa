@@ -5,6 +5,7 @@ import Link from 'next/link'
 
 // MUI Imports
 import Alert from '@mui/material/Alert'
+import Box from '@mui/material/Box'
 import Card from '@mui/material/Card'
 import CardHeader from '@mui/material/CardHeader'
 import CardContent from '@mui/material/CardContent'
@@ -17,50 +18,49 @@ import CustomIconButton from '@core/components/mui/IconButton'
 
 type ConnectedAccountsType = {
   title: string
-  logo: string
+  iconClass: string
   checked: boolean
   subtitle: string
 }
 
 type SocialAccountsType = {
   title: string
-  logo: string
+  iconClass: string
   username?: string
   isConnected: boolean
   href?: string
 }
 
-// Vars
 const connectedAccountsArr: ConnectedAccountsType[] = [
   {
     checked: true,
     title: 'Google',
-    logo: '/images/logos/google.png',
+    iconClass: 'ri-google-fill',
     subtitle: 'Calendario y contactos'
   },
   {
     checked: false,
     title: 'Slack',
-    logo: '/images/logos/slack.png',
+    iconClass: 'ri-slack-fill',
     subtitle: 'Comunicaciones'
   },
   {
     checked: true,
     title: 'Github',
-    logo: '/images/logos/github.png',
+    iconClass: 'ri-github-fill',
     subtitle: 'Gestiona tus repositorios Git'
   },
   {
     checked: true,
     title: 'Mailchimp',
     subtitle: 'Servicio de email marketing',
-    logo: '/images/logos/mailchimp.png'
+    iconClass: 'ri-mail-line'
   },
   {
     title: 'Asana',
     checked: false,
     subtitle: 'Comunicación de tareas',
-    logo: '/images/logos/asana.png'
+    iconClass: 'ri-checkbox-circle-line'
   }
 ]
 
@@ -68,33 +68,54 @@ const socialAccountsArr: SocialAccountsType[] = [
   {
     title: 'Facebook',
     isConnected: false,
-    logo: '/images/logos/facebook.png'
+    iconClass: 'ri-facebook-fill'
   },
   {
     title: 'Twitter',
     isConnected: true,
     username: '@Theme_Selection',
-    logo: '/images/logos/twitter.png',
+    iconClass: 'ri-twitter-fill',
     href: 'https://twitter.com/Theme_Selection'
   },
   {
     title: 'Linkedin',
     isConnected: true,
     username: '@ThemeSelection',
-    logo: '/images/logos/linkedin.png',
+    iconClass: 'ri-linkedin-fill',
     href: 'https://in.linkedin.com/company/themeselection'
   },
   {
     title: 'Dribbble',
     isConnected: false,
-    logo: '/images/logos/dribbble.png'
+    iconClass: 'ri-dribbble-fill'
   },
   {
     title: 'Behance',
     isConnected: false,
-    logo: '/images/logos/behance.png'
+    iconClass: 'ri-behance-fill'
   }
 ]
+
+function BrandIcon({ className }: { className: string }) {
+  return (
+    <Box
+      component='span'
+      aria-hidden
+      sx={{
+        width: 32,
+        height: 32,
+        display: 'inline-flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        fontSize: 28,
+        color: 'text.primary',
+        flexShrink: 0
+      }}
+    >
+      <i className={className} />
+    </Box>
+  )
+}
 
 const Connections = () => {
   return (
@@ -112,7 +133,7 @@ const Connections = () => {
             {connectedAccountsArr.map((item, index) => (
               <div key={index} className='flex items-center justify-between gap-4'>
                 <div className='flex flex-grow items-center gap-4'>
-                  <img height={32} width={32} src={item.logo} alt={item.title} />
+                  <BrandIcon className={item.iconClass} />
                   <div className='flex-grow'>
                     <Typography className='font-medium' color='text.primary'>
                       {item.title}
@@ -120,7 +141,7 @@ const Connections = () => {
                     <Typography variant='body2'>{item.subtitle}</Typography>
                   </div>
                 </div>
-                <Switch defaultChecked={item.checked} />
+                <Switch defaultChecked={item.checked} inputProps={{ 'aria-label': `Conectar ${item.title}` }} />
               </div>
             ))}
           </CardContent>
@@ -134,7 +155,7 @@ const Connections = () => {
             {socialAccountsArr.map((item, index) => (
               <div key={index} className='flex items-center justify-between gap-4'>
                 <div className='flex flex-grow items-center gap-4'>
-                  <img height={32} width={32} src={item.logo} alt={item.title} />
+                  <BrandIcon className={item.iconClass} />
                   <div className='flex-grow'>
                     <Typography className='font-medium' color='text.primary'>
                       {item.title}
@@ -148,7 +169,11 @@ const Connections = () => {
                     )}
                   </div>
                 </div>
-                <CustomIconButton variant='outlined' color={item.isConnected ? 'error' : 'secondary'}>
+                <CustomIconButton
+                  variant='outlined'
+                  color={item.isConnected ? 'error' : 'secondary'}
+                  aria-label={item.isConnected ? `Desvincular ${item.title}` : `Vincular ${item.title}`}
+                >
                   <i className={item.isConnected ? 'ri-delete-bin-7-line' : 'ri-links-line'} />
                 </CustomIconButton>
               </div>

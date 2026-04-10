@@ -621,6 +621,7 @@ const CrudListPanel = ({
                 value={searchQuery}
                 onChange={e => setSearchQuery(e.target.value)}
                 sx={{ minWidth: 220 }}
+                inputProps={{ 'aria-label': 'Buscar registros' }}
                 InputProps={{
                   startAdornment: (
                     <InputAdornment position='start'>

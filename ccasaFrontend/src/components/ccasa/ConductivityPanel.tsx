@@ -217,7 +217,7 @@ const ConductivityPanel = () => {
     toDate: ''
   })
 
-  const [formType, setFormType] = useState<ConductivityType>('High')
+  const [formType, setFormType] = useState<ConductivityType | ''>('High')
   const [formWeight, setFormWeight] = useState('')
   const [formPreparationTime, setFormPreparationTime] = useState('')
   const [formObservation, setFormObservation] = useState('')
@@ -325,6 +325,11 @@ return filteredRecords.slice(start, start + rowsPerPage)
       return
     }
 
+    setFormType('')
+    setFormWeight('')
+    setFormLogbookId('')
+    setFormObservation('')
+    setFormPreparationTime('')
     setFormError(null)
     setDialogOpen(false)
   }, [submitting])
@@ -388,11 +393,9 @@ return filteredRecords.slice(start, start + rowsPerPage)
   ])
 
   const handleDownloadPdf = useCallback(async (id: number) => {
-    const authToken = typeof window !== 'undefined' ? localStorage.getItem('ccasa_access_token') : null
-
     try {
       const res = await fetch(`${getApiBaseUrl()}/api/v1/conductivity-records/${id}/pdf`, {
-        headers: authToken ? { Authorization: `Bearer ${authToken}` } : {}
+        headers: token ? { Authorization: `Bearer ${token}` } : {}
       })
 
       if (!res.ok) {
@@ -426,7 +429,7 @@ return
       setSnackbarSeverity('error')
       setSnackbar(e instanceof Error ? e.message : 'Error al descargar PDF')
     }
-  }, [])
+  }, [token])
 
   const handleReview = useCallback(
     async (id: number) => {
@@ -481,6 +484,7 @@ return
                 value={search}
                 onChange={e => setSearch(e.target.value)}
                 sx={{ minWidth: 200, flex: '1 1 180px' }}
+                inputProps={{ 'aria-label': 'Buscar en tabla de conductividad' }}
                 InputProps={{
                   startAdornment: (
                     <InputAdornment position='start'>
@@ -692,17 +696,21 @@ return (
           <Stack spacing={2} sx={{ mt: 1 }}>
             <FormControl fullWidth required size='small'>
               <InputLabel id='form-type-label'>Tipo</InputLabel>
-              <Select<ConductivityType>
+              <Select<ConductivityType | ''>
                 labelId='form-type-label'
                 label='Tipo'
+                displayEmpty
                 value={formType}
-                onChange={(e: SelectChangeEvent<ConductivityType>) => {
+                onChange={(e: SelectChangeEvent<ConductivityType | ''>) => {
                   setFormError(null)
-                  setFormType(e.target.value as ConductivityType)
+                  setFormType(e.target.value as ConductivityType | '')
                 }}
               >
-                <MenuItem value='High'>Alta (High)</MenuItem>
-                <MenuItem value='Low'>Baja (Low)</MenuItem>
+                <MenuItem value=''>
+                  <em>Seleccionar…</em>
+                </MenuItem>
+                <MenuItem value='High'>Alta</MenuItem>
+                <MenuItem value='Low'>Baja</MenuItem>
               </Select>
             </FormControl>
             <TextField

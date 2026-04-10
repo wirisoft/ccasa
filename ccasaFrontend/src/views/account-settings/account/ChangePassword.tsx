@@ -78,7 +78,13 @@ const ChangePassword = () => {
 
   const eyeIcon = (show: boolean, toggle: () => void) => (
     <InputAdornment position='end'>
-      <IconButton size='small' edge='end' onClick={toggle} onMouseDown={e => e.preventDefault()}>
+      <IconButton
+        size='small'
+        edge='end'
+        onClick={toggle}
+        onMouseDown={e => e.preventDefault()}
+        aria-label={show ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+      >
         <i className={show ? 'ri-eye-off-line' : 'ri-eye-line'} />
       </IconButton>
     </InputAdornment>

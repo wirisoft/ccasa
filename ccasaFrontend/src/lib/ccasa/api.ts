@@ -1,20 +1,35 @@
 import { clearCcasaClientSession, getStoredAccessToken } from '@/lib/ccasa/clientSession'
 
 export function getApiBaseUrl(): string {
-  const raw = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8080'
+  const raw = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8082'
 
   return raw.replace(/\/$/, '')
 }
 
 export { getStoredAccessToken }
 
+function getHttpErrorMessage(status: number): string {
+  const messages: Record<number, string> = {
+    400: 'Solicitud inválida. Verifica los datos ingresados.',
+    401: 'Tu sesión ha expirado. Por favor inicia sesión nuevamente.',
+    403: 'No tienes permiso para realizar esta acción.',
+    404: 'El recurso solicitado no fue encontrado.',
+    409: 'Ya existe un registro con esos datos.',
+    422: 'Los datos enviados no son válidos.',
+    500: 'Error interno del servidor. Intenta nuevamente.',
+    503: 'El servicio no está disponible en este momento.'
+  }
+
+  return messages[status] ?? `Error inesperado (código ${status}).`
+}
+
 async function parseErrorResponse(res: Response): Promise<string> {
   try {
     const data = (await res.json()) as { message?: string; error?: string }
 
-    return data.message || data.error || res.statusText
+    return data.message || data.error || getHttpErrorMessage(res.status)
   } catch {
-    return res.statusText
+    return getHttpErrorMessage(res.status)
   }
 }
 
@@ -65,7 +80,7 @@ export async function apiFetch<T>(path: string, options: ApiFetchOptions = {}): 
 
     const msg = await parseErrorResponse(res)
 
-    throw new Error(msg || `HTTP ${res.status}`)
+    throw new Error(msg || getHttpErrorMessage(res.status))
   }
 
   if (res.status === 204) {

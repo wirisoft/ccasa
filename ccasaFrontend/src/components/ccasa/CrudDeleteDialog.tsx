@@ -5,7 +5,9 @@ import { useCallback } from 'react'
 
 // MUI Imports
 import Alert from '@mui/material/Alert'
+import Box from '@mui/material/Box'
 import Button from '@mui/material/Button'
+import CircularProgress from '@mui/material/CircularProgress'
 import Dialog from '@mui/material/Dialog'
 import DialogActions from '@mui/material/DialogActions'
 import DialogContent from '@mui/material/DialogContent'
@@ -69,20 +71,23 @@ const CrudDeleteDialog = ({
         ) : null}
         <DialogContentText>{targetPhrase}</DialogContentText>
       </DialogContent>
-      <DialogActions sx={{ borderTop: '1px solid', borderColor: 'divider', pt: 3 }}>
+      <DialogActions sx={{ borderTop: '1px solid', borderColor: 'divider', pt: 3, flexWrap: 'wrap', gap: 1 }}>
         <Button type='button' variant='outlined' color='secondary' onClick={handleClose} disabled={loading}>
           Cancelar
         </Button>
-        <Button
-          type='button'
-          color='error'
-          variant='contained'
-          sx={{ minWidth: 120 }}
-          onClick={handleConfirm}
-          disabled={loading}
-        >
-          Eliminar
-        </Button>
+        <Box sx={{ display: 'flex', alignItems: 'center', flex: '1 1 auto', justifyContent: 'flex-end' }}>
+          {loading ? <CircularProgress size={20} sx={{ mr: 1 }} /> : null}
+          <Button
+            type='button'
+            color='error'
+            variant='contained'
+            sx={{ minWidth: 120 }}
+            onClick={handleConfirm}
+            disabled={loading}
+          >
+            Eliminar
+          </Button>
+        </Box>
       </DialogActions>
     </Dialog>
   )

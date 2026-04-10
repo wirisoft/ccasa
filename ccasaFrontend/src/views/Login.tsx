@@ -248,6 +248,7 @@ const Login = () => {
                           edge='end'
                           onClick={() => setIsPasswordShown(s => !s)}
                           onMouseDown={e => e.preventDefault()}
+                          aria-label={isPasswordShown ? 'Ocultar contraseña' : 'Mostrar contraseña'}
                         >
                           <i className={isPasswordShown ? 'ri-eye-off-line' : 'ri-eye-line'} />
                         </IconButton>

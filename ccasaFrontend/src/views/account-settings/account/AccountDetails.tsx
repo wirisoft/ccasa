@@ -270,12 +270,11 @@ const AccountDetails = () => {
 
       formDataUpload.append('file', signatureFile)
 
-      const authToken = typeof window !== 'undefined' ? window.localStorage.getItem('ccasa_access_token') : null
-      const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL?.replace(/\/$/, '') ?? 'http://localhost:8080'
+      const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL?.replace(/\/$/, '') ?? 'http://localhost:8082'
 
       const res = await fetch(`${baseUrl}/api/v1/users/${userId}/signature-file`, {
         method: 'POST',
-        headers: authToken ? { Authorization: `Bearer ${authToken}` } : {},
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
         body: formDataUpload
       })
 

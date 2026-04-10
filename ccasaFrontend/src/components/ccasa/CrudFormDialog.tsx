@@ -6,8 +6,10 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 
 // MUI Imports
 import Alert from '@mui/material/Alert'
+import Box from '@mui/material/Box'
 import Button from '@mui/material/Button'
 import Checkbox from '@mui/material/Checkbox'
+import CircularProgress from '@mui/material/CircularProgress'
 import Dialog from '@mui/material/Dialog'
 import DialogActions from '@mui/material/DialogActions'
 import DialogContent from '@mui/material/DialogContent'
@@ -619,13 +621,16 @@ const CrudFormDialog = ({
             })}
           </Grid>
         </DialogContent>
-        <DialogActions sx={{ borderTop: '1px solid', borderColor: 'divider', pt: 3 }}>
+        <DialogActions sx={{ borderTop: '1px solid', borderColor: 'divider', pt: 3, flexWrap: 'wrap', gap: 1 }}>
           <Button type='button' variant='outlined' color='secondary' onClick={onClose} disabled={loading}>
             Cancelar
           </Button>
-          <Button type='submit' variant='contained' sx={{ minWidth: 120 }} disabled={loading}>
-            {primaryLabel}
-          </Button>
+          <Box sx={{ display: 'flex', alignItems: 'center', flex: '1 1 auto', justifyContent: 'flex-end' }}>
+            {loading ? <CircularProgress size={20} sx={{ mr: 1 }} /> : null}
+            <Button type='submit' variant='contained' sx={{ minWidth: 120 }} disabled={loading}>
+              {primaryLabel}
+            </Button>
+          </Box>
         </DialogActions>
       </form>
     </Dialog>

@@ -276,6 +276,7 @@ const LogbooksPanel = ({ title = 'Bitácoras activas', showCard = true }: Logboo
                 value={searchQuery}
                 onChange={e => setSearchQuery(e.target.value)}
                 sx={{ minWidth: 220 }}
+                inputProps={{ 'aria-label': 'Buscar bitácoras' }}
                 InputProps={{
                   startAdornment: (
                     <InputAdornment position='start'>
@@ -314,7 +315,11 @@ const LogbooksPanel = ({ title = 'Bitácoras activas', showCard = true }: Logboo
               </Tooltip>
             </Stack>
           </Stack>
-          {rows.length > 0 && filteredRows.length === 0 ? (
+          {rows.length === 0 ? (
+            <Typography variant='body2' color='text.secondary' sx={{ mt: 2 }}>
+              No hay bitácoras registradas. Crea la primera con el botón &quot;+ Nueva bitácora&quot;.
+            </Typography>
+          ) : rows.length > 0 && filteredRows.length === 0 ? (
             <Typography variant='body2' color='text.secondary' sx={{ py: 3 }}>
               No se encontraron bitácoras que coincidan con la búsqueda.
             </Typography>

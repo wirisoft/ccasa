@@ -4,25 +4,15 @@
 import Link from 'next/link'
 
 // MUI Imports
+import Box from '@mui/material/Box'
 import Button from '@mui/material/Button'
 import Typography from '@mui/material/Typography'
 
 // Type Imports
 import type { Mode } from '@core/types'
 
-// Component Imports
-import Illustrations from '@components/Illustrations'
-
-// Hook Imports
-import { useImageVariant } from '@core/hooks/useImageVariant'
-
 const NotFound = ({ mode }: { mode: Mode }) => {
-  // Vars
-  const darkImg = '/images/pages/misc-mask-dark.png'
-  const lightImg = '/images/pages/misc-mask-light.png'
-
-  // Hooks
-  const miscBackground = useImageVariant(mode, lightImg, darkImg)
+  void mode
 
   return (
     <div className='flex items-center justify-center min-bs-[100dvh] relative p-6 overflow-x-hidden'>
@@ -31,19 +21,26 @@ const NotFound = ({ mode }: { mode: Mode }) => {
           <Typography className='font-medium text-8xl' color='text.primary'>
             404
           </Typography>
-          <Typography variant='h4'>Page Not Found ⚠️</Typography>
-          <Typography>We couldn&#39;t find the page you are looking for.</Typography>
+          <Typography variant='h4'>Página no encontrada ⚠️</Typography>
+          <Typography>No pudimos encontrar la página que buscas.</Typography>
         </div>
-        <img
-          alt='error-illustration'
-          src='/images/illustrations/characters/5.png'
-          className='object-cover bs-[400px] md:bs-[450px] lg:bs-[500px]'
-        />
+        <Box
+          aria-hidden
+          sx={{
+            fontSize: { xs: 140, md: 180 },
+            color: 'text.secondary',
+            lineHeight: 1,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center'
+          }}
+        >
+          <i className='ri-error-warning-line' />
+        </Box>
         <Button href='/' component={Link} variant='contained'>
-          Back to Home
+          Volver al inicio
         </Button>
       </div>
-      <Illustrations maskImg={{ src: miscBackground }} />
     </div>
   )
 }
