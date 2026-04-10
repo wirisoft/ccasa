@@ -601,6 +601,10 @@ const CrudFormDialog = ({
                         markTouched(field.key)
                         setValue(field.key, e.target.value)
                       }}
+                      inputProps={{
+                        min: field.min ?? 0,
+                        step: field.step ?? 'any'
+                      }}
                     />
                   </Grid>
                 )

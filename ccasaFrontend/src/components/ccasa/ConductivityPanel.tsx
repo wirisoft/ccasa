@@ -201,6 +201,7 @@ const ConductivityPanel = () => {
   const [rowsPerPage, setRowsPerPage] = useState(10)
   const [dialogOpen, setDialogOpen] = useState(false)
   const [reviewing, setReviewing] = useState<number | null>(null)
+  const [reviewSubmitting, setReviewSubmitting] = useState(false)
   const [confirmReviewOpen, setConfirmReviewOpen] = useState(false)
   const [reviewingId, setReviewingId] = useState<number | null>(null)
   const [submitting, setSubmitting] = useState(false)
@@ -437,6 +438,7 @@ return filteredRecords.slice(start, start + rowsPerPage)
   const handleReview = useCallback(
     async (id: number) => {
       setReviewing(id)
+      setReviewSubmitting(true)
 
       try {
         await apiFetch<ConductivityRecord>(`${CONDUCTIVITY_API}/${id}/review`, {
@@ -445,11 +447,14 @@ return filteredRecords.slice(start, start + rowsPerPage)
         })
         setSnackbarSeverity('success')
         setSnackbar('Registro revisado correctamente')
+        setConfirmReviewOpen(false)
+        setReviewingId(null)
         void fetchRecords()
       } catch (e) {
         setSnackbarSeverity('error')
         setSnackbar(e instanceof Error ? e.message : 'Error al revisar')
       } finally {
+        setReviewSubmitting(false)
         setReviewing(null)
       }
     },
@@ -811,7 +816,19 @@ return (
         </DialogActions>
       </Dialog>
 
-      <Dialog open={confirmReviewOpen} onClose={() => setConfirmReviewOpen(false)} maxWidth='xs' fullWidth>
+      <Dialog
+        open={confirmReviewOpen}
+        onClose={() => {
+          if (reviewSubmitting) {
+            return
+          }
+
+          setConfirmReviewOpen(false)
+          setReviewingId(null)
+        }}
+        maxWidth='xs'
+        fullWidth
+      >
         <DialogTitle>Confirmar revisión</DialogTitle>
         <DialogContent>
           <DialogContentText>
@@ -824,20 +841,20 @@ return (
               setConfirmReviewOpen(false)
               setReviewingId(null)
             }}
+            disabled={reviewSubmitting}
           >
             Cancelar
           </Button>
           <Button
             variant='contained'
             color='success'
+            disabled={reviewSubmitting || reviewingId == null}
+            startIcon={
+              reviewSubmitting ? <CircularProgress size={16} color='inherit' /> : null
+            }
             onClick={() => {
-              setConfirmReviewOpen(false)
-              const id = reviewingId
-
-              setReviewingId(null)
-
-              if (id != null) {
-                void handleReview(id)
+              if (reviewingId != null) {
+                void handleReview(reviewingId)
               }
             }}
           >

@@ -193,18 +193,14 @@ export function formatCrudCell(value: unknown, column?: string): string {
   }
 
   if (typeof value === 'number') {
-    return String(value)
+    return Number.isNaN(value) ? '—' : String(value)
   }
 
-  try {
-    return JSON.stringify(value)
-  } catch {
-    if (typeof value === 'string' && STATUS_LABELS[value]) {
-      return STATUS_LABELS[value]
-    }
-
-    return String(value)
+  if (typeof value === 'object') {
+    return '—'
   }
+
+  return String(value)
 }
 
 /** Fila devuelta por GET de opciones FK: CrudResponseDTO o DTO plano (p. ej. logbooks). */

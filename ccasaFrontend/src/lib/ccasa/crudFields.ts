@@ -58,6 +58,12 @@ export type CrudFieldDef = {
    * Si false u omitido, se envía `YYYY-MM-DD` para campos mapeados a `LocalDate`.
    */
   dateAsIsoInstant?: boolean
+
+  /** Para `type: 'number'`: atributo HTML `min` (por defecto en formulario: 0). Usar p. ej. -9999 si se permiten negativos. */
+  min?: number
+
+  /** Para `type: 'number'`: atributo HTML `step` (por defecto `'any'`). */
+  step?: number | string
 }
 
 export type CrudResourceConfig = {
@@ -134,9 +140,15 @@ export const BATCH_FIELDS: CrudFieldDef[] = [
     optionsApiPath: '/api/v1/reagents',
     optionLabelKey: 'name'
   },
-  { key: 'generatedAt', label: 'Fecha de generación', type: 'date', gridCols: 4 },
-  { key: 'startDate', label: 'Fecha inicio', type: 'date', gridCols: 4 },
-  { key: 'endDate', label: 'Fecha fin', type: 'date', gridCols: 4 }
+  {
+    key: 'generatedAt',
+    label: 'Fecha de generación',
+    type: 'date',
+    gridCols: 4,
+    helperText: 'Formato: dd/mm/aaaa'
+  },
+  { key: 'startDate', label: 'Fecha inicio', type: 'date', gridCols: 4, helperText: 'Formato: dd/mm/aaaa' },
+  { key: 'endDate', label: 'Fecha fin', type: 'date', gridCols: 4, helperText: 'Formato: dd/mm/aaaa' }
 ]
 
 export const BATCH_CONFIG: CrudResourceConfig = {
@@ -198,8 +210,8 @@ export const EQUIPMENT_CONFIG: CrudResourceConfig = {
 // ---------------------------------------------------------------------------
 export const REFERENCE_PARAMETER_FIELDS: CrudFieldDef[] = [
   { key: 'code', label: 'Código', type: 'text', required: true, gridCols: 4 },
-  { key: 'minValue', label: 'Valor mínimo', type: 'number', gridCols: 4 },
-  { key: 'maxValue', label: 'Valor máximo', type: 'number', gridCols: 4 },
+  { key: 'minValue', label: 'Valor mínimo', type: 'number', gridCols: 4, min: -9999 },
+  { key: 'maxValue', label: 'Valor máximo', type: 'number', gridCols: 4, min: -9999 },
   { key: 'description', label: 'Descripción', type: 'text', gridCols: 6 },
   { key: 'ruleDetail', label: 'Detalle de regla', type: 'text', gridCols: 6 }
 ]
@@ -336,7 +348,8 @@ export const ALERT_FIELDS: CrudFieldDef[] = [
     label: 'Fecha de generación',
     type: 'date',
     gridCols: 6,
-    dateAsIsoInstant: true
+    dateAsIsoInstant: true,
+    helperText: 'Formato: dd/mm/aaaa'
   },
   {
     key: 'status',
@@ -386,7 +399,8 @@ export const SIGNATURE_FIELDS: CrudFieldDef[] = [
     label: 'Fecha de firma',
     type: 'date',
     gridCols: 6,
-    dateAsIsoInstant: true
+    dateAsIsoInstant: true,
+    helperText: 'Formato: dd/mm/aaaa'
   },
   {
     key: 'entryId',
@@ -469,7 +483,14 @@ export const USER_CONFIG: CrudResourceConfig = {
 
 /** Entrada genérica (Entry) — claves alineadas con CrudEntityMapper del backend. */
 export const ENTRY_CORE_FIELDS: CrudFieldDef[] = [
-  { key: 'recordedAt', label: 'Fecha de registro', type: 'date', gridCols: 6, dateAsIsoInstant: true },
+  {
+    key: 'recordedAt',
+    label: 'Fecha de registro',
+    type: 'date',
+    gridCols: 6,
+    dateAsIsoInstant: true,
+    helperText: 'Formato: dd/mm/aaaa'
+  },
   {
     key: 'status',
     label: 'Estado',
@@ -529,7 +550,7 @@ export const ENTRY_DISTILLED_WATER_FIELDS: CrudFieldDef[] = [
   { key: 'ceReading2', label: 'CE Lectura 2', type: 'number', gridCols: 4 },
   { key: 'ceReading3', label: 'CE Lectura 3', type: 'number', gridCols: 4 },
   { key: 'ceAverage', label: 'CE Promedio', type: 'number', gridCols: 4 },
-  { key: 'referenceDifference', label: 'Diferencia referencia', type: 'number', gridCols: 4 },
+  { key: 'referenceDifference', label: 'Diferencia referencia', type: 'number', gridCols: 4, min: -9999 },
   { key: 'controlStandardPct', label: 'Estándar control %', type: 'number', gridCols: 4 },
   { key: 'isAcceptable', label: '¿Aceptable?', type: 'boolean' },
   {
@@ -572,12 +593,19 @@ export const ENTRY_CONDUCTIVITY_FIELDS: CrudFieldDef[] = [
       { value: 'Low', label: 'Baja' }
     ]
   },
-  { key: 'measuredValue', label: 'Valor medido', type: 'number', gridCols: 6 },
+  { key: 'measuredValue', label: 'Valor medido', type: 'number', gridCols: 6, min: -9999 },
   { key: 'weightGrams', label: 'Peso (g)', type: 'number', required: true, gridCols: 6 },
-  { key: 'calculatedMol', label: 'Mol calculado', type: 'number', gridCols: 6 },
-  { key: 'calculatedValue', label: 'Valor calculado', type: 'number', gridCols: 6 },
+  { key: 'calculatedMol', label: 'Mol calculado', type: 'number', gridCols: 6, min: -9999 },
+  { key: 'calculatedValue', label: 'Valor calculado', type: 'number', gridCols: 6, min: -9999 },
   { key: 'inRange', label: '¿En rango?', type: 'boolean' },
-  { key: 'autoDate', label: 'Fecha automática', type: 'date', gridCols: 6, dateAsIsoInstant: true },
+  {
+    key: 'autoDate',
+    label: 'Fecha automática',
+    type: 'date',
+    gridCols: 6,
+    dateAsIsoInstant: true,
+    helperText: 'Formato: dd/mm/aaaa'
+  },
   {
     key: 'entryId',
     label: 'Entrada',
@@ -599,10 +627,17 @@ export const ENTRY_CONDUCTIVITY_CONFIG: CrudResourceConfig = {
 
 /** Temperatura horno — claves alineadas con CrudEntityMapper del backend. */
 export const ENTRY_OVEN_TEMP_FIELDS: CrudFieldDef[] = [
-  { key: 'rawTemperature', label: 'Temperatura cruda', type: 'number', gridCols: 6 },
-  { key: 'correctedTemperature', label: 'Temperatura corregida', type: 'number', gridCols: 6 },
+  { key: 'rawTemperature', label: 'Temperatura cruda', type: 'number', gridCols: 6, min: -9999 },
+  { key: 'correctedTemperature', label: 'Temperatura corregida', type: 'number', gridCols: 6, min: -9999 },
   { key: 'readingNumber', label: 'Número de lectura', type: 'number', gridCols: 4 },
-  { key: 'recordedAt', label: 'Fecha de registro', type: 'date', gridCols: 4, dateAsIsoInstant: true },
+  {
+    key: 'recordedAt',
+    label: 'Fecha de registro',
+    type: 'date',
+    gridCols: 4,
+    dateAsIsoInstant: true,
+    helperText: 'Formato: dd/mm/aaaa'
+  },
   { key: 'inRange', label: '¿En rango?', type: 'boolean' },
   { key: 'isMaintenance', label: '¿Mantenimiento?', type: 'boolean' },
   {
@@ -739,7 +774,7 @@ export const ENTRY_EXPENSE_CHART_CONFIG: CrudResourceConfig = {
 
 /** Lavado de material — claves alineadas con CrudEntityMapper del backend. */
 export const ENTRY_MATERIAL_WASH_FIELDS: CrudFieldDef[] = [
-  { key: 'mondayDate', label: 'Fecha lunes', type: 'date', gridCols: 6 },
+  { key: 'mondayDate', label: 'Fecha lunes', type: 'date', gridCols: 6, helperText: 'Formato: dd/mm/aaaa' },
   {
     key: 'pieceType',
     label: 'Tipo de pieza',
@@ -875,10 +910,16 @@ export const ENTRY_WEIGHING_CONFIG: CrudResourceConfig = {
 export const ENTRY_ACCURACY_FIELDS: CrudFieldDef[] = [
   { key: 'batch1Avg', label: 'Promedio lote 1', type: 'number', gridCols: 6 },
   { key: 'batch2Avg', label: 'Promedio lote 2', type: 'number', gridCols: 6 },
-  { key: 'difference', label: 'Diferencia', type: 'number', gridCols: 4 },
+  { key: 'difference', label: 'Diferencia', type: 'number', gridCols: 4, min: -9999 },
   { key: 'inRange', label: '¿En rango?', type: 'boolean' },
   { key: 'phFolioNumber', label: 'Número folio pH', type: 'number', gridCols: 4 },
-  { key: 'dailyRecordDate', label: 'Fecha registro diario', type: 'date', gridCols: 4 },
+  {
+    key: 'dailyRecordDate',
+    label: 'Fecha registro diario',
+    type: 'date',
+    gridCols: 4,
+    helperText: 'Formato: dd/mm/aaaa'
+  },
   {
     key: 'entryId',
     label: 'Entrada',
@@ -920,7 +961,7 @@ export const ENTRY_FLASK_TREATMENT_FIELDS: CrudFieldDef[] = [
   { key: 'swabsUsed', label: 'Hisopos usados', type: 'number', gridCols: 6 },
   { key: 'analysisValue', label: 'Valor de análisis', type: 'number', gridCols: 6 },
   { key: 'cmcResult', label: 'Resultado CMC', type: 'text', gridCols: 6 },
-  { key: 'reportDate', label: 'Fecha de reporte', type: 'date', gridCols: 6 },
+  { key: 'reportDate', label: 'Fecha de reporte', type: 'date', gridCols: 6, helperText: 'Formato: dd/mm/aaaa' },
   {
     key: 'entryId',
     label: 'Entrada',
@@ -993,7 +1034,14 @@ export const REAGENT_JAR_FIELDS: CrudFieldDef[] = [
     gridCols: 6,
     helperText: 'Debe ser mayor a 0'
   },
-  { key: 'openedAt', label: 'Fecha de apertura', type: 'date', required: false, gridCols: 6 }
+  {
+    key: 'openedAt',
+    label: 'Fecha de apertura',
+    type: 'date',
+    required: false,
+    gridCols: 6,
+    helperText: 'Formato: dd/mm/aaaa'
+  }
 ]
 
 export const REAGENT_JAR_CONFIG: CrudResourceConfig = {

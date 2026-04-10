@@ -37,8 +37,17 @@ import com.backend.ccasa.service.models.enums.WaterTypeEnum;
 import jakarta.persistence.EntityManager;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Set;
 
 public final class CrudEntityMapper {
+
+	/** No exponer en respuestas CRUD de usuario (seguridad). */
+	private static final Set<String> USER_EXCLUDED_FROM_RESPONSE = Set.of(
+			"passwordHash",
+			"signatureStoragePath",
+			"signatureContentType",
+			"signatureFileName",
+			"signatureUploadedAt");
 
 	private CrudEntityMapper() {
 	}
@@ -285,15 +294,11 @@ public final class CrudEntityMapper {
 			values.put("firstName", e.getFirstName());
 			values.put("lastName", e.getLastName());
 			values.put("email", e.getEmail());
-			values.put("passwordHash", e.getPasswordHash());
 			values.put("active", e.isActive());
 			values.put("nomenclature", e.getNomenclature());
-			values.put("signatureFileName", e.getSignatureFileName());
-			values.put("signatureContentType", e.getSignatureContentType());
-			values.put("signatureStoragePath", e.getSignatureStoragePath());
-			values.put("signatureUploadedAt", e.getSignatureUploadedAt());
 			values.put("roleId", idOf(e.getRole()));
 			putAudit(values, e);
+			values.keySet().removeAll(USER_EXCLUDED_FROM_RESPONSE);
 			return values;
 		}
 		if (entity instanceof LogbookEntity e) {
