@@ -1,5 +1,8 @@
-/** Subir versión en cada despliegue relevante del shell HTML / rutas pre-cacheadas. */
-const CACHE_NAME = 'ccasa-lab-v2'
+/**
+ * Subir versión al cambiar lógica de caché. v4: mismo comportamiento que v3; bump para vaciar
+ * cachés de clientes que aún tenían bundles viejos (p. ej. títulos de UI desactualizados).
+ */
+const CACHE_NAME = 'ccasa-lab-v4'
 
 const OFFLINE_HTML = `<!DOCTYPE html>
 <html lang="es">
@@ -23,52 +26,12 @@ const OFFLINE_HTML = `<!DOCTYPE html>
 </body>
 </html>`
 
-// Rutas alineadas con slugs reales bajo /entradas/[slug] y páginas principales
-const STATIC_ASSETS = [
-  '/',
-  '/bitacoras',
-  '/entradas/core',
-  '/entradas/agua-destilada',
-  '/entradas/conductividad',
-  '/entradas/temperatura-horno',
-  '/entradas/horno-secado',
-  '/entradas/gastos-cartas',
-  '/entradas/lavado-material',
-  '/entradas/preparacion-soluciones',
-  '/entradas/pesadas',
-  '/entradas/precision',
-  '/entradas/tratamiento-matraz',
-  '/catalogos/reactivos',
-  '/catalogos/lotes',
-  '/catalogos/soluciones',
-  '/catalogos/insumos',
-  '/catalogos/frascos-reactivo',
-  '/folios',
-  '/alertas',
-  '/firmas',
-  '/empleados',
-  '/roles',
-  '/login',
-  '/register',
-  '/account-settings',
-  '/_not-found'
-]
+// No pre-cachear rutas HTML de la app (Next/RSC): en install quedaba una copia vieja
+// (p. ej. títulos) hasta que el usuario borraba caché. El runtime sigue cacheando GET
+// exitosos en fetch para modo offline en páginas ya visitadas.
 
 self.addEventListener('install', event => {
-  event.waitUntil(
-    caches
-      .open(CACHE_NAME)
-      .then(cache =>
-        Promise.all(
-          STATIC_ASSETS.map(url =>
-            cache.add(url).catch(() => {
-              /* Ignorar fallos (redirect, 401, etc.) para no bloquear install */
-            })
-          )
-        )
-      )
-      .then(() => self.skipWaiting())
-  )
+  event.waitUntil(self.skipWaiting())
 })
 
 self.addEventListener('activate', event => {
