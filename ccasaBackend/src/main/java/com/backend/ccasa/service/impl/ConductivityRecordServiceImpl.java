@@ -525,74 +525,74 @@ public class ConductivityRecordServiceImpl implements IConductivityRecordService
 		}
 	}
 
-	private PdfPCell buildLogoCell() {
+	private PdfPTable headerLine(ConductivityRecordResponseDTO dto) throws Exception {
+		PdfPTable header = new PdfPTable(new float[] { 1f, 3f, 2.5f });
+		header.setWidthPercentage(100);
+		header.setSpacingAfter(4f);
+
 		PdfPCell logoCell = new PdfPCell();
 		logoCell.setBorder(Rectangle.NO_BORDER);
 		logoCell.setVerticalAlignment(Element.ALIGN_MIDDLE);
-		logoCell.setHorizontalAlignment(Element.ALIGN_CENTER);
 		logoCell.setPadding(4f);
 		Image logo = loadClasspathLogo();
 		if (logo != null) {
-			logo.scaleToFit(72f, 52f);
+			logo.scaleToFit(60f, 50f);
 			logoCell.addElement(logo);
 		} else {
+			logoCell.addElement(new Phrase("SA", F_14_WHITE_BOLD));
 			logoCell.setBackgroundColor(COLOR_NAVY);
-			logoCell.setMinimumHeight(52f);
-			Paragraph sa = new Paragraph("SA", F_14_WHITE_BOLD);
-			sa.setAlignment(Element.ALIGN_CENTER);
-			logoCell.addElement(sa);
 		}
-		return logoCell;
-	}
+		header.addCell(logoCell);
 
-	private PdfPCell headerFolioFechaCell(String text, Font font, boolean noWrap) {
-		PdfPCell c = new PdfPCell(new Phrase(safe(text), font));
-		c.setBorder(Rectangle.BOX);
-		c.setBorderColor(COLOR_GRAY_DARK);
-		c.setBorderWidth(0.5f);
-		c.setBackgroundColor(COLOR_WHITE);
-		c.setPadding(6f);
-		c.setVerticalAlignment(Element.ALIGN_MIDDLE);
-		if (noWrap) {
-			c.setNoWrap(true);
-		}
-		return c;
-	}
+		PdfPCell centerCell = new PdfPCell();
+		centerCell.setBorder(Rectangle.NO_BORDER);
+		centerCell.setVerticalAlignment(Element.ALIGN_MIDDLE);
+		centerCell.setPadding(4f);
+		centerCell.addElement(new Phrase("BITÁCORAS SERVICIOS AMBIENTALES", F_11_BOLD_NAVY));
+		centerCell.addElement(new Phrase("Laboratorio de análisis ambiental · Control de calidad", F_8_NORMAL_GRAY_DARK));
+		header.addCell(centerCell);
 
-	private PdfPTable headerLine(ConductivityRecordResponseDTO dto) {
-		PdfPTable outer = new PdfPTable(new float[] { 0.85f, 2.15f });
-		outer.setWidthPercentage(100);
-		outer.addCell(buildLogoCell());
+		Font labelFont = F_8_NORMAL_GRAY;
+		Font valueFont = F_9_BOLD_NAVY;
 
-		PdfPTable headerInner = new PdfPTable(new float[] { 1.5f, 1f });
-		headerInner.setWidthPercentage(100);
+		PdfPTable metaTable = new PdfPTable(new float[] { 1f, 1f });
+		metaTable.setWidthPercentage(100);
 
-		PdfPCell leftTitles = new PdfPCell();
-		leftTitles.setBorder(Rectangle.NO_BORDER);
-		leftTitles.addElement(new Paragraph("BITÁCORAS SERVICIOS AMBIENTALES", F_11_BOLD_NAVY));
-		leftTitles.addElement(new Paragraph("Laboratorio de análisis ambiental · Control de calidad", F_8_NORMAL_GRAY_DARK));
+		PdfPCell lbl1 = new PdfPCell(new Phrase("Folio No.", labelFont));
+		lbl1.setBorder(Rectangle.TOP | Rectangle.LEFT | Rectangle.RIGHT);
+		lbl1.setBorderColor(COLOR_GRAY_MID);
+		lbl1.setPadding(3f);
+		metaTable.addCell(lbl1);
 
-		PdfPTable boxes = new PdfPTable(new float[] { 1f, 2f, 1f, 1.5f });
-		boxes.setWidthPercentage(100);
-		boxes.addCell(headerFolioFechaCell("Folio No.", F_8_NORMAL_GRAY, false));
-		boxes.addCell(headerFolioFechaCell(safe(dto.displayFolio()), F_9_BOLD_BLACK, true));
-		boxes.addCell(headerFolioFechaCell("Fecha", F_8_NORMAL_GRAY, false));
-		boxes.addCell(headerFolioFechaCell(
-			safe(PDF_DATE.format(dto.recordedAt() != null ? dto.recordedAt() : Instant.now())),
-			F_10_BOLD_BLACK,
-			true));
+		PdfPCell lbl2 = new PdfPCell(new Phrase("Fecha", labelFont));
+		lbl2.setBorder(Rectangle.TOP | Rectangle.LEFT | Rectangle.RIGHT);
+		lbl2.setBorderColor(COLOR_GRAY_MID);
+		lbl2.setPadding(3f);
+		metaTable.addCell(lbl2);
 
-		PdfPCell rightBoxes = new PdfPCell(boxes);
-		rightBoxes.setBorder(Rectangle.NO_BORDER);
-		rightBoxes.setVerticalAlignment(Element.ALIGN_TOP);
+		String folioText = safe(dto.displayFolio());
+		PdfPCell val1 = new PdfPCell(new Phrase(folioText, valueFont));
+		val1.setBorder(Rectangle.BOX);
+		val1.setBorderColor(COLOR_GRAY_MID);
+		val1.setPadding(3f);
+		val1.setNoWrap(false);
+		metaTable.addCell(val1);
 
-		headerInner.addCell(leftTitles);
-		headerInner.addCell(rightBoxes);
+		String fechaText = dto.recordedAt() != null ? PDF_DATE.format(dto.recordedAt()) : "";
+		PdfPCell val2 = new PdfPCell(new Phrase(fechaText, valueFont));
+		val2.setBorder(Rectangle.BOX);
+		val2.setBorderColor(COLOR_GRAY_MID);
+		val2.setPadding(3f);
+		val2.setNoWrap(true);
+		metaTable.addCell(val2);
 
-		PdfPCell wrap = new PdfPCell(headerInner);
-		wrap.setBorder(Rectangle.NO_BORDER);
-		outer.addCell(wrap);
-		return outer;
+		PdfPCell metaCell = new PdfPCell(metaTable);
+		metaCell.setBorder(Rectangle.NO_BORDER);
+		metaCell.setPadding(0f);
+		metaCell.setVerticalAlignment(Element.ALIGN_MIDDLE);
+		header.addCell(metaCell);
+
+		return header;
 	}
 
 	private PdfPTable headerDividerThick() {
