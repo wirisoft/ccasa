@@ -378,3 +378,110 @@ export function resolveFkDisplay(value: unknown, column: string, fkLookups: FkLo
 
   return formatCrudCell(value, column)
 }
+
+/**
+ * Texto contextual breve por ruta de API (p. ej. debajo del CardHeader en listados CRUD).
+ */
+export function getSectionInfo(apiPath: string): string | null {
+  if (apiPath.includes('logbooks')) {
+    return 'Las bitácoras son los libros de registro del laboratorio. El sistema crea automáticamente 15 bitácoras (códigos 1–15). Cada entrada de laboratorio pertenece a una bitácora.'
+  }
+
+  if (apiPath.includes('folio-blocks')) {
+    return 'Los bloques de folios definen rangos numéricos para organizar los folios. Debes crear un bloque antes de crear folios manualmente. Los registros de conductividad crean su bloque automáticamente.'
+  }
+
+  if (apiPath.includes('folios')) {
+    return 'Los folios son unidades de registro dentro de una bitácora. Requieren un bloque de folios y una bitácora. Los registros de conductividad generan su folio automáticamente con formato BSA-COND-XXXXXX.'
+  }
+
+  if (apiPath.includes('reagents')) {
+    return 'Catálogo de reactivos del laboratorio. Debes registrar los reactivos antes de crear lotes o frascos de reactivo. Son necesarios también en los módulos de Horno de secado, Gastos y cartas, y Pesadas.'
+  }
+
+  if (apiPath.includes('batches')) {
+    return 'Los lotes identifican partidas específicas de reactivos. Requieren tener al menos un reactivo registrado. Son opcionales en Agua destilada y requeridos en Gastos y cartas.'
+  }
+
+  if (apiPath.includes('solutions')) {
+    return 'Catálogo de soluciones del laboratorio. El sistema incluye 16 soluciones predeterminadas. Son necesarias en los módulos de Pesadas y Preparación de soluciones.'
+  }
+
+  if (apiPath.includes('supplies')) {
+    return 'Insumos generales del laboratorio. Son necesarios en el módulo de Tratamiento de matraz (hisopos). Registra aquí cualquier material de consumo del laboratorio.'
+  }
+
+  if (apiPath.includes('equipment')) {
+    return 'Equipos de laboratorio disponibles. El sistema incluye 8 equipos predeterminados. Se usan como referencia en Gastos y cartas. Registra tipo y denominación de cada equipo.'
+  }
+
+  if (apiPath.includes('reagent-jars')) {
+    return 'Registro de frascos físicos de reactivos. Requieren tener un reactivo registrado. Llevan control de cantidad inicial y actual. Son necesarios en el módulo de Gastos y cartas.'
+  }
+
+  if (apiPath.includes('reference-parameters')) {
+    return 'Parámetros de referencia usados en los cálculos de conductividad KCl. El sistema los carga automáticamente al arrancar. Solo el administrador puede modificarlos. Cambiarlos afecta directamente los cálculos.'
+  }
+
+  if (apiPath.includes('roles')) {
+    return 'Roles disponibles en el sistema. Cada usuario debe tener un rol asignado. Los roles Admin, Analyst, Supervisor y Sampler ya existen por defecto.'
+  }
+
+  if (apiPath.includes('alerts')) {
+    return 'Alertas del sistema. Registra y gestiona alertas generadas durante la operación del laboratorio. Pueden asignarse a un usuario específico.'
+  }
+
+  if (apiPath.includes('signatures')) {
+    return 'Firmas digitales del sistema. Se generan automáticamente al firmar o aprobar una entrada desde el módulo de Entradas → Núcleo. Este módulo es solo de consulta.'
+  }
+
+  if (apiPath.includes('users')) {
+    return 'Empleados del laboratorio. Solo el administrador puede crear o modificar usuarios. Para poder aprobar registros de conductividad, el usuario debe tener asignada la nomenclatura TCM o TMC.'
+  }
+
+  if (apiPath.includes('entry-conductivity')) {
+    return 'Registros de conductividad KCl (RF-05). El sistema calcula automáticamente la conductividad teórica y verifica si está en el rango de aceptación (~1400–1420 µS/cm para Alta). Requiere una bitácora activa. Para aprobar un registro, debe existir un usuario con nomenclatura TCM o TMC.'
+  }
+
+  if (apiPath.includes('entry-distilled-water')) {
+    return 'Registros de agua destilada (RF-08). Requiere crear primero una Entrada en el módulo Entradas → Núcleo. El sistema calcula promedios de pH y CE automáticamente.'
+  }
+
+  if (apiPath.includes('entry-oven-temp')) {
+    return 'Registros de temperatura de horno. Requiere una entrada núcleo existente creada en Entradas → Núcleo.'
+  }
+
+  if (apiPath.includes('entry-drying-oven')) {
+    return 'Registros del horno de secado. Requiere una entrada núcleo y un reactivo registrado. Puedes asignar analista y supervisor.'
+  }
+
+  if (apiPath.includes('entry-expense-chart')) {
+    return 'Registro de gastos y cartas del laboratorio. Requiere una entrada núcleo, un lote de reactivo y un frasco de KCl registrados previamente.'
+  }
+
+  if (apiPath.includes('entry-material-wash')) {
+    return 'Registros de lavado de material (RF-09). Requiere una entrada núcleo. Es necesario completarlo antes de crear un Tratamiento de matraz.'
+  }
+
+  if (apiPath.includes('entry-solution-prep')) {
+    return 'Registro de preparación de soluciones. Requiere una entrada núcleo, una solución del catálogo y una pesada registrada previamente en el módulo de Pesadas.'
+  }
+
+  if (apiPath.includes('entry-weighing')) {
+    return 'Registro de pesadas del laboratorio. Requiere una entrada núcleo y un reactivo. La solución destino es opcional. Es necesario completarlo antes de crear una Preparación de soluciones.'
+  }
+
+  if (apiPath.includes('entry-accuracy')) {
+    return 'Registros de mediciones de precisión. Requiere una entrada núcleo, un muestreador y seleccionar la bitácora de pH correspondiente.'
+  }
+
+  if (apiPath.includes('entry-flask-treatment')) {
+    return 'Registro de tratamiento de matraz. Requiere una entrada núcleo, un registro de Lavado de material previo y un insumo de hisopos registrado en el catálogo de Insumos.'
+  }
+
+  if (apiPath.includes('entries')) {
+    return 'Entradas núcleo del laboratorio. Cada tipo de registro (temperatura, lavado, pesadas, etc.) necesita una entrada base creada aquí. Los registros de conductividad y agua destilada crean su entrada automáticamente.'
+  }
+
+  return null
+}

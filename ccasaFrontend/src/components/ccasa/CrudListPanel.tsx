@@ -33,6 +33,7 @@ import {
   buildFkLookupMap,
   collectCrudColumns,
   getColumnLabel,
+  getSectionInfo,
   resolveFkDisplay,
   resolveFkDisplayPlain
 } from '@/lib/ccasa/crudDisplay'
@@ -203,110 +204,6 @@ export function getTooltipText(resourceLabel: string, apiPath: string): string {
   }
 
   return `Crear nuevo registro de ${resourceLabel ?? 'este módulo'}`
-}
-
-function getSectionInfo(apiPath: string): string | null {
-  if (apiPath.includes('logbooks')) {
-    return 'Las bitácoras son los libros de registro del laboratorio. Cada bitácora agrupa folios y entradas de distintos tipos.'
-  }
-
-  if (apiPath.includes('folio-blocks')) {
-    return 'Los bloques de folios definen rangos numéricos para organizar los folios. Debes crear un bloque antes de crear folios.'
-  }
-
-  if (apiPath.includes('folios')) {
-    return 'Los folios son unidades de registro dentro de una bitácora. Cada entrada de conductividad genera su propio folio automáticamente.'
-  }
-
-  if (apiPath.includes('reagents')) {
-    return 'Catálogo de reactivos disponibles en el laboratorio. Registra aquí los reactivos antes de asociarlos a frascos o lotes.'
-  }
-
-  if (apiPath.includes('batches')) {
-    return 'Los lotes identifican partidas específicas de reactivos. Asocia cada lote a un reactivo del catálogo.'
-  }
-
-  if (apiPath.includes('solutions')) {
-    return 'Catálogo de soluciones preparadas en el laboratorio. Define nombre y concentración para cada una.'
-  }
-
-  if (apiPath.includes('supplies')) {
-    return 'Insumos generales del laboratorio como consumibles y materiales de apoyo.'
-  }
-
-  if (apiPath.includes('reagent-jars')) {
-    return 'Registro de frascos físicos de reactivos. Lleva control de la cantidad inicial y actual de cada frasco.'
-  }
-
-  if (apiPath.includes('equipment')) {
-    return 'Equipos de laboratorio disponibles. Registra tipo y denominación de cada equipo para su trazabilidad.'
-  }
-
-  if (apiPath.includes('reference-parameters')) {
-    return 'Parámetros de referencia usados en los cálculos de conductividad (KCl Alta y Baja). Solo el administrador puede modificarlos.'
-  }
-
-  if (apiPath.includes('roles')) {
-    return 'Roles disponibles en el sistema. Cada usuario debe tener asignado un rol que define sus permisos.'
-  }
-
-  if (apiPath.includes('alerts')) {
-    return 'Alertas del sistema. Registra, consulta y resuelve alertas generadas durante la operación del laboratorio.'
-  }
-
-  if (apiPath.includes('signatures')) {
-    return 'Firmas digitales asociadas a entradas. Se generan al firmar o aprobar una entrada del sistema.'
-  }
-
-  if (apiPath.includes('users')) {
-    return 'Empleados del laboratorio. Solo el administrador puede crear, editar o eliminar usuarios. Cada usuario tiene un rol asignado.'
-  }
-
-  if (apiPath.includes('entry-conductivity')) {
-    return 'Registros de conductividad KCl. El sistema calcula automáticamente la conductividad teórica y verifica si está dentro del rango de aceptación (~1400–1420 µS/cm).'
-  }
-
-  if (apiPath.includes('entry-distilled-water')) {
-    return 'Registros de agua destilada del laboratorio.'
-  }
-
-  if (apiPath.includes('entry-oven-temp')) {
-    return 'Registros de temperatura de horno. Asocia cada registro a una entrada base existente.'
-  }
-
-  if (apiPath.includes('entry-drying-oven')) {
-    return 'Registros del horno de secado.'
-  }
-
-  if (apiPath.includes('entry-expense-chart')) {
-    return 'Registro de gastos y cartas del laboratorio.'
-  }
-
-  if (apiPath.includes('entry-material-wash')) {
-    return 'Registros de lavado de material del laboratorio.'
-  }
-
-  if (apiPath.includes('entry-solution-prep')) {
-    return 'Registros de preparación de soluciones.'
-  }
-
-  if (apiPath.includes('entry-weighing')) {
-    return 'Registros de pesadas realizadas en el laboratorio.'
-  }
-
-  if (apiPath.includes('entry-accuracy')) {
-    return 'Registros de mediciones de precisión.'
-  }
-
-  if (apiPath.includes('entry-flask-treatment')) {
-    return 'Registros de tratamiento de matraz.'
-  }
-
-  if (apiPath.includes('entries')) {
-    return 'Entradas de registro del laboratorio. Cada entrada tiene un estado: Borrador, Firmado o Aprobado. Las entradas Aprobadas no se pueden modificar.'
-  }
-
-  return null
 }
 
 function crudPdfFilePrefix(apiPath: string): string {

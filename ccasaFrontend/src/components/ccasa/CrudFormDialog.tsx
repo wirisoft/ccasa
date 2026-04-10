@@ -212,59 +212,84 @@ function getFormHelperText(title: string): string | null {
   const t = title.toLowerCase()
 
   if (t.includes('bitácora') || t.includes('bitacora')) {
-    return 'Define el código único y el nombre de la bitácora. El código no se puede repetir.'
+    return 'El código de bitácora debe ser único. Las bitácoras 1–15 ya existen en el sistema.'
+  }
+
+  if (t.includes('bloque')) {
+    return 'Define el rango de números para este bloque. El identificador será el prefijo de los folios.'
   }
 
   if (t.includes('folio')) {
-    return 'Selecciona la bitácora y el bloque al que pertenece este folio. El número de folio debe ser único dentro del bloque.'
+    return 'Selecciona la bitácora y el bloque al que pertenece. Los folios de conductividad se crean automáticamente.'
   }
 
   if (t.includes('reactivo')) {
-    return 'Registra el nombre del reactivo. Puedes agregar descripción y unidad de medida.'
+    return 'Registra el nombre del reactivo con su fórmula química y unidad de medida.'
   }
 
   if (t.includes('lote')) {
-    return 'Asocia este lote a un reactivo existente e ingresa el código de lote.'
+    return 'Asocia este lote a un reactivo existente. El código de lote debe ser único.'
+  }
+
+  // Antes del catálogo genérico de soluciones (p. ej. "Nueva preparación de soluciones")
+  if (t.includes('prep') && (t.includes('solución') || t.includes('solucion'))) {
+    return 'Requiere tener una pesada registrada previamente. Selecciona la solución del catálogo.'
   }
 
   if (t.includes('solución') || t.includes('solucion')) {
-    return 'Define el nombre y la concentración de la solución.'
+    return 'Define nombre y concentración. Las 16 soluciones básicas ya están en el catálogo.'
   }
 
   if (t.includes('insumo')) {
-    return 'Registra el nombre y descripción del insumo.'
+    return 'Registra insumos de consumo del laboratorio como hisopos, consumibles, etc.'
   }
 
   if (t.includes('frasco')) {
-    return 'Selecciona el reactivo y define las cantidades inicial y actual en gramos. La cantidad actual no puede ser mayor a la inicial.'
+    return 'Selecciona el reactivo y define la cantidad inicial y actual en gramos. La cantidad actual no puede superar la inicial.'
   }
 
   if (t.includes('equipo')) {
-    return 'Define el tipo y la denominación del equipo para su identificación en el laboratorio.'
+    return 'Registra el tipo y denominación del equipo para su identificación en bitácoras y reportes.'
   }
 
   if (t.includes('parámetro') || t.includes('parametro')) {
-    return 'Los parámetros de referencia afectan directamente los cálculos de conductividad. Modifícalos con precaución.'
+    return '⚠️ Los parámetros de referencia afectan los cálculos de conductividad. Modifícalos solo si el cliente lo solicita explícitamente.'
   }
 
   if (t.includes('usuario') || t.includes('empleado')) {
-    return 'Completa todos los campos obligatorios. La contraseña solo es necesaria al crear un usuario nuevo.'
+    return 'La contraseña solo es necesaria al crear un usuario nuevo. Para aprobar conductividad, asigna nomenclatura TCM o TMC.'
   }
 
   if (t.includes('alerta')) {
-    return 'Registra el tipo, mensaje y estado inicial de la alerta.'
+    return 'Registra el tipo y mensaje de la alerta. Puedes asignarla a un usuario específico.'
   }
 
   if (t.includes('firma')) {
-    return 'Selecciona el tipo de firma y la entrada a la que corresponde.'
-  }
-
-  if (t.includes('entrada')) {
-    return 'Selecciona la bitácora a la que pertenece esta entrada.'
+    return 'Las firmas se generan automáticamente al firmar entradas. Usa este formulario solo si necesitas registrar una firma manualmente.'
   }
 
   if (t.includes('conductividad')) {
-    return 'Solo necesitas el tipo y el peso. El sistema calcula automáticamente la conductividad teórica.'
+    return 'Solo necesitas el tipo y el peso en gramos. El sistema calcula la conductividad automáticamente.'
+  }
+
+  if (t.includes('agua destilada') || t.includes('agua')) {
+    return 'Ingresa las tres lecturas de pH y CE para que el sistema calcule los promedios. El lote de agua es opcional.'
+  }
+
+  if (t.includes('pesada')) {
+    return 'Registra el peso del reactivo. Esta pesada será referenciada en Preparación de soluciones.'
+  }
+
+  if (t.includes('entrada') && !t.includes('agua') && !t.includes('pesada')) {
+    return 'Selecciona la bitácora correspondiente. Esta entrada base será usada por módulos como Temperatura horno, Lavado de material, Pesadas, etc.'
+  }
+
+  if (t.includes('matraz')) {
+    return 'Requiere tener un registro de Lavado de material y un insumo de hisopos en el catálogo.'
+  }
+
+  if (t.includes('lavado')) {
+    return 'Registra el tipo de pieza y material lavado. Este registro será referenciado en Tratamiento de matraz.'
   }
 
   return null
