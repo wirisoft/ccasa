@@ -123,6 +123,45 @@ const COLUMN_LABELS: Record<string, string> = {
   signatureUploadedAt: 'Firma subida el'
 }
 
+/** Búsqueda O(1) por clave en minúsculas (p. ej. backend o proxy con distinto casing). */
+const COLUMN_LABEL_BY_LOWER = new Map<string, string>(
+  Object.entries(COLUMN_LABELS).map(([k, v]) => [k.toLowerCase(), v])
+)
+
+/**
+ * Convierte claves estilo snake_case o SCREAMING_SNAKE a camelCase para alinearlas con COLUMN_LABELS.
+ * Si no hay guiones bajos, devuelve la cadena original.
+ */
+function snakeOrScreamingSnakeToCamelCase(key: string): string {
+  if (!key.includes('_')) {
+    return key
+  }
+
+  const parts = key
+    .toLowerCase()
+    .split('_')
+    .filter(p => p.length > 0)
+
+  if (parts.length <= 1) {
+    return key
+  }
+
+  return parts[0] + parts.slice(1).map(p => p.charAt(0).toUpperCase() + p.slice(1)).join('')
+}
+
+/** Último recurso: texto legible a partir de camelCase o snake_case. */
+function humanizeUnknownColumnKey(key: string): string {
+  const withSpaces = key.includes('_')
+    ? key.replace(/_/g, ' ')
+    : key.replace(/([A-Z])/g, ' $1').trim()
+
+  if (withSpaces === '') {
+    return key
+  }
+
+  return withSpaces.charAt(0).toUpperCase() + withSpaces.slice(1)
+}
+
 /** Etiquetas en español para valores de estado/enums que el backend envía en inglés. */
 const STATUS_LABELS: Record<string, string> = {
   Draft: 'Borrador',
@@ -145,7 +184,40 @@ const STATUS_LABELS: Record<string, string> = {
 }
 
 export function getColumnLabel(key: string): string {
-  return COLUMN_LABELS[key] ?? key
+  const raw = key.trim()
+
+  if (raw === '') {
+    return ''
+  }
+
+  const fromMap = COLUMN_LABELS[raw]
+
+  if (fromMap !== undefined) {
+    return fromMap
+  }
+
+  const camel = snakeOrScreamingSnakeToCamelCase(raw)
+  const fromCamel = COLUMN_LABELS[camel]
+
+  if (fromCamel !== undefined) {
+    return fromCamel
+  }
+
+  const byLower = COLUMN_LABEL_BY_LOWER.get(raw.toLowerCase())
+
+  if (byLower !== undefined) {
+    return byLower
+  }
+
+  if (camel !== raw) {
+    const byCamelLower = COLUMN_LABEL_BY_LOWER.get(camel.toLowerCase())
+
+    if (byCamelLower !== undefined) {
+      return byCamelLower
+    }
+  }
+
+  return humanizeUnknownColumnKey(raw)
 }
 
 export function collectCrudColumns(rows: CrudResponseDTO[]): string[] {
