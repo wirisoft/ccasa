@@ -13,6 +13,7 @@ import CardContent from '@mui/material/CardContent'
 import CardHeader from '@mui/material/CardHeader'
 import Chip from '@mui/material/Chip'
 import CircularProgress from '@mui/material/CircularProgress'
+import Divider from '@mui/material/Divider'
 import FormControl from '@mui/material/FormControl'
 import IconButton from '@mui/material/IconButton'
 import Grid from '@mui/material/Grid'
@@ -35,6 +36,7 @@ import Typography from '@mui/material/Typography'
 import { apiFetch, getApiBaseUrl, getErrorMessage, getHttpErrorMessage, PDF_DOWNLOAD_ERROR } from '@/lib/ccasa/api'
 import { clearCcasaClientSession } from '@/lib/ccasa/clientSession'
 import { ENTRY_STATUS_LABELS } from '@/lib/ccasa/crudDisplay'
+import { formatDateDdMmYyyy } from '@/lib/ccasa/formatters'
 import type {
   CrudResponseDTO,
   DistilledWaterRequestDTO,
@@ -78,7 +80,36 @@ const FORM_FIELDS: FormFieldConfig[] = [
   { key: 'controlStandardPct', label: 'Estándar control %', md: 6 }
 ]
 
+const PH_FORM_FIELDS = FORM_FIELDS.slice(0, 3)
+const CE_FORM_FIELDS = FORM_FIELDS.slice(3, 6)
+const QC_FORM_FIELDS = FORM_FIELDS.slice(6, 8)
+
 type Option = { value: number; label: string }
+
+function buildEntrySearchLabel(item: CrudResponseDTO, logbookNameById: Map<number, string>): string {
+  const v = item.values ?? {}
+  const logbookId = v.logbookId != null ? Number(v.logbookId) : NaN
+  const logbookName = Number.isFinite(logbookId) ? logbookNameById.get(logbookId) : undefined
+  const statusRaw = typeof v.status === 'string' ? v.status : ''
+  const statusLabel = statusRaw ? (ENTRY_STATUS_LABELS[statusRaw] ?? statusRaw) : ''
+  const ra = v.recordedAt
+  const recordedStr = ra != null && ra !== '' ? formatDateDdMmYyyy(typeof ra === 'string' ? ra : String(ra)) : ''
+  const datePart = recordedStr && recordedStr !== '—' ? ` (${recordedStr})` : ''
+
+  let label = `Entrada #${item.id}`
+
+  if (logbookName) {
+    label += ` — ${logbookName}`
+  }
+
+  if (statusLabel) {
+    label += ` — ${statusLabel}`
+  }
+
+  label += datePart
+
+  return label
+}
 
 function formatCell(value: number | string | boolean | null | undefined): string {
   if (value === null || value === undefined) {
@@ -280,14 +311,31 @@ const DistilledWaterPanel = () => {
           }))
         )
       ),
-      apiFetch<LogbookDTO[]>('/api/v1/logbooks', opts).then(rows =>
+      apiFetch<LogbookDTO[]>('/api/v1/logbooks', opts).then(async rows => {
+        const lbArr = Array.isArray(rows) ? rows : []
+
         setLogbookOptions(
-          (Array.isArray(rows) ? rows : []).map(item => ({
+          lbArr.map(item => ({
             value: item.id,
             label: item.name ?? `#${item.id}`
           }))
         )
-      ),
+
+        const logbookNameById = new Map(lbArr.map(l => [l.id, (l.name ?? '').trim() || `#${l.id}`]))
+
+        try {
+          const entRows = await apiFetch<CrudResponseDTO[]>('/api/v1/entries', opts)
+
+          setEntryOptions(
+            (Array.isArray(entRows) ? entRows : []).map(item => ({
+              value: item.id,
+              label: buildEntrySearchLabel(item, logbookNameById)
+            }))
+          )
+        } catch {
+          setEntryOptions([])
+        }
+      }),
       apiFetch<CrudResponseDTO[]>('/api/v1/users', opts).then(rows =>
         setUserOptions(
           (Array.isArray(rows) ? rows : []).map(item => {
@@ -308,14 +356,6 @@ const DistilledWaterPanel = () => {
           }))
         )
       ),
-      apiFetch<CrudResponseDTO[]>('/api/v1/entries', opts).then(rows =>
-        setEntryOptions(
-          (Array.isArray(rows) ? rows : []).map(item => ({
-            value: item.id,
-            label: `Entrada #${item.id}`
-          }))
-        )
-      )
     ])
       .catch(() => {
         setFolioOptions([])
@@ -500,7 +540,7 @@ const DistilledWaterPanel = () => {
         setCreateSuccess(true)
         setFormState({ ...EMPTY_FORM })
         setSnackbarSeverity('success')
-        setSnackbarMessage('Entrada de agua destilada creada')
+        setSnackbarMessage('Registro de agua destilada creado correctamente. Puedes descargar el PDF.')
         setSnackbarOpen(true)
       } catch (err) {
         setCreateError(getErrorMessage(err, 'Error al crear la entrada'))
@@ -563,6 +603,10 @@ const DistilledWaterPanel = () => {
         <CardHeader title='Consultar agua destilada por entrada' titleTypographyProps={{ variant: 'subtitle1' }} />
         <CardContent>
           <Stack spacing={2}>
+            <Alert severity='info' variant='outlined' sx={{ mb: 2, fontSize: '0.82rem' }}>
+              Consulta el registro de agua destilada de una entrada existente. Si la entrada no tiene registro, puedes
+              crearlo en la sección de abajo.
+            </Alert>
             <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} alignItems={{ sm: 'center' }}>
               <FormControl size='small' sx={{ minWidth: 220 }} disabled={!token || searching}>
                 <InputLabel id='distilled-search-entry-label' shrink>
@@ -725,7 +769,67 @@ const DistilledWaterPanel = () => {
                 </FormControl>
               </Grid>
 
-              {FORM_FIELDS.map(f => (
+              <Grid item xs={12}>
+                <Typography
+                  variant='caption'
+                  color='text.secondary'
+                  sx={{ fontWeight: 600, textTransform: 'uppercase', letterSpacing: 0.5 }}
+                >
+                  Lecturas de pH
+                </Typography>
+                <Divider sx={{ mt: 0.5 }} />
+              </Grid>
+              {PH_FORM_FIELDS.map(f => (
+                <Grid key={f.key} item xs={12} md={f.md}>
+                  <TextField
+                    label={f.label}
+                    name={f.key}
+                    type='text'
+                    fullWidth
+                    size='small'
+                    value={formState[f.key] ?? ''}
+                    onChange={ev => setFormState(prev => ({ ...prev, [f.key]: ev.target.value }))}
+                    disabled={!token || creating}
+                    inputProps={{ inputMode: 'decimal' }}
+                  />
+                </Grid>
+              ))}
+              <Grid item xs={12}>
+                <Typography
+                  variant='caption'
+                  color='text.secondary'
+                  sx={{ fontWeight: 600, textTransform: 'uppercase', letterSpacing: 0.5 }}
+                >
+                  Lecturas de CE (µS/cm)
+                </Typography>
+                <Divider sx={{ mt: 0.5 }} />
+              </Grid>
+              {CE_FORM_FIELDS.map(f => (
+                <Grid key={f.key} item xs={12} md={f.md}>
+                  <TextField
+                    label={f.label}
+                    name={f.key}
+                    type='text'
+                    fullWidth
+                    size='small'
+                    value={formState[f.key] ?? ''}
+                    onChange={ev => setFormState(prev => ({ ...prev, [f.key]: ev.target.value }))}
+                    disabled={!token || creating}
+                    inputProps={{ inputMode: 'decimal' }}
+                  />
+                </Grid>
+              ))}
+              <Grid item xs={12}>
+                <Typography
+                  variant='caption'
+                  color='text.secondary'
+                  sx={{ fontWeight: 600, textTransform: 'uppercase', letterSpacing: 0.5 }}
+                >
+                  Control de calidad
+                </Typography>
+                <Divider sx={{ mt: 0.5 }} />
+              </Grid>
+              {QC_FORM_FIELDS.map(f => (
                 <Grid key={f.key} item xs={12} md={f.md}>
                   <TextField
                     label={f.label}
@@ -767,8 +871,30 @@ const DistilledWaterPanel = () => {
               </Grid>
 
               <Grid item xs={12}>
+                <Alert severity='info' variant='outlined' sx={{ fontSize: '0.82rem' }}>
+                  Ingresa las tres lecturas de pH y CE para que el sistema calcule los promedios automáticamente. El campo
+                  Lote de agua es opcional.
+                </Alert>
+              </Grid>
+
+              <Grid item xs={12}>
                 <Button type='submit' variant='contained' disabled={!token || creating}>
                   Crear entrada
+                </Button>
+                <Button
+                  type='button'
+                  variant='outlined'
+                  size='small'
+                  sx={{ ml: 1 }}
+                  onClick={() => {
+                    setFormState({ ...EMPTY_FORM })
+                    setCreateError(null)
+                    setCreateSuccess(false)
+                    setCreateResult(null)
+                  }}
+                  disabled={creating}
+                >
+                  Limpiar formulario
                 </Button>
                 {creating ? (
                   <CircularProgress size={24} sx={{ ml: 2, verticalAlign: 'middle' }} />
