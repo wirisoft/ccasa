@@ -13,6 +13,7 @@ import CardContent from '@mui/material/CardContent'
 import CardHeader from '@mui/material/CardHeader'
 import CircularProgress from '@mui/material/CircularProgress'
 import FormControl from '@mui/material/FormControl'
+import IconButton from '@mui/material/IconButton'
 import Grid from '@mui/material/Grid'
 import InputLabel from '@mui/material/InputLabel'
 import MenuItem from '@mui/material/MenuItem'
@@ -26,10 +27,11 @@ import TableCell from '@mui/material/TableCell'
 import TableContainer from '@mui/material/TableContainer'
 import TableRow from '@mui/material/TableRow'
 import TextField from '@mui/material/TextField'
+import Tooltip from '@mui/material/Tooltip'
 import Typography from '@mui/material/Typography'
 
 // Lib Imports
-import { apiFetch } from '@/lib/ccasa/api'
+import { apiFetch, getApiBaseUrl } from '@/lib/ccasa/api'
 import type {
   CrudResponseDTO,
   DistilledWaterRequestDTO,
@@ -215,6 +217,8 @@ const DistilledWaterPanel = () => {
   const [createSuccess, setCreateSuccess] = useState(false)
   const [createResult, setCreateResult] = useState<DistilledWaterResponseDTO | null>(null)
   const [snackbarOpen, setSnackbarOpen] = useState(false)
+  const [snackbarMessage, setSnackbarMessage] = useState('')
+  const [snackbarSeverity, setSnackbarSeverity] = useState<'success' | 'error'>('success')
 
   useEffect(() => {
     if (!token) {
@@ -322,6 +326,56 @@ const DistilledWaterPanel = () => {
     }
   }, [token, searchId])
 
+  const handleDownloadPdf = useCallback(
+    async (entryId: number) => {
+      if (!token) {
+        return
+      }
+
+      try {
+        const res = await fetch(
+          `${getApiBaseUrl()}/api/v1/entries/${encodeURIComponent(String(entryId))}/distilled-water/pdf`,
+          { headers: { Authorization: `Bearer ${token}` } }
+        )
+
+        if (!res.ok) {
+          let msg = res.statusText
+
+          try {
+            const errJson = (await res.json()) as { message?: string; error?: string }
+
+            msg = errJson.message || errJson.error || msg
+          } catch {
+            /* ignore */
+          }
+
+          setSnackbarSeverity('error')
+          setSnackbarMessage(msg || `Error HTTP ${res.status}`)
+          setSnackbarOpen(true)
+
+          return
+        }
+
+        const blob = await res.blob()
+        const url = URL.createObjectURL(blob)
+        const a = document.createElement('a')
+
+        a.href = url
+        a.download = `agua-destilada-${entryId}.pdf`
+        a.click()
+        URL.revokeObjectURL(url)
+        setSnackbarSeverity('success')
+        setSnackbarMessage('PDF descargado')
+        setSnackbarOpen(true)
+      } catch (e) {
+        setSnackbarSeverity('error')
+        setSnackbarMessage(e instanceof Error ? e.message : 'Error al descargar PDF')
+        setSnackbarOpen(true)
+      }
+    },
+    [token]
+  )
+
   const handleCreateSubmit = useCallback(
     async (e: FormEvent) => {
       e.preventDefault()
@@ -353,6 +407,8 @@ const DistilledWaterPanel = () => {
         setCreateResult(data)
         setCreateSuccess(true)
         setFormState({ ...EMPTY_FORM })
+        setSnackbarSeverity('success')
+        setSnackbarMessage('Entrada de agua destilada creada')
         setSnackbarOpen(true)
       } catch (err) {
         setCreateError(err instanceof Error ? err.message : 'Error al crear la entrada')
@@ -446,7 +502,26 @@ const DistilledWaterPanel = () => {
 
             {searchError ? <Alert severity='error'>{searchError}</Alert> : null}
 
-            {!searching && result ? <DistilledWaterResultTable data={result} /> : null}
+            {!searching && result ? (
+              <Stack spacing={1}>
+                <Stack direction='row' spacing={1} alignItems='center'>
+                  <Tooltip title='Exportar PDF de agua destilada' arrow>
+                    <span>
+                      <IconButton
+                        size='small'
+                        color='error'
+                        onClick={() => void handleDownloadPdf(result.entryId)}
+                        disabled={!token}
+                        aria-label='PDF'
+                      >
+                        <Box component='i' className='ri-file-pdf-line' />
+                      </IconButton>
+                    </span>
+                  </Tooltip>
+                </Stack>
+                <DistilledWaterResultTable data={result} />
+              </Stack>
+            ) : null}
 
             {!searching && !searchError && !result ? (
               <Typography variant='body2' color='text.secondary'>
@@ -595,9 +670,22 @@ const DistilledWaterPanel = () => {
 
           {createSuccess && createResult ? (
             <Box sx={{ mt: 3 }}>
-              <Typography variant='subtitle2' className='mbe-2'>
-                Resultado
-              </Typography>
+              <Stack direction='row' spacing={1} alignItems='center' sx={{ mb: 1 }}>
+                <Typography variant='subtitle2'>Resultado</Typography>
+                <Tooltip title='Exportar PDF de agua destilada' arrow>
+                  <span>
+                    <IconButton
+                      size='small'
+                      color='error'
+                      onClick={() => void handleDownloadPdf(createResult.entryId)}
+                      disabled={!token}
+                      aria-label='PDF'
+                    >
+                      <Box component='i' className='ri-file-pdf-line' />
+                    </IconButton>
+                  </span>
+                </Tooltip>
+              </Stack>
               <DistilledWaterResultTable data={createResult} />
             </Box>
           ) : null}
@@ -608,8 +696,17 @@ const DistilledWaterPanel = () => {
         open={snackbarOpen}
         autoHideDuration={6000}
         onClose={() => setSnackbarOpen(false)}
-        message='Entrada de agua destilada creada'
-      />
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      >
+        <Alert
+          severity={snackbarSeverity}
+          variant='filled'
+          onClose={() => setSnackbarOpen(false)}
+          sx={{ width: '100%' }}
+        >
+          {snackbarMessage}
+        </Alert>
+      </Snackbar>
     </Stack>
   )
 }

@@ -5,6 +5,7 @@ import com.backend.ccasa.service.models.dtos.DistilledWaterRequestDTO;
 import com.backend.ccasa.service.models.dtos.DistilledWaterResponseDTO;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -28,6 +29,16 @@ public class DistilledWaterController {
 	@GetMapping("/{entryId}/distilled-water")
 	public ResponseEntity<DistilledWaterResponseDTO> get(@PathVariable Long entryId) {
 		return ResponseEntity.ok(distilledWaterEntryService.getByEntryId(entryId));
+	}
+
+	@GetMapping("/{entryId}/distilled-water/pdf")
+	@PreAuthorize("hasAnyRole('ADMIN','ANALYST','SUPERVISOR','SAMPLER')")
+	public ResponseEntity<byte[]> pdf(@PathVariable Long entryId) {
+		byte[] bytes = distilledWaterEntryService.generatePdf(entryId);
+		return ResponseEntity.ok()
+			.header("Content-Type", "application/pdf")
+			.header("Content-Disposition", "inline; filename=\"agua-destilada-" + entryId + ".pdf\"")
+			.body(bytes);
 	}
 
 	@PostMapping("/distilled-water")

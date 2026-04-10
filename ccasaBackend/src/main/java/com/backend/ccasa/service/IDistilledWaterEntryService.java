@@ -11,5 +11,7 @@ public interface IDistilledWaterEntryService {
 	DistilledWaterResponseDTO getByEntryId(Long entryId);
 
 	DistilledWaterResponseDTO create(DistilledWaterRequestDTO dto);
+
+	byte[] generatePdf(Long entryId);
 }
 
