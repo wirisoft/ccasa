@@ -545,18 +545,16 @@ public class ConductivityRecordServiceImpl implements IConductivityRecordService
 		return logoCell;
 	}
 
-	private PdfPCell folioDateBox(String label, String value, boolean folioValueSingleLine) {
-		PdfPCell c = new PdfPCell();
+	private PdfPCell headerFolioFechaCell(String text, Font font, boolean noWrap) {
+		PdfPCell c = new PdfPCell(new Phrase(safe(text), font));
 		c.setBorder(Rectangle.BOX);
-		c.setBorderColor(COLOR_GRAY_MID);
-		c.setPadding(6f);
+		c.setBorderColor(COLOR_GRAY_DARK);
+		c.setBorderWidth(0.5f);
 		c.setBackgroundColor(COLOR_WHITE);
-		c.addElement(new Paragraph(label, F_8_NORMAL_GRAY));
-		if (folioValueSingleLine) {
-			c.addElement(new Paragraph(safe(value), F_9_BOLD_BLACK));
+		c.setPadding(6f);
+		c.setVerticalAlignment(Element.ALIGN_MIDDLE);
+		if (noWrap) {
 			c.setNoWrap(true);
-		} else {
-			c.addElement(new Paragraph(value, F_9_BOLD_BLACK));
 		}
 		return c;
 	}
@@ -574,13 +572,14 @@ public class ConductivityRecordServiceImpl implements IConductivityRecordService
 		leftTitles.addElement(new Paragraph("BITÁCORAS SERVICIOS AMBIENTALES", F_11_BOLD_NAVY));
 		leftTitles.addElement(new Paragraph("Laboratorio de análisis ambiental · Control de calidad", F_8_NORMAL_GRAY_DARK));
 
-		// Folio vs Fecha: más peso a Fecha (≥80pt efectivos en página típica) y sin corte en el valor
-		PdfPTable boxes = new PdfPTable(new float[] { 1.35f, 1.65f });
+		PdfPTable boxes = new PdfPTable(new float[] { 1f, 2f, 1f, 1.5f });
 		boxes.setWidthPercentage(100);
-		boxes.addCell(folioDateBox("Folio No.", safe(dto.displayFolio()), true));
-		boxes.addCell(folioDateBox(
-			"Fecha",
+		boxes.addCell(headerFolioFechaCell("Folio No.", F_8_NORMAL_GRAY, false));
+		boxes.addCell(headerFolioFechaCell(safe(dto.displayFolio()), F_9_BOLD_BLACK, true));
+		boxes.addCell(headerFolioFechaCell("Fecha", F_8_NORMAL_GRAY, false));
+		boxes.addCell(headerFolioFechaCell(
 			safe(PDF_DATE.format(dto.recordedAt() != null ? dto.recordedAt() : Instant.now())),
+			F_10_BOLD_BLACK,
 			true));
 
 		PdfPCell rightBoxes = new PdfPCell(boxes);
