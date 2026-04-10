@@ -241,8 +241,8 @@ const LogbooksPanel = ({ title = 'Bitácoras activas', showCard = true }: Logboo
 
   const formTitle = editingRow ? `Editar ${LOGBOOK_CONFIG.label.toLowerCase()}` : `Nueva ${LOGBOOK_CONFIG.label.toLowerCase()}`
 
-  const inner = (
-    <>
+  const logbooksContextBox = (
+    <Box sx={{ px: 2.5, pb: 0, pt: 0 }}>
       <Box
         sx={{
           mb: 2,
@@ -261,6 +261,11 @@ const LogbooksPanel = ({ title = 'Bitácoras activas', showCard = true }: Logboo
           (códigos 1–15). Cada entrada de laboratorio pertenece a una bitácora.
         </Typography>
       </Box>
+    </Box>
+  )
+
+  const inner = (
+    <>
       {loading ? (
         <Box className='flex justify-center p-6'>
           <CircularProgress />
@@ -426,10 +431,14 @@ const LogbooksPanel = ({ title = 'Bitácoras activas', showCard = true }: Logboo
   const shell = showCard ? (
     <Card sx={{ border: '1px solid', borderColor: 'divider', boxShadow: 'none', borderRadius: 2 }}>
       <CardHeader title={title} titleTypographyProps={{ variant: 'h6', fontWeight: 600 }} />
+      {logbooksContextBox}
       <CardContent sx={{ p: 3, '&:last-child': { pb: 3 } }}>{inner}</CardContent>
     </Card>
   ) : (
-    inner
+    <>
+      {logbooksContextBox}
+      {inner}
+    </>
   )
 
   return (

@@ -446,7 +446,7 @@ return filteredRecords.slice(start, start + rowsPerPage)
     <>
       <Card variant='outlined'>
         <CardHeader title='Registros de conductividad' titleTypographyProps={{ variant: 'subtitle1' }} />
-        <CardContent>
+        <Box sx={{ px: 2.5, pb: 0, pt: 0 }}>
           <Box
             sx={{
               mb: 2,
@@ -469,6 +469,8 @@ return filteredRecords.slice(start, start + rowsPerPage)
               Para aprobar un registro, debe existir un usuario con nomenclatura TCM o TMC.
             </Typography>
           </Box>
+        </Box>
+        <CardContent>
           <Stack spacing={2} sx={{ mb: 2 }}>
             <Stack direction='row' flexWrap='wrap' useFlexGap spacing={1} alignItems='center'>
               <TextField
