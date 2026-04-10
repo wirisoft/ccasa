@@ -41,6 +41,7 @@ import com.lowagie.text.pdf.PdfPCell;
 import com.lowagie.text.pdf.PdfPTable;
 import com.lowagie.text.pdf.PdfWriter;
 import java.io.ByteArrayOutputStream;
+import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.text.Normalizer;
@@ -68,10 +69,11 @@ public class ConductivityRecordServiceImpl implements IConductivityRecordService
 	private static final String ALT_REVIEWER_NOMENCLATURE = "TMC";
 	private static final MathContext MC = new MathContext(14, RoundingMode.HALF_UP);
 	private static final DateTimeFormatter PDF_DATE = DateTimeFormatter.ofPattern("yyyyMMdd").withZone(ZoneOffset.UTC);
+	private static final String PDF_LOGO_CLASSPATH = "static/images/lab-logo.png";
 	private static final Font TITLE_FONT = new Font(Font.HELVETICA, 12, Font.BOLD);
 	private static final Font LABEL_FONT = new Font(Font.HELVETICA, 9, Font.BOLD);
 	private static final Font BODY_FONT = new Font(Font.HELVETICA, 9, Font.NORMAL);
-private static final Font SMALL_FONT = new Font(Font.HELVETICA, 8, Font.NORMAL);
+	private static final Font SMALL_FONT = new Font(Font.HELVETICA, 8, Font.NORMAL);
 
 	private final EntryConductivityRepository entryConductivityRepository;
 	private final EntryRepository entryRepository;
@@ -494,20 +496,59 @@ private static final Font SMALL_FONT = new Font(Font.HELVETICA, 8, Font.NORMAL);
 		document.add(calculationsBlock(dto));
 	}
 
+	private Image loadClasspathLogo() {
+		try (InputStream is = getClass().getClassLoader().getResourceAsStream(PDF_LOGO_CLASSPATH)) {
+			if (is == null) {
+				return null;
+			}
+			byte[] bytes = is.readAllBytes();
+			return Image.getInstance(bytes);
+		} catch (Exception e) {
+			return null;
+		}
+	}
+
 	private PdfPTable headerLine(ConductivityRecordResponseDTO dto) {
-		PdfPTable header = new PdfPTable(new float[] { 0.7f, 0.6f, 1f, 0.6f, 0.9f });
-		header.setWidthPercentage(100);
-		header.addCell(cell("Folio No.", LABEL_FONT, Element.ALIGN_LEFT, false));
-		header.addCell(cell(safe(dto.displayFolio()), LABEL_FONT, Element.ALIGN_CENTER, true));
-		header.addCell(cell("", BODY_FONT, Element.ALIGN_LEFT, false));
-		header.addCell(cell("Fecha:", LABEL_FONT, Element.ALIGN_RIGHT, false));
-		header.addCell(cell(safe(PDF_DATE.format(dto.recordedAt() != null ? dto.recordedAt() : Instant.now())), LABEL_FONT, Element.ALIGN_CENTER, true));
-		return header;
+		PdfPTable outer = new PdfPTable(new float[] { 0.9f, 2.1f });
+		outer.setWidthPercentage(100);
+
+		PdfPCell logoCell = new PdfPCell();
+		logoCell.setBorder(Rectangle.NO_BORDER);
+		logoCell.setVerticalAlignment(Element.ALIGN_TOP);
+		Image logo = loadClasspathLogo();
+		if (logo != null) {
+			logo.scaleToFit(72f, 48f);
+			logo.setAlignment(Element.ALIGN_LEFT);
+			logoCell.addElement(logo);
+		}
+		outer.addCell(logoCell);
+
+		PdfPTable right = new PdfPTable(new float[] { 0.7f, 0.6f, 1f, 0.6f, 0.9f });
+		right.setWidthPercentage(100);
+		right.addCell(cell("Folio No.", LABEL_FONT, Element.ALIGN_LEFT, false));
+		right.addCell(cell(safe(dto.displayFolio()), LABEL_FONT, Element.ALIGN_CENTER, true));
+		right.addCell(cell("", BODY_FONT, Element.ALIGN_LEFT, false));
+		right.addCell(cell("Fecha:", LABEL_FONT, Element.ALIGN_RIGHT, false));
+		right.addCell(cell(
+			safe(PDF_DATE.format(dto.recordedAt() != null ? dto.recordedAt() : Instant.now())),
+			LABEL_FONT, Element.ALIGN_CENTER, true));
+
+		PdfPCell rightCell = new PdfPCell(right);
+		rightCell.setBorder(Rectangle.NO_BORDER);
+		outer.addCell(rightCell);
+		return outer;
 	}
 
 	private PdfPTable topBodyTable(ConductivityRecordResponseDTO dto) {
 		PdfPTable table = new PdfPTable(new float[] { 1.2f, 1.1f, 1.1f, 1.3f });
 		table.setWidthPercentage(100);
+		String tipoLabel = dto.type() == ConductivityTypeEnum.High
+			? "Alta (KCl)"
+			: dto.type() == ConductivityTypeEnum.Low
+				? "Baja (KCl)"
+				: "—";
+		table.addCell(cell("Tipo de conductividad:", LABEL_FONT, Element.ALIGN_LEFT, false));
+		table.addCell(cell(tipoLabel, BODY_FONT, Element.ALIGN_LEFT, true, 3));
 		table.addCell(cell("Preparacion de estandar de control de la calidad, de", BODY_FONT, Element.ALIGN_CENTER, false, 4));
 		table.addCell(cell("KCl", LABEL_FONT, Element.ALIGN_CENTER, true));
 		table.addCell(cell("marca", BODY_FONT, Element.ALIGN_CENTER, false));

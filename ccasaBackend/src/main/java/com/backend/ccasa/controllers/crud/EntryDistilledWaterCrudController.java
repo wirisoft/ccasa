@@ -20,7 +20,7 @@ public class EntryDistilledWaterCrudController {
 	}
 
 	@PostMapping
-	@PreAuthorize("hasAnyRole('ANALYST', 'SUPERVISOR')")
+	@PreAuthorize("hasAnyRole('ADMIN', 'ANALYST', 'SUPERVISOR')")
 	public ResponseEntity<CrudResponseDTO> create(@RequestBody CrudRequestDTO request) {
 		return ResponseEntity.ok(service.create(request));
 	}
@@ -36,13 +36,13 @@ public class EntryDistilledWaterCrudController {
 	}
 
 	@PutMapping("/{id}")
-	@PreAuthorize("hasAnyRole('ANALYST', 'SUPERVISOR')")
+	@PreAuthorize("hasAnyRole('ADMIN', 'ANALYST', 'SUPERVISOR')")
 	public ResponseEntity<CrudResponseDTO> update(@PathVariable Long id, @RequestBody CrudRequestDTO request) {
 		return ResponseEntity.ok(service.update(id, request));
 	}
 
 	@DeleteMapping("/{id}")
-	@PreAuthorize("hasAnyRole('ANALYST', 'SUPERVISOR')")
+	@PreAuthorize("hasAnyRole('ADMIN', 'ANALYST', 'SUPERVISOR')")
 	public ResponseEntity<Void> delete(@PathVariable Long id) {
 		service.delete(id);
 		return ResponseEntity.noContent().build();
