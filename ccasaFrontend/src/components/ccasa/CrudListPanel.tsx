@@ -28,7 +28,7 @@ import Tooltip from '@mui/material/Tooltip'
 import Typography from '@mui/material/Typography'
 
 // Lib Imports
-import { apiFetch } from '@/lib/ccasa/api'
+import { apiFetch, getApiBaseUrl } from '@/lib/ccasa/api'
 import { buildFkLookupMap, collectCrudColumns, getColumnLabel, resolveFkDisplay } from '@/lib/ccasa/crudDisplay'
 import type { CrudFieldDef } from '@/lib/ccasa/crudFields'
 import type { CrudResponseDTO, FkLookupMap } from '@/lib/ccasa/types'
@@ -286,6 +286,22 @@ function getSectionInfo(apiPath: string): string | null {
   return null
 }
 
+function crudPdfFilePrefix(apiPath: string): string {
+  if (apiPath.includes('entry-material-wash')) {
+    return 'lavado-material'
+  }
+
+  if (apiPath.includes('entry-solution-prep')) {
+    return 'prep-solucion'
+  }
+
+  if (apiPath.includes('entry-weighing')) {
+    return 'pesada'
+  }
+
+  return 'registro'
+}
+
 const CrudListPanel = ({
   apiPath,
   title = 'Registros',
@@ -367,6 +383,59 @@ const CrudListPanel = ({
   }, [fields])
 
   const columns = useMemo(() => (rows && rows.length > 0 ? collectCrudColumns(rows) : ['id']), [rows])
+
+  const showPdfExport = useMemo(
+    () =>
+      apiPath.includes('entry-weighing') ||
+      apiPath.includes('entry-solution-prep') ||
+      apiPath.includes('entry-material-wash'),
+    [apiPath]
+  )
+
+  const pdfDownloadPrefix = useMemo(() => crudPdfFilePrefix(apiPath), [apiPath])
+
+  const handleDownloadPdf = useCallback(
+    async (rowId: number) => {
+      if (!token) {
+        return
+      }
+
+      try {
+        const res = await fetch(`${getApiBaseUrl()}${apiPath}/${encodeURIComponent(String(rowId))}/pdf`, {
+          headers: { Authorization: `Bearer ${token}` }
+        })
+
+        if (!res.ok) {
+          let msg = res.statusText
+
+          try {
+            const errJson = (await res.json()) as { message?: string; error?: string }
+
+            msg = errJson.message || errJson.error || msg
+          } catch {
+            /* ignore */
+          }
+
+          setSnackbar(msg || `Error HTTP ${res.status}`)
+
+          return
+        }
+
+        const blob = await res.blob()
+        const url = URL.createObjectURL(blob)
+        const a = document.createElement('a')
+
+        a.href = url
+        a.download = `${pdfDownloadPrefix}-${rowId}.pdf`
+        a.click()
+        URL.revokeObjectURL(url)
+        setSnackbar('PDF descargado')
+      } catch (e) {
+        setSnackbar(e instanceof Error ? e.message : 'Error al descargar PDF')
+      }
+    },
+    [token, apiPath, pdfDownloadPrefix]
+  )
 
   /** Filas filtradas por búsqueda global (busca en todos los valores visibles, incluyendo FKs resueltas). */
   const filteredRows = useMemo(() => {
@@ -606,6 +675,11 @@ const CrudListPanel = ({
                       {columns.filter(col => col !== 'id').map(col => (
                         <TableCell key={col}>{getColumnLabel(col)}</TableCell>
                       ))}
+                      {showPdfExport ? (
+                        <TableCell align='center' sx={{ width: 56 }}>
+                          PDF
+                        </TableCell>
+                      ) : null}
                       {hasWrite ? <TableCell align='center'>Acciones</TableCell> : null}
                     </TableRow>
                   </TableHead>
@@ -618,6 +692,24 @@ const CrudListPanel = ({
                         {columns.filter(col => col !== 'id').map(col => (
                           <TableCell key={col}>{resolveFkDisplay(row.values?.[col], col, fkLookups)}</TableCell>
                         ))}
+                        {showPdfExport ? (
+                          <TableCell align='center'>
+                            <Tooltip title='Exportar PDF' arrow>
+                              <span>
+                                <IconButton
+                                  size='small'
+                                  color='error'
+                                  aria-label='PDF'
+                                  sx={{ width: 32, height: 32 }}
+                                  disabled={!token}
+                                  onClick={() => void handleDownloadPdf(row.id)}
+                                >
+                                  <Box component='i' className='ri-file-pdf-line' />
+                                </IconButton>
+                              </span>
+                            </Tooltip>
+                          </TableCell>
+                        ) : null}
                         {hasWrite ? (
                           <TableCell align='center'>
                             <Stack direction='row' spacing={0.5} justifyContent='flex-end' alignItems='center'>
@@ -694,7 +786,18 @@ const CrudListPanel = ({
   )
 
   if (!hasWrite) {
-    return shell
+    return (
+      <>
+        {shell}
+        <Snackbar
+          open={snackbar != null}
+          autoHideDuration={3000}
+          onClose={() => setSnackbar(null)}
+          message={snackbar ?? ''}
+          anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+        />
+      </>
+    )
   }
 
   return (
