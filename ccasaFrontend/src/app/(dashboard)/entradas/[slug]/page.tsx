@@ -6,7 +6,7 @@ import type { Metadata } from 'next'
 import EntradaTipoClient from './EntradaTipoClient'
 
 // Config Imports
-import { ENTRADA_SLUGS, getEntradaModulo } from '@configs/ccasaModules'
+import { getEntradaModulo } from '@configs/ccasaModules'
 
 const ENTRADA_METADATA_TITLE: Record<string, string> = {
   conductividad: 'Conductividad — BSA Lab',
@@ -17,14 +17,12 @@ type PageProps = {
   params: { slug: string }
 }
 
+export const dynamic = 'force-dynamic'
+
 export function generateMetadata({ params }: PageProps): Metadata {
   const title = ENTRADA_METADATA_TITLE[params.slug] ?? 'Entrada — BSA Lab'
 
   return { title }
-}
-
-export function generateStaticParams() {
-  return ENTRADA_SLUGS.map(slug => ({ slug }))
 }
 
 const EntradaTipoPage = ({ params }: PageProps) => {
