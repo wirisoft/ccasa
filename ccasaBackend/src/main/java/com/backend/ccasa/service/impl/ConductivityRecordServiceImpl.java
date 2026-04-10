@@ -36,10 +36,11 @@ import com.lowagie.text.PageSize;
 import com.lowagie.text.Paragraph;
 import com.lowagie.text.Phrase;
 import com.lowagie.text.Rectangle;
-import com.lowagie.text.pdf.PdfContentByte;
 import com.lowagie.text.pdf.PdfPCell;
 import com.lowagie.text.pdf.PdfPTable;
 import com.lowagie.text.pdf.PdfWriter;
+
+import java.awt.Color;
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.nio.file.Files;
@@ -70,10 +71,27 @@ public class ConductivityRecordServiceImpl implements IConductivityRecordService
 	private static final MathContext MC = new MathContext(14, RoundingMode.HALF_UP);
 	private static final DateTimeFormatter PDF_DATE = DateTimeFormatter.ofPattern("yyyyMMdd").withZone(ZoneOffset.UTC);
 	private static final String PDF_LOGO_CLASSPATH = "static/images/lab-logo.png";
-	private static final Font TITLE_FONT = new Font(Font.HELVETICA, 12, Font.BOLD);
-	private static final Font LABEL_FONT = new Font(Font.HELVETICA, 9, Font.BOLD);
-	private static final Font BODY_FONT = new Font(Font.HELVETICA, 9, Font.NORMAL);
-	private static final Font SMALL_FONT = new Font(Font.HELVETICA, 8, Font.NORMAL);
+
+	private static final Color COLOR_NAVY = new Color(44, 62, 80);
+	private static final Color COLOR_GRAY_LIGHT = new Color(244, 246, 247);
+	private static final Color COLOR_GRAY_MID = new Color(189, 195, 199);
+	private static final Color COLOR_GRAY_DARK = new Color(127, 140, 141);
+	private static final Color COLOR_WHITE = Color.WHITE;
+	private static final Color COLOR_ROW_ALT = new Color(248, 249, 250);
+	private static final Color COLOR_RESULT_ROW = new Color(234, 236, 238);
+
+	private static final Font F_11_BOLD_NAVY = new Font(Font.HELVETICA, 11f, Font.BOLD, COLOR_NAVY);
+	private static final Font F_8_NORMAL_GRAY_DARK = new Font(Font.HELVETICA, 8f, Font.NORMAL, COLOR_GRAY_DARK);
+	private static final Font F_9_BOLD_NAVY = new Font(Font.HELVETICA, 9f, Font.BOLD, COLOR_NAVY);
+	private static final Font F_9_BOLD_BLACK = new Font(Font.HELVETICA, 9f, Font.BOLD, Color.BLACK);
+	private static final Font F_9_NORMAL_GRAY = new Font(Font.HELVETICA, 9f, Font.NORMAL, COLOR_GRAY_DARK);
+	private static final Font F_10_BOLD_BLACK = new Font(Font.HELVETICA, 10f, Font.BOLD, Color.BLACK);
+	private static final Font F_8_NORMAL_GRAY = new Font(Font.HELVETICA, 8f, Font.NORMAL, COLOR_GRAY_DARK);
+	private static final Font F_9_WHITE_BOLD = new Font(Font.HELVETICA, 9f, Font.BOLD, COLOR_WHITE);
+	private static final Font F_10_WHITE_BOLD = new Font(Font.HELVETICA, 10f, Font.BOLD, COLOR_WHITE);
+	private static final Font F_14_WHITE_BOLD = new Font(Font.HELVETICA, 14f, Font.BOLD, COLOR_WHITE);
+	private static final Font F_8_BOLD_NAVY = new Font(Font.HELVETICA, 8f, Font.BOLD, COLOR_NAVY);
+	private static final Font F_9_NORMAL_BLACK = new Font(Font.HELVETICA, 9f, Font.NORMAL, Color.BLACK);
 
 	private final EntryConductivityRepository entryConductivityRepository;
 	private final EntryRepository entryRepository;
@@ -483,17 +501,25 @@ public class ConductivityRecordServiceImpl implements IConductivityRecordService
 	private void writePdf(Document document, EntryConductivityEntity record) throws Exception {
 		ConductivityRecordResponseDTO dto = toDto(record);
 		document.add(headerLine(dto));
+		document.add(headerDividerThick());
 		document.add(new Paragraph(" "));
-		document.add(topBodyTable(dto));
+		document.add(conductivityTypeBanner(dto));
 		document.add(new Paragraph(" "));
-		document.add(centered("Se analiza de acuerdo al procedimiento de control de calidad con las siguientes muestras:", BODY_FONT));
-		document.add(centered("VERIFICACION", LABEL_FONT));
+		document.add(sectionTitleTable("PREPARACIÓN DEL ESTÁNDAR DE CONTROL DE CALIDAD"));
+		document.add(new Paragraph(" "));
+		document.add(preparationTable(dto));
+		document.add(new Paragraph(" "));
+		addVerificationBlock(document);
 		document.add(new Paragraph(" "));
 		document.add(signaturesBlock(dto, record));
 		document.add(new Paragraph(" "));
 		document.add(observationsBlock(dto));
 		document.add(new Paragraph(" "));
+		document.add(sectionTitleTable("CÁLCULOS"));
+		document.add(new Paragraph(" "));
 		document.add(calculationsBlock(dto));
+		document.add(new Paragraph(" "));
+		document.add(pdfFooter());
 	}
 
 	private Image loadClasspathLogo() {
@@ -508,156 +534,360 @@ public class ConductivityRecordServiceImpl implements IConductivityRecordService
 		}
 	}
 
-	private PdfPTable headerLine(ConductivityRecordResponseDTO dto) {
-		PdfPTable outer = new PdfPTable(new float[] { 0.9f, 2.1f });
-		outer.setWidthPercentage(100);
-
+	private PdfPCell buildLogoCell() {
 		PdfPCell logoCell = new PdfPCell();
 		logoCell.setBorder(Rectangle.NO_BORDER);
-		logoCell.setVerticalAlignment(Element.ALIGN_TOP);
+		logoCell.setVerticalAlignment(Element.ALIGN_MIDDLE);
+		logoCell.setHorizontalAlignment(Element.ALIGN_CENTER);
+		logoCell.setPadding(4f);
 		Image logo = loadClasspathLogo();
 		if (logo != null) {
-			logo.scaleToFit(72f, 48f);
-			logo.setAlignment(Element.ALIGN_LEFT);
+			logo.scaleToFit(72f, 52f);
 			logoCell.addElement(logo);
+		} else {
+			logoCell.setBackgroundColor(COLOR_NAVY);
+			logoCell.setMinimumHeight(52f);
+			Paragraph sa = new Paragraph("SA", F_14_WHITE_BOLD);
+			sa.setAlignment(Element.ALIGN_CENTER);
+			logoCell.addElement(sa);
 		}
-		outer.addCell(logoCell);
+		return logoCell;
+	}
 
-		PdfPTable right = new PdfPTable(new float[] { 0.7f, 0.6f, 1f, 0.6f, 0.9f });
-		right.setWidthPercentage(100);
-		right.addCell(cell("Folio No.", LABEL_FONT, Element.ALIGN_LEFT, false));
-		right.addCell(cell(safe(dto.displayFolio()), LABEL_FONT, Element.ALIGN_CENTER, true));
-		right.addCell(cell("", BODY_FONT, Element.ALIGN_LEFT, false));
-		right.addCell(cell("Fecha:", LABEL_FONT, Element.ALIGN_RIGHT, false));
-		right.addCell(cell(
-			safe(PDF_DATE.format(dto.recordedAt() != null ? dto.recordedAt() : Instant.now())),
-			LABEL_FONT, Element.ALIGN_CENTER, true));
+	private PdfPCell folioDateBox(String label, String value) {
+		PdfPCell c = new PdfPCell();
+		c.setBorder(Rectangle.BOX);
+		c.setBorderColor(COLOR_GRAY_MID);
+		c.setPadding(6f);
+		c.setBackgroundColor(COLOR_WHITE);
+		c.addElement(new Paragraph(label, F_8_NORMAL_GRAY));
+		c.addElement(new Paragraph(value, F_9_BOLD_BLACK));
+		return c;
+	}
 
-		PdfPCell rightCell = new PdfPCell(right);
-		rightCell.setBorder(Rectangle.NO_BORDER);
-		outer.addCell(rightCell);
+	private PdfPTable headerLine(ConductivityRecordResponseDTO dto) {
+		PdfPTable outer = new PdfPTable(new float[] { 0.85f, 2.15f });
+		outer.setWidthPercentage(100);
+		outer.addCell(buildLogoCell());
+
+		PdfPTable headerInner = new PdfPTable(new float[] { 1.5f, 1f });
+		headerInner.setWidthPercentage(100);
+
+		PdfPCell leftTitles = new PdfPCell();
+		leftTitles.setBorder(Rectangle.NO_BORDER);
+		leftTitles.addElement(new Paragraph("BITÁCORAS SERVICIOS AMBIENTALES", F_11_BOLD_NAVY));
+		leftTitles.addElement(new Paragraph("Laboratorio de análisis ambiental · Control de calidad", F_8_NORMAL_GRAY_DARK));
+
+		PdfPTable boxes = new PdfPTable(new float[] { 1f, 1f });
+		boxes.setWidthPercentage(100);
+		boxes.addCell(folioDateBox("Folio No.", safe(dto.displayFolio())));
+		boxes.addCell(folioDateBox(
+			"Fecha",
+			safe(PDF_DATE.format(dto.recordedAt() != null ? dto.recordedAt() : Instant.now()))));
+
+		PdfPCell rightBoxes = new PdfPCell(boxes);
+		rightBoxes.setBorder(Rectangle.NO_BORDER);
+		rightBoxes.setVerticalAlignment(Element.ALIGN_TOP);
+
+		headerInner.addCell(leftTitles);
+		headerInner.addCell(rightBoxes);
+
+		PdfPCell wrap = new PdfPCell(headerInner);
+		wrap.setBorder(Rectangle.NO_BORDER);
+		outer.addCell(wrap);
 		return outer;
 	}
 
-	private PdfPTable topBodyTable(ConductivityRecordResponseDTO dto) {
-		PdfPTable table = new PdfPTable(new float[] { 1.2f, 1.1f, 1.1f, 1.3f });
+	private PdfPTable headerDividerThick() {
+		PdfPTable t = new PdfPTable(1);
+		t.setSpacingBefore(4f);
+		t.setWidthPercentage(100);
+		PdfPCell c = new PdfPCell();
+		c.setFixedHeight(2.5f);
+		c.setBorder(Rectangle.NO_BORDER);
+		c.setBackgroundColor(COLOR_NAVY);
+		t.addCell(c);
+		return t;
+	}
+
+	private String tipoRfq05(ConductivityRecordResponseDTO dto) {
+		if (dto.type() == ConductivityTypeEnum.High) {
+			return "Alta (KCl) — Estándar RF-05";
+		}
+		if (dto.type() == ConductivityTypeEnum.Low) {
+			return "Baja (KCl) — Estándar RF-05";
+		}
+		return "—";
+	}
+
+	private PdfPTable conductivityTypeBanner(ConductivityRecordResponseDTO dto) {
+		PdfPTable outer = new PdfPTable(new float[] { 2.4f, 1f });
+		outer.setWidthPercentage(100);
+
+		PdfPCell left = new PdfPCell();
+		left.setBorder(Rectangle.BOX);
+		left.setBorderColor(COLOR_GRAY_MID);
+		left.setBackgroundColor(COLOR_GRAY_LIGHT);
+		left.setPadding(10f);
+		left.addElement(new Paragraph("TIPO DE CONDUCTIVIDAD:", F_8_NORMAL_GRAY));
+		left.addElement(new Paragraph(tipoRfq05(dto), F_10_BOLD_BLACK));
+
+		PdfPCell right = new PdfPCell();
+		right.setBorder(Rectangle.BOX);
+		right.setBorderColor(COLOR_GRAY_MID);
+		right.setBackgroundColor(COLOR_GRAY_LIGHT);
+		right.setPadding(8f);
+		right.setVerticalAlignment(Element.ALIGN_MIDDLE);
+		right.setHorizontalAlignment(Element.ALIGN_CENTER);
+		Boolean ir = dto.inRange();
+		if (ir == null) {
+			right.addElement(new Paragraph(" ", F_9_NORMAL_BLACK));
+		} else if (Boolean.TRUE.equals(ir)) {
+			Paragraph ok = new Paragraph("\u2713 En rango aceptable", F_9_BOLD_NAVY);
+			ok.setAlignment(Element.ALIGN_CENTER);
+			right.addElement(ok);
+		} else {
+			Paragraph bad = new Paragraph("\u2717 Fuera de rango", F_9_BOLD_NAVY);
+			bad.setAlignment(Element.ALIGN_CENTER);
+			right.addElement(bad);
+		}
+
+		outer.addCell(left);
+		outer.addCell(right);
+		return outer;
+	}
+
+	private PdfPTable sectionTitleTable(String title) {
+		PdfPTable wrap = new PdfPTable(1);
+		wrap.setWidthPercentage(100);
+		PdfPCell c = new PdfPCell(new Phrase(title, F_9_BOLD_NAVY));
+		c.setBorder(Rectangle.LEFT);
+		c.setBorderWidthLeft(3f);
+		c.setBorderColorLeft(COLOR_NAVY);
+		c.setPaddingLeft(10f);
+		c.setPaddingTop(6f);
+		c.setPaddingBottom(4f);
+		c.setBorderWidthTop(0f);
+		c.setBorderWidthRight(0f);
+		c.setBorderWidthBottom(0f);
+		wrap.addCell(c);
+		return wrap;
+	}
+
+	private PdfPCell prepCell(String text, Font font, Color bg, int align) {
+		PdfPCell c = new PdfPCell(new Phrase(safe(text), font));
+		c.setBackgroundColor(bg);
+		c.setBorder(Rectangle.BOX);
+		c.setBorderColor(COLOR_GRAY_MID);
+		c.setPadding(6f);
+		c.setHorizontalAlignment(align);
+		c.setVerticalAlignment(Element.ALIGN_MIDDLE);
+		return c;
+	}
+
+	private void addPrepFullRow(PdfPTable table, String text, int rowIndex) {
+		Color bg = rowIndex % 2 == 0 ? COLOR_WHITE : COLOR_ROW_ALT;
+		PdfPCell c = prepCell(text, F_9_NORMAL_BLACK, bg, Element.ALIGN_LEFT);
+		c.setColspan(5);
+		table.addCell(c);
+	}
+
+	private PdfPTable preparationTable(ConductivityRecordResponseDTO dto) {
+		PdfPTable table = new PdfPTable(new float[] { 1f, 1f, 1f, 1f, 1.1f });
 		table.setWidthPercentage(100);
-		String tipoLabel = dto.type() == ConductivityTypeEnum.High
-			? "Alta (KCl)"
-			: dto.type() == ConductivityTypeEnum.Low
-				? "Baja (KCl)"
-				: "—";
-		table.addCell(cell("Tipo de conductividad:", LABEL_FONT, Element.ALIGN_LEFT, false));
-		table.addCell(cell(tipoLabel, BODY_FONT, Element.ALIGN_LEFT, true, 3));
-		table.addCell(cell("Preparacion de estandar de control de la calidad, de", BODY_FONT, Element.ALIGN_CENTER, false, 4));
-		table.addCell(cell("KCl", LABEL_FONT, Element.ALIGN_CENTER, true));
-		table.addCell(cell("marca", BODY_FONT, Element.ALIGN_CENTER, false));
-		table.addCell(cell("MCF", LABEL_FONT, Element.ALIGN_CENTER, true));
-		table.addCell(cell("lote B1293638", LABEL_FONT, Element.ALIGN_CENTER, true));
-		table.addCell(cell("pureza 100%", BODY_FONT, Element.ALIGN_CENTER, true));
-		table.addCell(cell("concentracion de", BODY_FONT, Element.ALIGN_CENTER, false));
-		table.addCell(cell("g/mol", LABEL_FONT, Element.ALIGN_CENTER, true));
-		table.addCell(cell("peso, tomo la cantidad de", BODY_FONT, Element.ALIGN_CENTER, false));
-		table.addCell(cell(fixed(dto.weightGrams(), 4) + " g", LABEL_FONT, Element.ALIGN_CENTER, true));
-		table.addCell(cell("usando balanza", BODY_FONT, Element.ALIGN_CENTER, false));
-		table.addCell(cell("M-BAD-01 F:25", LABEL_FONT, Element.ALIGN_CENTER, true));
-		table.addCell(cell("usando horno M-HS-01 F:05", LABEL_FONT, Element.ALIGN_CENTER, true));
-		table.addCell(cell("disuelvo y aforo a 1000 ml", BODY_FONT, Element.ALIGN_CENTER, true));
-		table.addCell(cell("con un matraz", BODY_FONT, Element.ALIGN_CENTER, false));
-		table.addCell(cell("Vol. 1000 ml. 01-FQ", LABEL_FONT, Element.ALIGN_CENTER, true));
-		table.addCell(cell("usando como disolvente 1-MT/02 F:22", BODY_FONT, Element.ALIGN_CENTER, true, 2));
-		table.addCell(cell("obteniendo la concentracion final de", BODY_FONT, Element.ALIGN_CENTER, false));
-		table.addCell(cell(fixed(dto.calculatedValue(), 0) + " uS/cm", LABEL_FONT, Element.ALIGN_CENTER, true));
+
+		String[] headers = { "Reactivo", "Marca", "Lote", "Pureza", "Concentración" };
+		for (String h : headers) {
+			table.addCell(prepCell(h, F_9_WHITE_BOLD, COLOR_NAVY, Element.ALIGN_CENTER));
+		}
+
+		table.addCell(prepCell("KCl", F_9_NORMAL_BLACK, COLOR_WHITE, Element.ALIGN_CENTER));
+		table.addCell(prepCell("MCF", F_9_NORMAL_BLACK, COLOR_WHITE, Element.ALIGN_CENTER));
+		table.addCell(prepCell("B1293638", F_9_NORMAL_BLACK, COLOR_WHITE, Element.ALIGN_CENTER));
+		table.addCell(prepCell("100%", F_9_NORMAL_BLACK, COLOR_WHITE, Element.ALIGN_CENTER));
+		table.addCell(prepCell(fixed(dto.referenceMol(), 4) + " mol", F_9_NORMAL_BLACK, COLOR_WHITE, Element.ALIGN_CENTER));
+
+		int r = 0;
+		addPrepFullRow(
+			table,
+			"Peso: " + fixed(dto.weightGrams(), 4) + " g · Balanza M-BAD-01 F:25",
+			r++);
+		addPrepFullRow(table, "Horno: M-HS-01 F:05", r++);
+		addPrepFullRow(
+			table,
+			"Matraz Vol. 1000 ml. 01-FQ · Disolvente 1-MT/02 F:22 · Aforo 1000 ml",
+			r++);
+		addPrepFullRow(
+			table,
+			"Concentración final (lectura conductivímetro): " + fixed(dto.calculatedValue(), 0) + " \u00B5S/cm",
+			r);
 		return table;
+	}
+
+	private void addVerificationBlock(Document document) throws Exception {
+		Paragraph p = new Paragraph(
+			"Se analiza de acuerdo al procedimiento de control de calidad con las siguientes muestras:",
+			F_9_NORMAL_GRAY);
+		p.setAlignment(Element.ALIGN_CENTER);
+		document.add(p);
+		Paragraph v = new Paragraph("VERIFICACIÓN", F_9_BOLD_BLACK);
+		v.setAlignment(Element.ALIGN_CENTER);
+		document.add(v);
 	}
 
 	private PdfPTable signaturesBlock(ConductivityRecordResponseDTO dto, EntryConductivityEntity record) {
 		PdfPTable signatures = new PdfPTable(new float[] { 1f, 1f, 1f });
 		signatures.setWidthPercentage(100);
-		signatures.addCell(signatureCell("Prepara", dto.createdByNomenclature(), dto.createdByName(), entryUser(record)));
-		signatures.addCell(signatureCell("Analiza", "MUESTREO", "MUESTREO", null));
-		signatures.addCell(signatureCell("Revisa", dto.reviewerNomenclature(), dto.reviewerName(), record.getReviewerUser()));
+		signatures.addCell(signatureBlockCell("PREPARA", dto.createdByNomenclature(), dto.createdByName(), entryUser(record)));
+		signatures.addCell(signatureBlockCell("ANALIZA", "MUESTREO", "MUESTREO", null));
+		signatures.addCell(signatureBlockCell("REVISA", dto.reviewerNomenclature(), dto.reviewerName(), record.getReviewerUser()));
 		return signatures;
 	}
 
+	private PdfPCell signatureBlockCell(String roleHeader, String nomenclature, String name, UserEntity user) {
+		PdfPCell cell = new PdfPCell();
+		cell.setPadding(12f);
+		cell.setBorder(Rectangle.BOX);
+		cell.setBorderColor(COLOR_GRAY_MID);
+		cell.setMinimumHeight(115f);
+
+		cell.addElement(new Paragraph(roleHeader, F_8_BOLD_NAVY));
+		PdfPTable sep = new PdfPTable(1);
+		sep.setWidthPercentage(100);
+		PdfPCell sepc = new PdfPCell();
+		sepc.setFixedHeight(2f);
+		sepc.setBorder(Rectangle.BOTTOM);
+		sepc.setBorderColorBottom(COLOR_GRAY_MID);
+		sepc.setBorderWidthBottom(1f);
+		sepc.setPadding(0f);
+		sep.addCell(sepc);
+		cell.addElement(sep);
+
+		cell.addElement(new Paragraph(safe(name), F_10_BOLD_BLACK));
+		cell.addElement(new Paragraph(safe(nomenclature), F_8_NORMAL_GRAY));
+
+		addSignatureImage(cell, user);
+
+		Paragraph sigLine = new Paragraph("_____________________________", F_8_NORMAL_GRAY);
+		sigLine.setAlignment(Element.ALIGN_CENTER);
+		cell.addElement(sigLine);
+		return cell;
+	}
+
 	private PdfPTable observationsBlock(ConductivityRecordResponseDTO dto) {
-		PdfPTable obs = new PdfPTable(new float[] { 0.6f, 1.4f, 1f });
+		PdfPTable obs = new PdfPTable(new float[] { 1f, 1f });
 		obs.setWidthPercentage(100);
-		obs.addCell(cell("Observaciones:", LABEL_FONT, Element.ALIGN_LEFT, false));
-		obs.addCell(
-			cell(
-				"HORA DE PREPARACION: " + safe(dto.preparationTime() != null ? dto.preparationTime().toString() : ""),
-				BODY_FONT,
-				Element.ALIGN_LEFT,
-				true
-			)
-		);
-		obs.addCell(cell(safe(dto.observation()) != null && !safe(dto.observation()).isBlank() ? safe(dto.observation()) : "AGUA LIBRE DE CO2", BODY_FONT, Element.ALIGN_LEFT, true));
+
+		PdfPCell c1 = new PdfPCell();
+		c1.setBorder(Rectangle.BOX);
+		c1.setBorderColor(COLOR_GRAY_MID);
+		c1.setPadding(8f);
+		c1.addElement(new Paragraph("HORA DE PREPARACIÓN", F_8_NORMAL_GRAY));
+		c1.addElement(new Paragraph(
+			safe(dto.preparationTime() != null ? dto.preparationTime().toString() : "—"),
+			F_10_BOLD_BLACK));
+
+		String obsText = safe(dto.observation()) != null && !safe(dto.observation()).isBlank()
+			? safe(dto.observation())
+			: "AGUA LIBRE DE CO2";
+		PdfPCell c2 = new PdfPCell();
+		c2.setBorder(Rectangle.BOX);
+		c2.setBorderColor(COLOR_GRAY_MID);
+		c2.setPadding(8f);
+		c2.addElement(new Paragraph("OBSERVACIONES", F_8_NORMAL_GRAY));
+		c2.addElement(new Paragraph(obsText, F_9_NORMAL_BLACK));
+
+		obs.addCell(c1);
+		obs.addCell(c2);
 		return obs;
+	}
+
+	private PdfPCell calcDataCell(String text, Font font, Color bg, int align, int colspan) {
+		PdfPCell c = new PdfPCell(new Phrase(safe(text), font));
+		c.setColspan(colspan);
+		c.setBackgroundColor(bg);
+		c.setBorder(Rectangle.BOX);
+		c.setBorderColor(COLOR_GRAY_MID);
+		c.setPadding(5f);
+		c.setHorizontalAlignment(align);
+		c.setVerticalAlignment(Element.ALIGN_MIDDLE);
+		return c;
 	}
 
 	private PdfPTable calculationsBlock(ConductivityRecordResponseDTO dto) {
 		PdfPTable calc = new PdfPTable(new float[] { 1f, 1f, 1.1f, 1f });
 		calc.setWidthPercentage(100);
-		calc.addCell(cell("Calculos:", LABEL_FONT, Element.ALIGN_LEFT, false, 4));
-		calc.addCell(cell("7.4565", LABEL_FONT, Element.ALIGN_CENTER, true));
-		calc.addCell(cell("0.1", LABEL_FONT, Element.ALIGN_CENTER, true));
-		calc.addCell(cell(fixed(dto.referenceUScm(), 4), LABEL_FONT, Element.ALIGN_CENTER, true));
-		calc.addCell(cell(fixed(dto.referenceMol(), 4), LABEL_FONT, Element.ALIGN_CENTER, true));
-		calc.addCell(cell("x", LABEL_FONT, Element.ALIGN_CENTER, true));
-		calc.addCell(cell("0.01", LABEL_FONT, Element.ALIGN_CENTER, true));
-		calc.addCell(cell(fixed(dto.weightGrams(), 4), LABEL_FONT, Element.ALIGN_CENTER, true));
-		calc.addCell(cell("X", LABEL_FONT, Element.ALIGN_CENTER, true));
-		calc.addCell(cell("x=", LABEL_FONT, Element.ALIGN_RIGHT, false));
-		calc.addCell(cell(fixed(dto.referenceUScm(), 4) + " uS/cm", LABEL_FONT, Element.ALIGN_CENTER, true));
-		calc.addCell(cell("X=", LABEL_FONT, Element.ALIGN_RIGHT, false));
-		calc.addCell(cell(fixed(dto.calculatedMol(), 7), LABEL_FONT, Element.ALIGN_CENTER, true));
-		calc.addCell(cell(fixed(dto.referenceMol(), 4) + " mol", LABEL_FONT, Element.ALIGN_CENTER, true, 2));
-		calc.addCell(cell(fixed(dto.referenceStandardUScm(), 0), LABEL_FONT, Element.ALIGN_CENTER, true));
-		calc.addCell(cell("uS/cm", SMALL_FONT, Element.ALIGN_LEFT, false));
-		calc.addCell(cell(fixed(dto.calculatedMol(), 6) + " mol", LABEL_FONT, Element.ALIGN_CENTER, true, 2));
-		calc.addCell(cell("X", LABEL_FONT, Element.ALIGN_CENTER, true));
-		calc.addCell(cell("", BODY_FONT, Element.ALIGN_LEFT, false));
-		calc.addCell(cell("X=", LABEL_FONT, Element.ALIGN_RIGHT, false));
-		calc.addCell(cell(fixed(dto.calculatedValue(), 0), LABEL_FONT, Element.ALIGN_CENTER, true));
-		calc.addCell(cell("uS/cm", SMALL_FONT, Element.ALIGN_LEFT, false));
+
+		Color r0 = COLOR_WHITE;
+		Color r1 = COLOR_ROW_ALT;
+
+		calc.addCell(calcDataCell("7.4565", F_9_NORMAL_BLACK, r0, Element.ALIGN_CENTER, 1));
+		calc.addCell(calcDataCell("0.1", F_9_NORMAL_BLACK, r0, Element.ALIGN_CENTER, 1));
+		calc.addCell(calcDataCell(fixed(dto.referenceUScm(), 4), F_9_NORMAL_BLACK, r0, Element.ALIGN_CENTER, 1));
+		calc.addCell(calcDataCell(fixed(dto.referenceMol(), 4), F_9_NORMAL_BLACK, r0, Element.ALIGN_CENTER, 1));
+
+		calc.addCell(calcDataCell("x", F_9_NORMAL_BLACK, r1, Element.ALIGN_CENTER, 1));
+		calc.addCell(calcDataCell("0.01", F_9_NORMAL_BLACK, r1, Element.ALIGN_CENTER, 1));
+		calc.addCell(calcDataCell(fixed(dto.weightGrams(), 4), F_9_NORMAL_BLACK, r1, Element.ALIGN_CENTER, 1));
+		calc.addCell(calcDataCell("X", F_9_NORMAL_BLACK, r1, Element.ALIGN_CENTER, 1));
+
+		calc.addCell(calcDataCell("x=", F_9_NORMAL_BLACK, r0, Element.ALIGN_RIGHT, 1));
+		calc.addCell(calcDataCell(fixed(dto.referenceUScm(), 4) + " uS/cm", F_9_NORMAL_BLACK, r0, Element.ALIGN_CENTER, 1));
+		calc.addCell(calcDataCell("X=", F_9_NORMAL_BLACK, r0, Element.ALIGN_RIGHT, 1));
+		calc.addCell(calcDataCell(fixed(dto.calculatedMol(), 7), F_9_NORMAL_BLACK, r0, Element.ALIGN_CENTER, 1));
+
+		calc.addCell(calcDataCell(fixed(dto.referenceMol(), 4) + " mol", F_9_BOLD_NAVY, COLOR_RESULT_ROW, Element.ALIGN_CENTER, 2));
+		calc.addCell(calcDataCell(fixed(dto.referenceStandardUScm(), 0), F_9_BOLD_NAVY, COLOR_RESULT_ROW, Element.ALIGN_CENTER, 1));
+		calc.addCell(calcDataCell("\u00B5S/cm", F_8_NORMAL_GRAY, COLOR_RESULT_ROW, Element.ALIGN_LEFT, 1));
+
+		calc.addCell(calcDataCell(fixed(dto.calculatedMol(), 6) + " mol", F_9_NORMAL_BLACK, r1, Element.ALIGN_CENTER, 2));
+		calc.addCell(calcDataCell("X", F_9_NORMAL_BLACK, r1, Element.ALIGN_CENTER, 1));
+		calc.addCell(calcDataCell("", F_9_NORMAL_BLACK, r1, Element.ALIGN_LEFT, 1));
+
+		calc.addCell(calcDataCell("X=", F_9_NORMAL_BLACK, r0, Element.ALIGN_RIGHT, 1));
+		calc.addCell(calcDataCell(fixed(dto.calculatedValue(), 0), F_9_NORMAL_BLACK, r0, Element.ALIGN_CENTER, 1));
+		calc.addCell(calcDataCell("\u00B5S/cm", F_8_NORMAL_GRAY, r0, Element.ALIGN_LEFT, 1));
+		calc.addCell(calcDataCell("", F_9_NORMAL_BLACK, r0, Element.ALIGN_LEFT, 1));
+
+		PdfPCell finalRow = new PdfPCell(
+			new Phrase(
+				"mol calculado: " + fixed(dto.calculatedMol(), 7) + " mol   ·   Conductividad calculada: "
+					+ fixed(dto.calculatedValue(), 0) + " \u00B5S/cm",
+				F_10_WHITE_BOLD));
+		finalRow.setColspan(4);
+		finalRow.setBackgroundColor(COLOR_NAVY);
+		finalRow.setBorder(Rectangle.BOX);
+		finalRow.setBorderColor(COLOR_NAVY);
+		finalRow.setPadding(10f);
+		finalRow.setHorizontalAlignment(Element.ALIGN_CENTER);
+		finalRow.setVerticalAlignment(Element.ALIGN_MIDDLE);
+		calc.addCell(finalRow);
+
 		return calc;
 	}
 
-	private Paragraph centered(String text, Font font) {
-		Paragraph paragraph = new Paragraph(text, font);
-		paragraph.setAlignment(Element.ALIGN_CENTER);
-		return paragraph;
-	}
+	private PdfPTable pdfFooter() {
+		PdfPTable t = new PdfPTable(new float[] { 1f, 1f });
+		t.setWidthPercentage(100);
+		PdfPCell line = new PdfPCell();
+		line.setColspan(2);
+		line.setFixedHeight(1f);
+		line.setBackgroundColor(COLOR_GRAY_MID);
+		line.setBorder(Rectangle.NO_BORDER);
+		t.addCell(line);
 
-	private void addLabelValue(PdfPTable table, String label, String value) {
-		table.addCell(cell(label, LABEL_FONT, Element.ALIGN_LEFT, true));
-		table.addCell(cell(safe(value), BODY_FONT, Element.ALIGN_LEFT, true));
-	}
+		PdfPCell left = new PdfPCell(new Phrase("Bitácoras Servicios Ambientales · Sistema BSA Lab", F_8_NORMAL_GRAY));
+		left.setBorder(Rectangle.NO_BORDER);
+		left.setPaddingTop(6f);
 
-	private PdfPCell cell(String text, Font font, int align, boolean border) {
-		PdfPCell cell = new PdfPCell(new Phrase(safe(text), font));
-		cell.setHorizontalAlignment(align);
-		cell.setVerticalAlignment(Element.ALIGN_MIDDLE);
-		cell.setPadding(6f);
-		cell.setBorder(border ? Rectangle.BOX : Rectangle.NO_BORDER);
-		return cell;
-	}
+		PdfPCell right = new PdfPCell(new Phrase("Documento generado automáticamente", F_8_NORMAL_GRAY));
+		right.setBorder(Rectangle.NO_BORDER);
+		right.setHorizontalAlignment(Element.ALIGN_RIGHT);
+		right.setPaddingTop(6f);
 
-	private PdfPCell cell(String text, Font font, int align, boolean border, int colspan) {
-		PdfPCell cell = cell(text, font, align, border);
-		cell.setColspan(colspan);
-		return cell;
-	}
-
-	private PdfPCell signatureCell(String label, String nomenclature, String name, UserEntity user) {
-		PdfPCell cell = new PdfPCell();
-		cell.setPadding(8f);
-		cell.setBorder(Rectangle.BOX);
-		cell.addElement(new Paragraph(label + ": " + safe(nomenclature), LABEL_FONT));
-		cell.addElement(new Paragraph(safe(name), BODY_FONT));
-		addSignatureImage(cell, user);
-		return cell;
+		t.addCell(left);
+		t.addCell(right);
+		return t;
 	}
 
 	private void addSignatureImage(PdfPCell cell, UserEntity user) {
@@ -671,7 +901,7 @@ public class ConductivityRecordServiceImpl implements IConductivityRecordService
 			}
 			Image image = Image.getInstance(signaturePath.toAbsolutePath().toString());
 			image.scaleToFit(100f, 40f);
-			image.setAlignment(Element.ALIGN_LEFT);
+			image.setAlignment(Element.ALIGN_CENTER);
 			cell.addElement(image);
 		} catch (Exception ignored) {
 			// Si la firma no puede renderizarse no bloqueamos la exportación del PDF.
