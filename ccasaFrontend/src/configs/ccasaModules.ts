@@ -8,6 +8,7 @@ import { ENTRADA_BACKEND_BY_SLUG } from './backendApiRegistry'
 export type EntradaModulo = {
   slug: string
   label: string
+
   /** Texto breve bajo el título de la página del módulo (opcional). */
   pageDescription?: string
   iconClass: string
