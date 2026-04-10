@@ -32,7 +32,7 @@ import { useAuth } from '@/contexts/AuthContext'
 
 /** Etiquetas cortas solo en el menú lateral (las páginas siguen usando `mod.label` completo). */
 const ENTRADA_NAV_LABEL: Partial<Record<string, string>> = {
-  conductividad: 'Conductividad',
+  conductividad: 'Conductividad KCl',
   'temperatura-horno': 'Temperatura horno',
   'gastos-cartas': 'Gastos y cartas',
   'preparacion-soluciones': 'Prep. soluciones',

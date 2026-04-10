@@ -9,7 +9,7 @@ import EntradaTipoClient from './EntradaTipoClient'
 import { getEntradaModulo } from '@configs/ccasaModules'
 
 const ENTRADA_METADATA_TITLE: Record<string, string> = {
-  conductividad: 'Conductividad — BSA Lab',
+  conductividad: 'Conductividad KCl (RF-05) — BSA Lab',
   'agua-destilada': 'Agua destilada — BSA Lab'
 }
 

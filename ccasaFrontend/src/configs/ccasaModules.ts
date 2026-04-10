@@ -33,9 +33,9 @@ const RAW_ENTRADA_MODULOS: Omit<EntradaModulo, 'backend'>[] = [
   },
   {
     slug: 'conductividad',
-    label: 'Conductividad (alta / baja)',
+    label: 'Conductividad KCl — RF-05 (alta y baja)',
     pageDescription:
-      'RF-05 — solución KCl: ingresa tipo y peso; el sistema calcula la conductividad (µS/cm), valida el rango y genera el folio BSA-COND.',
+      'Solución KCl: ingresa tipo y peso; el sistema calcula la conductividad (µS/cm), valida el rango y genera el folio BSA-COND.',
     iconClass: 'ri-flashlight-line',
     docRef: 'RF-05 · Excel 2 y 3',
     excelEspecificacionesHint:
