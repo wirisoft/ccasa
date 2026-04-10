@@ -8,6 +8,8 @@ import { ENTRADA_BACKEND_BY_SLUG } from './backendApiRegistry'
 export type EntradaModulo = {
   slug: string
   label: string
+  /** Texto breve bajo el título de la página del módulo (opcional). */
+  pageDescription?: string
   iconClass: string
 
   /** Contrato REST del *CrudController y endpoints de dominio (p. ej. agua destilada) */
@@ -31,6 +33,8 @@ const RAW_ENTRADA_MODULOS: Omit<EntradaModulo, 'backend'>[] = [
   {
     slug: 'conductividad',
     label: 'Conductividad (alta / baja)',
+    pageDescription:
+      'RF-05 — solución KCl: ingresa tipo y peso; el sistema calcula la conductividad (µS/cm), valida el rango y genera el folio BSA-COND.',
     iconClass: 'ri-flashlight-line',
     docRef: 'RF-05 · Excel 2 y 3',
     excelEspecificacionesHint:

@@ -38,9 +38,16 @@ const EntradaTipoClient = ({ slug }: EntradaTipoClientProps) => {
 
   return (
     <Stack spacing={4}>
-      <div className='flex items-center justify-between flex-wrap gap-2'>
-        <Typography variant='h5'>{mod.label}</Typography>
-        <Button component={Link} href='/' variant='outlined' size='small'>
+      <div className='flex items-start justify-between flex-wrap gap-2'>
+        <Stack spacing={0.5} sx={{ minWidth: 0, flex: '1 1 240px' }}>
+          <Typography variant='h5'>{mod.label}</Typography>
+          {mod.pageDescription ? (
+            <Typography variant='body2' color='text.secondary' sx={{ maxWidth: 720 }}>
+              {mod.pageDescription}
+            </Typography>
+          ) : null}
+        </Stack>
+        <Button component={Link} href='/' variant='outlined' size='small' sx={{ flexShrink: 0 }}>
           Volver al inicio
         </Button>
       </div>
