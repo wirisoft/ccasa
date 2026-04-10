@@ -12,7 +12,20 @@ import Divider from '@mui/material/Divider'
 import LogbooksPanel from '@components/ccasa/LogbooksPanel'
 import { useAuth } from '@/contexts/AuthContext'
 
-const sections = [
+type NavCard = {
+  title: string
+  description: string
+  icon: string
+  href: string
+}
+
+type NavLink = {
+  title: string
+  icon: string
+  href: string
+}
+
+const baseNavCards: NavCard[] = [
   {
     title: 'Bitácoras',
     description: 'Gestión de bitácoras activas',
@@ -30,26 +43,40 @@ const sections = [
     description: 'Reactivos, lotes y soluciones',
     icon: 'ri-flask-line',
     href: '/catalogos/reactivos'
-  },
-  {
-    title: 'Personal',
-    description: 'Empleados del laboratorio',
-    icon: 'ri-team-line',
-    href: '/empleados'
   }
 ]
 
-const navigation = [
+const personalCard: NavCard = {
+  title: 'Personal',
+  description: 'Empleados del laboratorio',
+  icon: 'ri-team-line',
+  href: '/empleados'
+}
+
+const baseNavigationLinks: NavLink[] = [
   { title: 'Folios', icon: 'ri-numbers-line', href: '/folios' },
   { title: 'Alertas', icon: 'ri-alarm-warning-line', href: '/alertas' },
   { title: 'Firmas', icon: 'ri-ball-pen-line', href: '/firmas' },
-  { title: 'Roles', icon: 'ri-shield-user-line', href: '/roles' },
   { title: 'Lotes', icon: 'ri-stack-line', href: '/catalogos/lotes' },
   { title: 'Insumos', icon: 'ri-shopping-basket-line', href: '/catalogos/insumos' }
 ]
 
+const rolesNavLink: NavLink = { title: 'Roles', icon: 'ri-shield-user-line', href: '/roles' }
+
 const DashboardCcasa = () => {
-  const { email } = useAuth()
+  const { email, role } = useAuth()
+  const isAdmin = role === 'Admin'
+
+  const navCards: NavCard[] = [...baseNavCards, ...(isAdmin ? [personalCard] : [])]
+
+  const navigation: NavLink[] = [
+    baseNavigationLinks[0],
+    baseNavigationLinks[1],
+    baseNavigationLinks[2],
+    ...(isAdmin ? [rolesNavLink] : []),
+    baseNavigationLinks[3],
+    baseNavigationLinks[4]
+  ]
 
   return (
     <Grid container spacing={4}>
@@ -68,7 +95,7 @@ const DashboardCcasa = () => {
       </Grid>
 
       {/* Module cards */}
-      {sections.map(section => (
+      {navCards.map(section => (
         <Grid item xs={12} sm={6} md={3} key={section.title}>
           <Card
             component={Link}

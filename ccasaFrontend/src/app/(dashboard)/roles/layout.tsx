@@ -5,9 +5,9 @@ import type { Metadata } from 'next'
 import AdminGuard from '@/components/ccasa/AdminGuard'
 
 export const metadata: Metadata = {
-  title: 'Empleados — BSA Lab'
+  title: 'Roles — BSA Lab'
 }
 
-export default function EmpleadosLayout({ children }: { children: ReactNode }) {
+export default function RolesLayout({ children }: { children: ReactNode }) {
   return <AdminGuard>{children}</AdminGuard>
 }

@@ -1,6 +1,6 @@
-'use client'
-
 import Link from 'next/link'
+
+import type { Metadata } from 'next'
 
 import Button from '@mui/material/Button'
 import Stack from '@mui/material/Stack'
@@ -8,6 +8,10 @@ import Typography from '@mui/material/Typography'
 
 import CrudListPanel from '@components/ccasa/CrudListPanel'
 import { EQUIPMENT_CONFIG } from '@/lib/ccasa/crudFields'
+
+export const metadata: Metadata = {
+  title: 'Equipos — BSA Lab'
+}
 
 const Page = () => {
   return (

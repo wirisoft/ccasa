@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import type { FormEvent } from 'react'
 
 import Link from 'next/link'
@@ -53,6 +53,18 @@ const Register = () => {
   const [touched, setTouched] = useState<Record<string, boolean>>({})
   const [showLoading, setShowLoading] = useState(false)
   const [fadeOutLoading, setFadeOutLoading] = useState(false)
+
+  useEffect(() => {
+    if (!showLoading) {
+      return
+    }
+
+    const timer = setTimeout(() => {
+      setFadeOutLoading(true)
+    }, 2000)
+
+    return () => clearTimeout(timer)
+  }, [showLoading])
 
   const markTouched = (field: string) => setTouched(prev => ({ ...prev, [field]: true }))
 
@@ -114,9 +126,6 @@ const Register = () => {
     try {
       await register(trimmedFirst, trimmedLast, trimmedEmail, password)
       setShowLoading(true)
-      setTimeout(() => {
-        setFadeOutLoading(true)
-      }, 2000)
     } catch (err) {
       const raw = err instanceof Error ? err.message : ''
       const lower = raw.toLowerCase()
@@ -254,6 +263,7 @@ const Register = () => {
                     fullWidth
                     label='Nombre'
                     name='firstName'
+                    autoComplete='given-name'
                     value={firstName}
                     onChange={e => setFirstName(e.target.value)}
                     onBlur={() => markTouched('firstName')}
@@ -266,6 +276,7 @@ const Register = () => {
                     fullWidth
                     label='Apellido'
                     name='lastName'
+                    autoComplete='family-name'
                     value={lastName}
                     onChange={e => setLastName(e.target.value)}
                     onBlur={() => markTouched('lastName')}
@@ -281,6 +292,7 @@ const Register = () => {
                   label='Correo electrónico'
                   name='email'
                   type='email'
+                  autoComplete='email'
                   value={email}
                   onChange={e => setEmail(e.target.value)}
                   onBlur={() => markTouched('email')}
@@ -295,6 +307,7 @@ const Register = () => {
                   label='Contraseña'
                   name='password'
                   type={isPasswordShown ? 'text' : 'password'}
+                  autoComplete='new-password'
                   value={password}
                   onChange={e => setPassword(e.target.value)}
                   onBlur={() => markTouched('password')}

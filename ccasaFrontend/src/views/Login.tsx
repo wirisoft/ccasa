@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import type { FormEvent } from 'react'
 
 import Link from 'next/link'
@@ -50,6 +50,18 @@ const Login = () => {
   const afterAuthPath = safeInternalPath(searchParams.get('next'))
   const { login } = useAuth()
 
+  useEffect(() => {
+    if (!showLoading) {
+      return
+    }
+
+    const timer = setTimeout(() => {
+      setFadeOutLoading(true)
+    }, 2000)
+
+    return () => clearTimeout(timer)
+  }, [showLoading])
+
   const emailError = touched.email && email.trim() !== '' && !validateEmail(email.trim())
     ? 'Ingresa un correo electrónico válido'
     : touched.email && email.trim() === ''
@@ -84,9 +96,6 @@ const Login = () => {
     try {
       await login(trimmedEmail, password)
       setShowLoading(true)
-      setTimeout(() => {
-        setFadeOutLoading(true)
-      }, 2000)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'No se pudo iniciar sesión. Verifica tus credenciales.')
     } finally {
@@ -219,6 +228,7 @@ const Login = () => {
                   label='Correo electrónico'
                   name='email'
                   type='email'
+                  autoComplete='email'
                   value={email}
                   onChange={e => setEmail(e.target.value)}
                   onBlur={() => setTouched(prev => ({ ...prev, email: true }))}
@@ -233,6 +243,7 @@ const Login = () => {
                   label='Contraseña'
                   name='password'
                   type={isPasswordShown ? 'text' : 'password'}
+                  autoComplete='current-password'
                   value={password}
                   onChange={e => setPassword(e.target.value)}
                   onBlur={() => setTouched(prev => ({ ...prev, password: true }))}

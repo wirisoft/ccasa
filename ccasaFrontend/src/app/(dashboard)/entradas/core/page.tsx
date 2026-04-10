@@ -1,19 +1,18 @@
-'use client'
-
-// Next Imports
 import Link from 'next/link'
 
-// MUI Imports
+import type { Metadata } from 'next'
+
 import Button from '@mui/material/Button'
 import Stack from '@mui/material/Stack'
 import Typography from '@mui/material/Typography'
 
-// Config Imports
+import CrudListPanel from '@components/ccasa/CrudListPanel'
 import { API_V1 } from '@configs/backendApiRegistry'
 import { ENTRY_CORE_CONFIG } from '@/lib/ccasa/crudFields'
 
-// Component Imports
-import CrudListPanel from '@components/ccasa/CrudListPanel'
+export const metadata: Metadata = {
+  title: 'Entradas (núcleo) — BSA Lab'
+}
 
 const Page = () => (
   <Stack spacing={4}>

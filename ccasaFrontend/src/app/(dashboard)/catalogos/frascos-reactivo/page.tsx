@@ -1,18 +1,17 @@
-'use client'
-
-// Next Imports
 import Link from 'next/link'
 
-// MUI Imports
+import type { Metadata } from 'next'
+
 import Button from '@mui/material/Button'
 import Stack from '@mui/material/Stack'
 import Typography from '@mui/material/Typography'
 
-// Component Imports
 import CrudListPanel from '@components/ccasa/CrudListPanel'
-
-// Config Imports
 import { REAGENT_JAR_CONFIG } from '@/lib/ccasa/crudFields'
+
+export const metadata: Metadata = {
+  title: 'Frascos de reactivo — BSA Lab'
+}
 
 const Page = () => {
   return (

@@ -1,21 +1,27 @@
 'use client'
 
-// Next Imports
+import dynamic from 'next/dynamic'
 import Link from 'next/link'
 
-// MUI Imports
 import Button from '@mui/material/Button'
+import CircularProgress from '@mui/material/CircularProgress'
 import Stack from '@mui/material/Stack'
 import Typography from '@mui/material/Typography'
 
-// Component Imports
-import ConductivityPanel from '@components/ccasa/ConductivityPanel'
-import CrudListPanel from '@components/ccasa/CrudListPanel'
-import DistilledWaterPanel from '@components/ccasa/DistilledWaterPanel'
-
-// Config Imports
 import { getEntradaModulo } from '@configs/ccasaModules'
 import { getEntryConfigBySlug } from '@/lib/ccasa/crudFields'
+
+const ConductivityPanel = dynamic(() => import('@/components/ccasa/ConductivityPanel'), {
+  loading: () => <CircularProgress size={28} />
+})
+
+const DistilledWaterPanel = dynamic(() => import('@/components/ccasa/DistilledWaterPanel'), {
+  loading: () => <CircularProgress size={28} />
+})
+
+const CrudListPanel = dynamic(() => import('@/components/ccasa/CrudListPanel'), {
+  loading: () => <CircularProgress size={28} />
+})
 
 type EntradaTipoClientProps = {
   slug: string
