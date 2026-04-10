@@ -494,10 +494,28 @@ const CrudListPanel = ({
 
   const sectionInfoAlert =
     sectionInfo != null ? (
-      <Box sx={{ px: 2, pb: 0, pt: 0 }}>
-        <Alert severity='info' variant='outlined' sx={{ mb: 2, fontSize: '0.82rem' }}>
-          {sectionInfo}
-        </Alert>
+      <Box sx={{ px: 2.5, pt: 0, pb: 0 }}>
+        <Box
+          sx={{
+            mb: 2,
+            p: '10px 16px',
+            border: '1px solid #0288d1',
+            borderRadius: 1,
+            backgroundColor: '#e1f5fe',
+            display: 'flex',
+            alignItems: 'flex-start',
+            gap: 1
+          }}
+        >
+          <Box
+            component='i'
+            className='ri-information-line'
+            sx={{ color: '#0288d1', fontSize: 18, mt: '1px', flexShrink: 0 }}
+          />
+          <Typography variant='body2' sx={{ color: '#01579b', fontSize: '0.82rem' }}>
+            {sectionInfo}
+          </Typography>
+        </Box>
       </Box>
     ) : null
 

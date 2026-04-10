@@ -32,7 +32,6 @@ import Typography from '@mui/material/Typography'
 
 // Lib Imports
 import { apiFetch, getErrorMessage } from '@/lib/ccasa/api'
-import { getSectionInfo } from '@/lib/ccasa/crudDisplay'
 import { LOGBOOK_CONFIG } from '@/lib/ccasa/crudFields'
 import type { LogbookDTO } from '@/lib/ccasa/types'
 
@@ -242,23 +241,26 @@ const LogbooksPanel = ({ title = 'Bitácoras activas', showCard = true }: Logboo
 
   const formTitle = editingRow ? `Editar ${LOGBOOK_CONFIG.label.toLowerCase()}` : `Nueva ${LOGBOOK_CONFIG.label.toLowerCase()}`
 
-  const LOGBOOKS_CONTEXT =
-    'Las bitácoras son los libros de registro del laboratorio. El sistema crea automáticamente 15 bitácoras (códigos 1–15). Cada entrada de laboratorio pertenece a una bitácora.'
-
   const inner = (
     <>
-      <Alert
-        severity='info'
-        variant='outlined'
+      <Box
         sx={{
           mb: 2,
-          fontSize: '0.82rem',
-          color: 'text.primary',
-          '& .MuiAlert-message': { color: 'text.primary' }
+          p: '10px 16px',
+          border: '1px solid #0288d1',
+          borderRadius: 1,
+          backgroundColor: '#e1f5fe',
+          display: 'flex',
+          alignItems: 'flex-start',
+          gap: 1
         }}
       >
-        {getSectionInfo('/api/v1/logbooks') ?? LOGBOOKS_CONTEXT}
-      </Alert>
+        <i className='ri-information-line' style={{ color: '#0288d1', fontSize: 18, marginTop: 1, flexShrink: 0 }} />
+        <Typography variant='body2' sx={{ color: '#01579b', fontSize: '0.82rem' }}>
+          Las bitácoras son los libros de registro del laboratorio. El sistema crea automáticamente 15 bitácoras
+          (códigos 1–15). Cada entrada de laboratorio pertenece a una bitácora.
+        </Typography>
+      </Box>
       {loading ? (
         <Box className='flex justify-center p-6'>
           <CircularProgress />

@@ -44,7 +44,7 @@ import {
   getHttpErrorMessage,
   PDF_DOWNLOAD_ERROR
 } from '@/lib/ccasa/api'
-import { CONDUCTIVITY_TYPE_LABELS, getSectionInfo } from '@/lib/ccasa/crudDisplay'
+import { CONDUCTIVITY_TYPE_LABELS } from '@/lib/ccasa/crudDisplay'
 import { formatDateDdMmYyyy } from '@/lib/ccasa/formatters'
 import type {
   ConductivityRecord,
@@ -442,26 +442,33 @@ return filteredRecords.slice(start, start + rowsPerPage)
     !Number.isNaN(weightNumPreview) &&
     weightNumPreview > 0
 
-  const CONDUCTIVITY_CONTEXT =
-    'Registros de conductividad KCl (RF-05). El sistema calcula automáticamente la conductividad teórica y verifica si está en el rango de aceptación (~1400–1420 µS/cm para Alta). Requiere una bitácora activa. Para aprobar un registro, debe existir un usuario con nomenclatura TCM o TMC.'
-
   return (
     <>
       <Card variant='outlined'>
         <CardHeader title='Registros de conductividad' titleTypographyProps={{ variant: 'subtitle1' }} />
         <CardContent>
-          <Alert
-            severity='info'
-            variant='outlined'
+          <Box
             sx={{
               mb: 2,
-              fontSize: '0.82rem',
-              color: 'text.primary',
-              '& .MuiAlert-message': { color: 'text.primary' }
+              p: '10px 16px',
+              border: '1px solid #0288d1',
+              borderRadius: 1,
+              backgroundColor: '#e1f5fe',
+              display: 'flex',
+              alignItems: 'flex-start',
+              gap: 1
             }}
           >
-            {getSectionInfo('/api/v1/entry-conductivity') ?? CONDUCTIVITY_CONTEXT}
-          </Alert>
+            <i
+              className='ri-information-line'
+              style={{ color: '#0288d1', fontSize: 18, marginTop: 1, flexShrink: 0 }}
+            />
+            <Typography variant='body2' sx={{ color: '#01579b', fontSize: '0.82rem' }}>
+              Registros de conductividad KCl (RF-05). El sistema calcula automáticamente la conductividad teórica y
+              verifica si está en el rango de aceptación (~1400–1420 µS/cm para Alta). Requiere una bitácora activa.
+              Para aprobar un registro, debe existir un usuario con nomenclatura TCM o TMC.
+            </Typography>
+          </Box>
           <Stack spacing={2} sx={{ mb: 2 }}>
             <Stack direction='row' flexWrap='wrap' useFlexGap spacing={1} alignItems='center'>
               <TextField
