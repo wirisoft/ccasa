@@ -1,4 +1,5 @@
 import { apiFetch } from '@/lib/ccasa/api'
+import { formatDateDdMmYyyy } from '@/lib/ccasa/formatters'
 import type { CrudFieldDef } from '@/lib/ccasa/crudFields'
 import type { CrudResponseDTO, FkLookupMap } from '@/lib/ccasa/types'
 
@@ -178,11 +179,7 @@ export function formatCrudCell(value: unknown, column?: string): string {
     }
 
     if (/^\d{4}-\d{2}-\d{2}T/.test(value)) {
-      return new Date(value).toLocaleDateString('es-MX', {
-        year: 'numeric',
-        month: 'short',
-        day: 'numeric'
-      })
+      return formatDateDdMmYyyy(value)
     }
 
     if (STATUS_LABELS[value]) {

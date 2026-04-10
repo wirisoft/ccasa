@@ -11,8 +11,8 @@ import DialogContentText from '@mui/material/DialogContentText'
 import DialogTitle from '@mui/material/DialogTitle'
 import Snackbar from '@mui/material/Snackbar'
 
-import { apiFetch } from '@/lib/ccasa/api'
-import { ROLE_LABELS } from '@/lib/ccasa/crudDisplay'
+import { apiFetch, getErrorMessage } from '@/lib/ccasa/api'
+import { ENTRY_STATUS_LABELS, ROLE_LABELS } from '@/lib/ccasa/crudDisplay'
 import { useAuth } from '@/contexts/AuthContext'
 
 type SignEntryButtonProps = {
@@ -24,12 +24,6 @@ type SignEntryButtonProps = {
 const ROLE_TO_SIGNATURE: Record<string, string> = {
   Analyst: 'Analyst',
   Supervisor: 'Supervisor'
-}
-
-const STATUS_LABELS: Record<string, string> = {
-  Draft: 'Borrador',
-  Signed: 'Firmada',
-  Locked: 'Bloqueada'
 }
 
 const SignEntryButton = ({ entryId, currentStatus, onSigned }: SignEntryButtonProps) => {
@@ -62,7 +56,7 @@ const SignEntryButton = ({ entryId, currentStatus, onSigned }: SignEntryButtonPr
       setSnackbar('Entrada firmada correctamente')
       onSigned?.()
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Error al firmar')
+      setError(getErrorMessage(err, 'Error al firmar'))
     } finally {
       setLoading(false)
     }
@@ -74,7 +68,7 @@ const SignEntryButton = ({ entryId, currentStatus, onSigned }: SignEntryButtonPr
 
   const actionLabel = role === 'Analyst' ? 'Firmar como Analista' : 'Firmar como Supervisor'
 
-  const nextStatus = role === 'Analyst' ? 'Firmada' : 'Bloqueada'
+  const nextStatus = role === 'Analyst' ? ENTRY_STATUS_LABELS.Signed : ENTRY_STATUS_LABELS.Locked
 
   return (
     <>
@@ -99,7 +93,7 @@ const SignEntryButton = ({ entryId, currentStatus, onSigned }: SignEntryButtonPr
           <DialogContentText>
             Estás a punto de firmar esta entrada como{' '}
             <strong>{role != null ? ROLE_LABELS[role] ?? role : '—'}</strong>.
-            El estado cambiará de <strong>{STATUS_LABELS[currentStatus] ?? currentStatus}</strong> a{' '}
+            El estado cambiará de <strong>{ENTRY_STATUS_LABELS[currentStatus] ?? currentStatus}</strong> a{' '}
             <strong>{nextStatus}</strong>.
             {role === 'Supervisor' && (
               <> Una vez bloqueada, la entrada <strong>no podrá ser modificada ni eliminada</strong>.</>

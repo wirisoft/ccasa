@@ -31,7 +31,7 @@ import Tooltip from '@mui/material/Tooltip'
 import Typography from '@mui/material/Typography'
 
 // Lib Imports
-import { apiFetch } from '@/lib/ccasa/api'
+import { apiFetch, getErrorMessage } from '@/lib/ccasa/api'
 import { LOGBOOK_CONFIG } from '@/lib/ccasa/crudFields'
 import type { LogbookDTO } from '@/lib/ccasa/types'
 
@@ -101,7 +101,7 @@ const LogbooksPanel = ({ title = 'Bitácoras activas', showCard = true }: Logboo
 
       setRows(data)
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Error al cargar bitácoras')
+      setError(getErrorMessage(e, 'Error al cargar bitácoras'))
     } finally {
       setLoading(false)
     }

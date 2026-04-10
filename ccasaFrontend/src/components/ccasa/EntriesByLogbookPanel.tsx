@@ -25,7 +25,8 @@ import TableRow from '@mui/material/TableRow'
 import Typography from '@mui/material/Typography'
 
 // Lib Imports
-import { apiFetch } from '@/lib/ccasa/api'
+import { apiFetch, getErrorMessage } from '@/lib/ccasa/api'
+import { formatDateDdMmYyyy } from '@/lib/ccasa/formatters'
 import { ENTRY_STATUS_LABELS } from '@/lib/ccasa/crudDisplay'
 import type { EntrySummaryDTO } from '@/lib/ccasa/types'
 
@@ -62,7 +63,7 @@ const EntriesByLogbookPanel = ({ logbookId }: EntriesByLogbookPanelProps) => {
 
         if (!cancelled) setRows(data)
       } catch (e) {
-        if (!cancelled) setError(e instanceof Error ? e.message : 'Error al cargar entradas')
+        if (!cancelled) setError(getErrorMessage(e, 'Error al cargar entradas'))
       } finally {
         if (!cancelled) setLoading(false)
       }
@@ -74,14 +75,6 @@ const EntriesByLogbookPanel = ({ logbookId }: EntriesByLogbookPanelProps) => {
       cancelled = true
     }
   }, [token, logbookId])
-
-  const formatDate = (iso: string) => {
-    try {
-      return new Date(iso).toLocaleString('es-MX', { timeZone: 'UTC' })
-    } catch {
-      return iso
-    }
-  }
 
   const paginatedRows = useMemo(() => {
     if (!rows) {
@@ -140,7 +133,7 @@ const EntriesByLogbookPanel = ({ logbookId }: EntriesByLogbookPanelProps) => {
                         <TableCell>{row.id}</TableCell>
                         <TableCell>{row.folioNumber}</TableCell>
                         <TableCell>{ENTRY_STATUS_LABELS[row.entryStatus] ?? row.entryStatus}</TableCell>
-                        <TableCell>{formatDate(row.recordedAt)}</TableCell>
+                        <TableCell>{formatDateDdMmYyyy(row.recordedAt)}</TableCell>
                       </TableRow>
                     ))}
                   </TableBody>

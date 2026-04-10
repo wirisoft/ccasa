@@ -20,6 +20,7 @@ import Typography from '@mui/material/Typography'
 
 // Lib Imports
 import { apiFetch } from '@/lib/ccasa/api'
+import { ROLE_LABELS } from '@/lib/ccasa/crudDisplay'
 import type { CrudResponseDTO } from '@/lib/ccasa/types'
 
 // Context Imports
@@ -38,22 +39,6 @@ function signatureNameFromValues(vals: Record<string, unknown>): string | null {
   const s = sf != null ? String(sf).trim() : ''
 
   return s !== '' ? s : null
-}
-
-/** Etiqueta en español para el rol devuelto por el backend (enum `RoleNameEnum.name()`). */
-function formatRoleLabel(role: string | null): string {
-  if (role == null || role === '') {
-    return '—'
-  }
-
-  const map: Record<string, string> = {
-    Admin: 'Administrador',
-    Analyst: 'Analista',
-    Sampler: 'Muestreador',
-    Supervisor: 'Supervisor'
-  }
-
-  return map[role] ?? role
 }
 
 const AccountDetails = () => {
@@ -377,7 +362,7 @@ const AccountDetails = () => {
                 <TextField
                   fullWidth
                   label='Rol'
-                  value={formatRoleLabel(role)}
+                  value={role == null || role === '' ? '—' : ROLE_LABELS[role] ?? role}
                   disabled
                   helperText='El rol se administra desde el módulo de empleados'
                   InputProps={{ readOnly: true }}

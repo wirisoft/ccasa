@@ -31,7 +31,8 @@ import Tooltip from '@mui/material/Tooltip'
 import Typography from '@mui/material/Typography'
 
 // Lib Imports
-import { apiFetch, getApiBaseUrl, getHttpErrorMessage } from '@/lib/ccasa/api'
+import { apiFetch, getApiBaseUrl, getErrorMessage, getHttpErrorMessage, PDF_DOWNLOAD_ERROR } from '@/lib/ccasa/api'
+import { ENTRY_STATUS_LABELS } from '@/lib/ccasa/crudDisplay'
 import type {
   CrudResponseDTO,
   DistilledWaterRequestDTO,
@@ -41,13 +42,6 @@ import type {
 
 // Context Imports
 import { useAuth } from '@/contexts/AuthContext'
-
-const STATUS_LABELS: Record<string, string> = {
-  Draft: 'Borrador',
-  Signed: 'Firmado',
-  Locked: 'Bloqueado',
-  Approved: 'Aprobado'
-}
 
 const EMPTY_FORM: Record<string, string> = {
   folioId: '',
@@ -101,7 +95,7 @@ function formatEntryStatus(status: string | null | undefined): string {
     return '—'
   }
 
-  return STATUS_LABELS[status] ?? status
+  return ENTRY_STATUS_LABELS[status] ?? status
 }
 
 function responseToTableRows(d: DistilledWaterResponseDTO): { label: string; value: string }[] {
@@ -335,7 +329,7 @@ const DistilledWaterPanel = () => {
       setResult(data)
     } catch (e) {
       setResult(null)
-      setSearchError(e instanceof Error ? e.message : 'Error al consultar')
+      setSearchError(getErrorMessage(e, 'Error al consultar'))
     } finally {
       setSearching(false)
     }
@@ -384,7 +378,7 @@ const DistilledWaterPanel = () => {
         setSnackbarOpen(true)
       } catch (e) {
         setSnackbarSeverity('error')
-        setSnackbarMessage(e instanceof Error ? e.message : 'Error al descargar PDF')
+        setSnackbarMessage(getErrorMessage(e, PDF_DOWNLOAD_ERROR))
         setSnackbarOpen(true)
       }
     },
@@ -426,7 +420,7 @@ const DistilledWaterPanel = () => {
         setSnackbarMessage('Entrada de agua destilada creada')
         setSnackbarOpen(true)
       } catch (err) {
-        setCreateError(err instanceof Error ? err.message : 'Error al crear la entrada')
+        setCreateError(getErrorMessage(err, 'Error al crear la entrada'))
       } finally {
         setCreating(false)
       }

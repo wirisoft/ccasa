@@ -28,7 +28,7 @@ import Tooltip from '@mui/material/Tooltip'
 import Typography from '@mui/material/Typography'
 
 // Lib Imports
-import { apiFetch, getApiBaseUrl, getHttpErrorMessage } from '@/lib/ccasa/api'
+import { apiFetch, getApiBaseUrl, getErrorMessage, getHttpErrorMessage, PDF_DOWNLOAD_ERROR } from '@/lib/ccasa/api'
 import { buildFkLookupMap, collectCrudColumns, getColumnLabel, resolveFkDisplay } from '@/lib/ccasa/crudDisplay'
 import type { CrudFieldDef } from '@/lib/ccasa/crudFields'
 import type { CrudResponseDTO, FkLookupMap } from '@/lib/ccasa/types'
@@ -354,7 +354,7 @@ const CrudListPanel = ({
 
       setRows(Array.isArray(data) ? data : [])
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Error al cargar datos')
+      setError(getErrorMessage(e, 'Error al cargar datos'))
     } finally {
       setLoading(false)
     }
@@ -431,7 +431,7 @@ const CrudListPanel = ({
         URL.revokeObjectURL(url)
         setSnackbar('PDF descargado')
       } catch (e) {
-        setSnackbar(e instanceof Error ? e.message : 'Error al descargar PDF')
+        setSnackbar(getErrorMessage(e, PDF_DOWNLOAD_ERROR))
       }
     },
     [token, apiPath, pdfDownloadPrefix]

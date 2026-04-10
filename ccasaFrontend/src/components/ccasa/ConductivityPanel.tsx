@@ -37,55 +37,25 @@ import Tooltip from '@mui/material/Tooltip'
 import Typography from '@mui/material/Typography'
 
 import { useAuth } from '@/contexts/AuthContext'
-import { apiFetch, getApiBaseUrl, getHttpErrorMessage } from '@/lib/ccasa/api'
-import type { LogbookDTO } from '@/lib/ccasa/types'
-
-type ConductivityType = 'High' | 'Low'
-type EntryStatus = 'Draft' | 'Signed' | 'Locked'
-
-interface ConductivityRecord {
-  conductivityId: number
-  entryId: number | null
-  displayFolio: string | null
-  type: ConductivityType
-  weightGrams: number
-  referenceUScm: number | null
-  referenceMol: number | null
-  calculatedMol: number | null
-  referenceStandardUScm: number | null
-  calculatedValue: number | null
-  inRange: boolean | null
-  recordedAt: string | null
-  preparationTime: string | null
-  observation: string | null
-  status: EntryStatus | null
-  createdByUserId: number | null
-  createdByName: string | null
-  createdByNomenclature: string | null
-  reviewerUserId: number | null
-  reviewerName: string | null
-  reviewerNomenclature: string | null
-  reviewedAt: string | null
-}
-
-interface CreateConductivityRequest {
-  type: ConductivityType
-  weightGrams: number
-  logbookId?: number | null
-  recordedAt?: string | null
-  preparationTime?: string | null
-  observation?: string | null
-}
+import {
+  apiFetch,
+  getApiBaseUrl,
+  getErrorMessage,
+  getHttpErrorMessage,
+  PDF_DOWNLOAD_ERROR
+} from '@/lib/ccasa/api'
+import { CONDUCTIVITY_TYPE_LABELS } from '@/lib/ccasa/crudDisplay'
+import { formatDateDdMmYyyy } from '@/lib/ccasa/formatters'
+import type {
+  ConductivityRecord,
+  ConductivityRecordStatus,
+  ConductivityType,
+  CreateConductivityRequest,
+  LogbookDTO
+} from '@/lib/ccasa/types'
 
 const CONDUCTIVITY_API = '/api/v1/conductivity-records'
 const LOGBOOKS_API = '/api/v1/logbooks'
-
-function typeLabel(t: ConductivityType | null | undefined): string {
-  if (t === 'High') return 'Alta'
-  if (t === 'Low') return 'Baja'
-  
-return String(t ?? '')
-}
 
 function formatWeight(v: number | null | undefined): string {
   if (v == null || Number.isNaN(Number(v))) return '—'
@@ -97,20 +67,6 @@ function formatConductivityZero(v: number | null | undefined): string {
   if (v == null || Number.isNaN(Number(v))) return '—'
   
 return Math.round(Number(v)).toString()
-}
-
-function formatDateDdMmYyyy(iso: string | null | undefined): string {
-  if (iso == null || iso === '') return '—'
-  const s = String(iso)
-  const d = new Date(s)
-
-  if (Number.isNaN(d.getTime())) return '—'
-  const day = String(d.getUTCDate()).padStart(2, '0')
-  const month = String(d.getUTCMonth() + 1).padStart(2, '0')
-  const year = d.getUTCFullYear()
-
-  
-return `${day}/${month}/${year}`
 }
 
 function inRangeChip(inRange: boolean | null | undefined) {
@@ -126,7 +82,7 @@ function inRangeChip(inRange: boolean | null | undefined) {
 return <Chip size='small' variant='outlined' label='—' />
 }
 
-function statusChip(status: EntryStatus | null | undefined) {
+function statusChip(status: ConductivityRecordStatus | null | undefined) {
   if (status === 'Draft') {
     return <Chip size='small' color='default' label='Borrador' />
   }
@@ -147,7 +103,7 @@ function recordMatchesSearch(record: ConductivityRecord, q: string): boolean {
   if (!q) return true
   const nq = q.trim().toLowerCase()
   const folio = (record.displayFolio ?? '').toLowerCase()
-  const tipo = typeLabel(record.type).toLowerCase()
+  const tipo = (CONDUCTIVITY_TYPE_LABELS[record.type] ?? String(record.type)).toLowerCase()
   const creador = (record.createdByName ?? '').toLowerCase()
   const revisor = (record.reviewerName ?? '').toLowerCase()
 
@@ -255,7 +211,7 @@ return
       setRecords(Array.isArray(data) ? data : [])
     } catch (e) {
       setRecords([])
-      setError(e instanceof Error ? e.message : 'Error al cargar registros')
+      setError(getErrorMessage(e, 'Error al cargar registros'))
     } finally {
       setLoading(false)
     }
@@ -383,7 +339,7 @@ return filteredRecords.slice(start, start + rowsPerPage)
       void fetchRecords()
     } catch (e) {
       setSnackbarSeverity('error')
-      setSnackbar(e instanceof Error ? e.message : 'Error al crear registro')
+      setSnackbar(getErrorMessage(e, 'Error al crear registro'))
     } finally {
       setSubmitting(false)
     }
@@ -431,7 +387,7 @@ return filteredRecords.slice(start, start + rowsPerPage)
       setSnackbar('PDF descargado')
     } catch (e) {
       setSnackbarSeverity('error')
-      setSnackbar(e instanceof Error ? e.message : 'Error al descargar PDF')
+      setSnackbar(getErrorMessage(e, PDF_DOWNLOAD_ERROR))
     }
   }, [token])
 
@@ -452,7 +408,7 @@ return filteredRecords.slice(start, start + rowsPerPage)
         void fetchRecords()
       } catch (e) {
         setSnackbarSeverity('error')
-        setSnackbar(e instanceof Error ? e.message : 'Error al revisar')
+        setSnackbar(getErrorMessage(e, 'Error al revisar'))
       } finally {
         setReviewSubmitting(false)
         setReviewing(null)
@@ -638,7 +594,7 @@ return (
                                 {page * rowsPerPage + index + 1}
                               </TableCell>
                               <TableCell>{row.displayFolio ?? '—'}</TableCell>
-                              <TableCell>{typeLabel(row.type)}</TableCell>
+                              <TableCell>{CONDUCTIVITY_TYPE_LABELS[row.type] ?? row.type}</TableCell>
                               <TableCell>{formatWeight(row.weightGrams)}</TableCell>
                               <TableCell>{formatConductivityZero(row.calculatedValue)}</TableCell>
                               <TableCell>{inRangeChip(row.inRange)}</TableCell>

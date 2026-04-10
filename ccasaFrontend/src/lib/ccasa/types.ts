@@ -73,3 +73,43 @@ export type DistilledWaterResponseDTO = {
 
 /** Mapa de lookups para resolver FKs: { columnKey → { id → label } } */
 export type FkLookupMap = Record<string, Record<number | string, string>>
+
+export type ConductivityType = 'High' | 'Low'
+
+export type ConductivityRecordStatus = 'Draft' | 'Signed' | 'Locked'
+
+/** Alineado con la respuesta de listado de registros de conductividad (backend). */
+export interface ConductivityRecord {
+  conductivityId: number
+  entryId: number | null
+  displayFolio: string | null
+  type: ConductivityType
+  weightGrams: number
+  referenceUScm: number | null
+  referenceMol: number | null
+  calculatedMol: number | null
+  referenceStandardUScm: number | null
+  calculatedValue: number | null
+  inRange: boolean | null
+  recordedAt: string | null
+  preparationTime: string | null
+  observation: string | null
+  status: ConductivityRecordStatus | null
+  createdByUserId: number | null
+  createdByName: string | null
+  createdByNomenclature: string | null
+  reviewerUserId: number | null
+  reviewerName: string | null
+  reviewerNomenclature: string | null
+  reviewedAt: string | null
+}
+
+/** Cuerpo para POST de creación de registro de conductividad. */
+export interface CreateConductivityRequest {
+  type: ConductivityType
+  weightGrams: number
+  logbookId?: number | null
+  recordedAt?: string | null
+  preparationTime?: string | null
+  observation?: string | null
+}
