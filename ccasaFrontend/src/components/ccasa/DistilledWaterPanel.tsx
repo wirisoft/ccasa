@@ -33,6 +33,7 @@ import Typography from '@mui/material/Typography'
 
 // Lib Imports
 import { apiFetch, getApiBaseUrl, getErrorMessage, getHttpErrorMessage, PDF_DOWNLOAD_ERROR } from '@/lib/ccasa/api'
+import { clearCcasaClientSession } from '@/lib/ccasa/clientSession'
 import { ENTRY_STATUS_LABELS } from '@/lib/ccasa/crudDisplay'
 import type {
   CrudResponseDTO,
@@ -96,7 +97,7 @@ function formatEntryStatus(status: string | null | undefined): string {
     return '—'
   }
 
-  return ENTRY_STATUS_LABELS[status] ?? status
+  return ENTRY_STATUS_LABELS[status] ?? 'Desconocido'
 }
 
 function acceptableValueCell(v: boolean | null): ReactNode {
@@ -158,6 +159,20 @@ function buildCreateDto(form: Record<string, string>): { ok: true; dto: Distille
 
   if (!form.userId?.trim() || !Number.isFinite(userId)) {
     return { ok: false, message: 'Selecciona un usuario.' }
+  }
+
+  const phValues = [form.phReading1, form.phReading2, form.phReading3].map(v => parseOptionalNumber(v ?? ''))
+  const phFilled = phValues.filter(v => v !== undefined).length
+
+  if (phFilled > 0 && phFilled < 3) {
+    return { ok: false, message: 'Ingresa las tres lecturas de pH (1, 2 y 3) o deja todas vacías.' }
+  }
+
+  const ceValues = [form.ceReading1, form.ceReading2, form.ceReading3].map(v => parseOptionalNumber(v ?? ''))
+  const ceFilled = ceValues.filter(v => v !== undefined).length
+
+  if (ceFilled > 0 && ceFilled < 3) {
+    return { ok: false, message: 'Ingresa las tres lecturas de CE (1, 2 y 3) o deja todas vacías.' }
   }
 
   const dto: DistilledWaterRequestDTO = { folioId, logbookId, userId }
@@ -238,6 +253,8 @@ const DistilledWaterPanel = () => {
   const [snackbarOpen, setSnackbarOpen] = useState(false)
   const [snackbarMessage, setSnackbarMessage] = useState('')
   const [snackbarSeverity, setSnackbarSeverity] = useState<'success' | 'error'>('success')
+  const [downloadingPdf, setDownloadingPdf] = useState(false)
+  const [entryListsReady, setEntryListsReady] = useState(false)
 
   useEffect(() => {
     if (!token) {
@@ -246,10 +263,12 @@ const DistilledWaterPanel = () => {
       setUserOptions([])
       setBatchOptions([])
       setEntryOptions([])
+      setEntryListsReady(false)
 
       return
     }
 
+    setEntryListsReady(false)
     const opts = { token }
 
     void Promise.all([
@@ -297,13 +316,17 @@ const DistilledWaterPanel = () => {
           }))
         )
       )
-    ]).catch(() => {
-      setFolioOptions([])
-      setLogbookOptions([])
-      setUserOptions([])
-      setBatchOptions([])
-      setEntryOptions([])
-    })
+    ])
+      .catch(() => {
+        setFolioOptions([])
+        setLogbookOptions([])
+        setUserOptions([])
+        setBatchOptions([])
+        setEntryOptions([])
+      })
+      .finally(() => {
+        setEntryListsReady(true)
+      })
   }, [token])
 
   const handleSearch = useCallback(async () => {
@@ -332,9 +355,55 @@ const DistilledWaterPanel = () => {
     setResult(null)
 
     try {
-      const data = await apiFetch<DistilledWaterResponseDTO>(`/api/v1/entries/${encodeURIComponent(id)}/distilled-water`, {
-        token
+      const url = `${getApiBaseUrl()}/api/v1/entries/${encodeURIComponent(id)}/distilled-water`
+
+      const res = await fetch(url, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          Accept: 'application/json'
+        }
       })
+
+      if (res.status === 401) {
+        clearCcasaClientSession()
+
+        if (typeof window !== 'undefined') {
+          window.location.href = '/login?expired=true'
+        }
+
+        return
+      }
+
+      if (res.status === 404) {
+        setSearchError('Esta entrada no tiene registro de agua destilada. Crea uno nuevo.')
+
+        return
+      }
+
+      if (!res.ok) {
+        let msg = ''
+
+        try {
+          const errJson = (await res.json()) as { message?: string; error?: string }
+
+          msg = errJson.message || errJson.error || ''
+        } catch {
+          /* ignore */
+        }
+
+        setSearchError(msg || getHttpErrorMessage(res.status))
+
+        return
+      }
+
+      const text = await res.text()
+      const data = text ? (JSON.parse(text) as DistilledWaterResponseDTO) : null
+
+      if (data == null || (typeof data === 'object' && Object.keys(data as object).length === 0)) {
+        setSearchError('Esta entrada no tiene registro de agua destilada. Crea uno nuevo.')
+
+        return
+      }
 
       setResult(data)
     } catch (e) {
@@ -350,6 +419,8 @@ const DistilledWaterPanel = () => {
       if (!token) {
         return
       }
+
+      setDownloadingPdf(true)
 
       try {
         const res = await fetch(
@@ -390,6 +461,8 @@ const DistilledWaterPanel = () => {
         setSnackbarSeverity('error')
         setSnackbarMessage(getErrorMessage(e, PDF_DOWNLOAD_ERROR))
         setSnackbarOpen(true)
+      } finally {
+        setDownloadingPdf(false)
       }
     },
     [token]
@@ -516,8 +589,27 @@ const DistilledWaterPanel = () => {
               <Button variant='contained' onClick={() => void handleSearch()} disabled={!token || searching}>
                 Consultar
               </Button>
+              {result ? (
+                <Button
+                  variant='outlined'
+                  size='small'
+                  onClick={() => {
+                    setResult(null)
+                    setSearchId('')
+                    setSearchError(null)
+                  }}
+                >
+                  Limpiar
+                </Button>
+              ) : null}
               {searching ? <CircularProgress size={24} /> : null}
             </Stack>
+
+            {token && entryListsReady && !searching && entryOptions.length === 0 ? (
+              <Typography variant='body2' color='text.secondary' sx={{ mt: 1, fontSize: '0.82rem' }}>
+                No hay entradas disponibles. Crea una entrada en el módulo de Entradas → Núcleo.
+              </Typography>
+            ) : null}
 
             {searchError ? <Alert severity='error'>{searchError}</Alert> : null}
 
@@ -530,10 +622,14 @@ const DistilledWaterPanel = () => {
                         size='small'
                         color='error'
                         onClick={() => void handleDownloadPdf(result.entryId)}
-                        disabled={!token}
-                        aria-label='PDF'
+                        disabled={!token || downloadingPdf}
+                        aria-label='Exportar PDF de agua destilada'
                       >
-                        <Box component='i' className='ri-file-pdf-line' />
+                        {downloadingPdf ? (
+                          <CircularProgress size={16} />
+                        ) : (
+                          <Box component='i' className='ri-file-pdf-line' />
+                        )}
                       </IconButton>
                     </span>
                   </Tooltip>
@@ -542,7 +638,7 @@ const DistilledWaterPanel = () => {
               </Stack>
             ) : null}
 
-            {!searching && !searchError && !result ? (
+            {!searching && !searchError && !result && entryOptions.length > 0 ? (
               <Typography variant='body2' color='text.secondary'>
                 Selecciona una entrada para consultar
               </Typography>
@@ -697,10 +793,14 @@ const DistilledWaterPanel = () => {
                       size='small'
                       color='error'
                       onClick={() => void handleDownloadPdf(createResult.entryId)}
-                      disabled={!token}
-                      aria-label='PDF'
+                      disabled={!token || downloadingPdf}
+                      aria-label='Exportar PDF de agua destilada'
                     >
-                      <Box component='i' className='ri-file-pdf-line' />
+                      {downloadingPdf ? (
+                        <CircularProgress size={16} />
+                      ) : (
+                        <Box component='i' className='ri-file-pdf-line' />
+                      )}
                     </IconButton>
                   </span>
                 </Tooltip>
