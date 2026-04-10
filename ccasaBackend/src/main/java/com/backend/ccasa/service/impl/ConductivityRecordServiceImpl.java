@@ -574,13 +574,14 @@ public class ConductivityRecordServiceImpl implements IConductivityRecordService
 		leftTitles.addElement(new Paragraph("BITÁCORAS SERVICIOS AMBIENTALES", F_11_BOLD_NAVY));
 		leftTitles.addElement(new Paragraph("Laboratorio de análisis ambiental · Control de calidad", F_8_NORMAL_GRAY_DARK));
 
-		PdfPTable boxes = new PdfPTable(new float[] { 1.75f, 1f });
+		// Folio vs Fecha: más peso a Fecha (≥80pt efectivos en página típica) y sin corte en el valor
+		PdfPTable boxes = new PdfPTable(new float[] { 1.35f, 1.65f });
 		boxes.setWidthPercentage(100);
 		boxes.addCell(folioDateBox("Folio No.", safe(dto.displayFolio()), true));
 		boxes.addCell(folioDateBox(
 			"Fecha",
 			safe(PDF_DATE.format(dto.recordedAt() != null ? dto.recordedAt() : Instant.now())),
-			false));
+			true));
 
 		PdfPCell rightBoxes = new PdfPCell(boxes);
 		rightBoxes.setBorder(Rectangle.NO_BORDER);
@@ -632,18 +633,18 @@ public class ConductivityRecordServiceImpl implements IConductivityRecordService
 		PdfPCell right = new PdfPCell();
 		right.setBorder(Rectangle.BOX);
 		right.setBorderColor(COLOR_GRAY_DARK);
-		right.setBorderWidth(1f);
-		right.setBackgroundColor(COLOR_GRAY_LIGHT);
+		right.setBorderWidth(0.5f);
+		right.setBackgroundColor(COLOR_RESULT_ROW);
 		right.setPadding(8f);
 		right.setVerticalAlignment(Element.ALIGN_MIDDLE);
 		right.setHorizontalAlignment(Element.ALIGN_CENTER);
 		Boolean ir = dto.inRange();
 		if (ir == null) {
 			right.setBorderColor(COLOR_GRAY_MID);
-			right.setBorderWidth(1f);
+			right.setBorderWidth(0.5f);
 			right.addElement(new Paragraph(" ", F_9_NORMAL_BLACK));
 		} else if (Boolean.TRUE.equals(ir)) {
-			Paragraph ok = new Paragraph("\u2713 En rango aceptable", F_9_BOLD_NAVY);
+			Paragraph ok = new Paragraph("\u2713 En rango", F_9_BOLD_NAVY);
 			ok.setAlignment(Element.ALIGN_CENTER);
 			right.addElement(ok);
 		} else {
