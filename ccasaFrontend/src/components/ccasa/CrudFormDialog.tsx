@@ -121,7 +121,7 @@ function fieldErrorMessage(field: CrudFieldDef, value: unknown, touched: boolean
   }
 
   if (isEmptyForValidation(field, value)) {
-    return 'Este campo es obligatorio'
+    return 'Este campo es requerido.'
   }
 
   return null

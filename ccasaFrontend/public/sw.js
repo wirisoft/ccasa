@@ -1,7 +1,29 @@
 const CACHE_NAME = 'ccasa-lab-v1'
 
-// Rutas alineadas con slugs reales bajo /entradas/[slug]
-const PRECACHE_URLS = [
+const OFFLINE_HTML = `<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sin conexión — BSA Lab</title>
+  <style>
+    body { font-family: sans-serif; display: flex; align-items: center;
+           justify-content: center; height: 100vh; margin: 0;
+           background: #f5f5f5; color: #333; text-align: center; }
+    h1 { font-size: 1.5rem; margin-bottom: 0.5rem; }
+    p { color: #666; }
+  </style>
+</head>
+<body>
+  <div>
+    <h1>Sin conexión 📡</h1>
+    <p>No hay conexión a internet. Verifica tu red e intenta nuevamente.</p>
+  </div>
+</body>
+</html>`
+
+// Rutas alineadas con slugs reales bajo /entradas/[slug] y páginas principales
+const STATIC_ASSETS = [
   '/',
   '/bitacoras',
   '/entradas/core',
@@ -24,7 +46,11 @@ const PRECACHE_URLS = [
   '/alertas',
   '/firmas',
   '/empleados',
-  '/roles'
+  '/roles',
+  '/login',
+  '/register',
+  '/account-settings',
+  '/_not-found'
 ]
 
 self.addEventListener('install', event => {
@@ -33,7 +59,7 @@ self.addEventListener('install', event => {
       .open(CACHE_NAME)
       .then(cache =>
         Promise.all(
-          PRECACHE_URLS.map(url =>
+          STATIC_ASSETS.map(url =>
             cache.add(url).catch(() => {
               /* Ignorar fallos (redirect, 401, etc.) para no bloquear install */
             })
@@ -78,9 +104,9 @@ self.addEventListener('fetch', event => {
         caches.match(request).then(
           cached =>
             cached ||
-            new Response('Sin conexión', {
+            new Response(OFFLINE_HTML, {
               status: 503,
-              statusText: 'Offline'
+              headers: { 'Content-Type': 'text/html; charset=utf-8' }
             })
         )
       )

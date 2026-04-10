@@ -2,6 +2,25 @@ import { apiFetch } from '@/lib/ccasa/api'
 import type { CrudFieldDef } from '@/lib/ccasa/crudFields'
 import type { CrudResponseDTO, FkLookupMap } from '@/lib/ccasa/types'
 
+export const ENTRY_STATUS_LABELS: Record<string, string> = {
+  Draft: 'Borrador',
+  Signed: 'Firmado',
+  Locked: 'Bloqueado',
+  Approved: 'Aprobado'
+}
+
+export const ROLE_LABELS: Record<string, string> = {
+  Admin: 'Administrador',
+  Analyst: 'Analista',
+  Supervisor: 'Supervisor',
+  Sampler: 'Muestreador'
+}
+
+export const CONDUCTIVITY_TYPE_LABELS: Record<string, string> = {
+  High: 'Alta',
+  Low: 'Baja'
+}
+
 const MAX_COLUMNS = 14
 
 const HIDDEN_COLUMNS = new Set([
@@ -136,7 +155,7 @@ export function collectCrudColumns(rows: CrudResponseDTO[]): string[] {
   return ['id', ...filtered]
 }
 
-export function formatCrudCell(value: unknown): string {
+export function formatCrudCell(value: unknown, column?: string): string {
   if (value === null || value === undefined) {
     return '—'
   }
@@ -146,6 +165,18 @@ export function formatCrudCell(value: unknown): string {
   }
 
   if (typeof value === 'string') {
+    if (column === 'status' || column === 'entryStatus') {
+      return ENTRY_STATUS_LABELS[value] ?? value
+    }
+
+    if (column === 'role' || column === 'roleId') {
+      return ROLE_LABELS[value] ?? value
+    }
+
+    if (column === 'type' && CONDUCTIVITY_TYPE_LABELS[value]) {
+      return CONDUCTIVITY_TYPE_LABELS[value] ?? value
+    }
+
     if (/^\d{4}-\d{2}-\d{2}T/.test(value)) {
       return new Date(value).toLocaleDateString('es-MX', {
         year: 'numeric',
@@ -248,5 +279,5 @@ export function resolveFkDisplay(value: unknown, column: string, fkLookups: FkLo
     if (resolved) return resolved
   }
 
-  return formatCrudCell(value)
+  return formatCrudCell(value, column)
 }

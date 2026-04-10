@@ -23,6 +23,7 @@ import Button from '@mui/material/Button'
 
 // Context Imports
 import { useAuth } from '@/contexts/AuthContext'
+import { ROLE_LABELS } from '@/lib/ccasa/crudDisplay'
 
 // Styled component for badge content
 const BadgeContentSpan = styled('span')({
@@ -124,7 +125,9 @@ const UserDropdown = () => {
                           {email}
                         </Typography>
                       ) : null}
-                      <Typography variant='caption'>{role || '—'}</Typography>
+                      <Typography variant='caption'>
+                        {role != null ? ROLE_LABELS[role] ?? role : '—'}
+                      </Typography>
                     </div>
                   </div>
                   <Divider className='mlb-1' />

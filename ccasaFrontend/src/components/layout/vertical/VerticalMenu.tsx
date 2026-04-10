@@ -84,49 +84,62 @@ const VerticalMenu = ({
         menuSectionStyles={menuSectionStyles(theme)}
       >
         <MenuSection label='Principal'>
-          <MenuItem href='/' icon={<i className='ri-home-smile-line' />}>
+          <MenuItem href='/' icon={<i className='ri-home-smile-line' />} title='Inicio'>
             Inicio
           </MenuItem>
-          <MenuItem href='/bitacoras' icon={<i className='ri-book-2-line' />}>
+          <MenuItem href='/bitacoras' icon={<i className='ri-book-2-line' />} title='Bitácoras'>
             Bitácoras
           </MenuItem>
-          <MenuItem href='/folios' icon={<i className='ri-numbers-line' />}>
+          <MenuItem href='/folios' icon={<i className='ri-numbers-line' />} title='Folios y bloques'>
             Folios y bloques
           </MenuItem>
         </MenuSection>
 
         <MenuSection label='Registros por tipo'>
-          <SubMenu label='Entradas' icon={<i className='ri-file-list-3-line' />}>
-            <MenuItem href='/entradas/core' icon={<i className='ri-table-line' />}>
+          <SubMenu label='Entradas' title='Entradas' icon={<i className='ri-file-list-3-line' />}>
+            <MenuItem href='/entradas/core' icon={<i className='ri-table-line' />} title='Núcleo'>
               Núcleo
             </MenuItem>
-            {ENTRADA_MODULOS.map(mod => (
-              <MenuItem key={mod.slug} href={`/entradas/${mod.slug}`} icon={<i className={mod.iconClass} />}>
-                {ENTRADA_NAV_LABEL[mod.slug] ?? mod.label}
-              </MenuItem>
-            ))}
+            {ENTRADA_MODULOS.map(mod => {
+              const navLabel = ENTRADA_NAV_LABEL[mod.slug] ?? mod.label
+
+              return (
+                <MenuItem
+                  key={mod.slug}
+                  href={`/entradas/${mod.slug}`}
+                  icon={<i className={mod.iconClass} />}
+                  title={navLabel}
+                >
+                  {navLabel}
+                </MenuItem>
+              )
+            })}
           </SubMenu>
         </MenuSection>
 
         {showCatalogs ? (
           <MenuSection label='Datos maestros'>
-            <SubMenu label='Catálogos' icon={<i className='ri-database-2-line' />}>
-              <MenuItem href='/catalogos/reactivos' icon={<i className='ri-flask-line' />}>
+            <SubMenu label='Catálogos' title='Catálogos' icon={<i className='ri-database-2-line' />}>
+              <MenuItem href='/catalogos/reactivos' icon={<i className='ri-flask-line' />} title='Reactivos'>
                 Reactivos
               </MenuItem>
-              <MenuItem href='/catalogos/frascos-reactivo' icon={<i className='ri-inbox-line' />}>
+              <MenuItem
+                href='/catalogos/frascos-reactivo'
+                icon={<i className='ri-inbox-line' />}
+                title='Frascos'
+              >
                 Frascos
               </MenuItem>
-              <MenuItem href='/catalogos/lotes' icon={<i className='ri-stack-line' />}>
-                Lotes (batch)
+              <MenuItem href='/catalogos/lotes' icon={<i className='ri-stack-line' />} title='Lotes'>
+                Lotes
               </MenuItem>
-              <MenuItem href='/catalogos/soluciones' icon={<i className='ri-test-tube-line' />}>
+              <MenuItem href='/catalogos/soluciones' icon={<i className='ri-test-tube-line' />} title='Soluciones'>
                 Soluciones
               </MenuItem>
-              <MenuItem href='/catalogos/insumos' icon={<i className='ri-shopping-basket-line' />}>
+              <MenuItem href='/catalogos/insumos' icon={<i className='ri-shopping-basket-line' />} title='Insumos'>
                 Insumos
               </MenuItem>
-              <MenuItem href='/catalogos/equipos' icon={<i className='ri-tools-line' />}>
+              <MenuItem href='/catalogos/equipos' icon={<i className='ri-tools-line' />} title='Equipos'>
                 Equipos
               </MenuItem>
             </SubMenu>
@@ -134,10 +147,10 @@ const VerticalMenu = ({
         ) : null}
 
         <MenuSection label='Operación'>
-          <MenuItem href='/alertas' icon={<i className='ri-alarm-warning-line' />}>
+          <MenuItem href='/alertas' icon={<i className='ri-alarm-warning-line' />} title='Alertas'>
             Alertas
           </MenuItem>
-          <MenuItem href='/firmas' icon={<i className='ri-ball-pen-line' />}>
+          <MenuItem href='/firmas' icon={<i className='ri-ball-pen-line' />} title='Firmas'>
             Firmas
           </MenuItem>
         </MenuSection>
@@ -145,18 +158,18 @@ const VerticalMenu = ({
         <MenuSection label='Administración'>
           {isAdmin ? (
             <>
-              <MenuItem href='/empleados' icon={<i className='ri-team-line' />}>
+              <MenuItem href='/empleados' icon={<i className='ri-team-line' />} title='Empleados'>
                 Empleados
               </MenuItem>
-              <MenuItem href='/roles' icon={<i className='ri-shield-user-line' />}>
+              <MenuItem href='/roles' icon={<i className='ri-shield-user-line' />} title='Roles'>
                 Roles
               </MenuItem>
-              <MenuItem href='/configuracion' icon={<i className='ri-settings-3-line' />}>
+              <MenuItem href='/configuracion' icon={<i className='ri-settings-3-line' />} title='Configuración'>
                 Configuración
               </MenuItem>
             </>
           ) : null}
-          <MenuItem href='/account-settings' icon={<i className='ri-user-settings-line' />}>
+          <MenuItem href='/account-settings' icon={<i className='ri-user-settings-line' />} title='Mi cuenta'>
             Mi cuenta
           </MenuItem>
         </MenuSection>

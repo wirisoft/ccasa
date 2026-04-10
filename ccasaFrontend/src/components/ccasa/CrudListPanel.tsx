@@ -28,7 +28,7 @@ import Tooltip from '@mui/material/Tooltip'
 import Typography from '@mui/material/Typography'
 
 // Lib Imports
-import { apiFetch, getApiBaseUrl } from '@/lib/ccasa/api'
+import { apiFetch, getApiBaseUrl, getHttpErrorMessage } from '@/lib/ccasa/api'
 import { buildFkLookupMap, collectCrudColumns, getColumnLabel, resolveFkDisplay } from '@/lib/ccasa/crudDisplay'
 import type { CrudFieldDef } from '@/lib/ccasa/crudFields'
 import type { CrudResponseDTO, FkLookupMap } from '@/lib/ccasa/types'
@@ -406,17 +406,17 @@ const CrudListPanel = ({
         })
 
         if (!res.ok) {
-          let msg = res.statusText
+          let msg = ''
 
           try {
             const errJson = (await res.json()) as { message?: string; error?: string }
 
-            msg = errJson.message || errJson.error || msg
+            msg = errJson.message || errJson.error || ''
           } catch {
             /* ignore */
           }
 
-          setSnackbar(msg || `Error HTTP ${res.status}`)
+          setSnackbar(msg || getHttpErrorMessage(res.status))
 
           return
         }
@@ -620,7 +620,7 @@ const CrudListPanel = ({
                 placeholder='Buscar...'
                 value={searchQuery}
                 onChange={e => setSearchQuery(e.target.value)}
-                sx={{ minWidth: 220 }}
+                sx={{ minWidth: { xs: '100%', sm: 220 } }}
                 inputProps={{ 'aria-label': 'Buscar registros' }}
                 InputProps={{
                   startAdornment: (

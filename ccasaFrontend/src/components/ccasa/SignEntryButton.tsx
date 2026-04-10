@@ -12,6 +12,7 @@ import DialogTitle from '@mui/material/DialogTitle'
 import Snackbar from '@mui/material/Snackbar'
 
 import { apiFetch } from '@/lib/ccasa/api'
+import { ROLE_LABELS } from '@/lib/ccasa/crudDisplay'
 import { useAuth } from '@/contexts/AuthContext'
 
 type SignEntryButtonProps = {
@@ -96,7 +97,8 @@ const SignEntryButton = ({ entryId, currentStatus, onSigned }: SignEntryButtonPr
             </Alert>
           ) : null}
           <DialogContentText>
-            Estás a punto de firmar esta entrada como <strong>{role}</strong>.
+            Estás a punto de firmar esta entrada como{' '}
+            <strong>{role != null ? ROLE_LABELS[role] ?? role : '—'}</strong>.
             El estado cambiará de <strong>{STATUS_LABELS[currentStatus] ?? currentStatus}</strong> a{' '}
             <strong>{nextStatus}</strong>.
             {role === 'Supervisor' && (

@@ -14,6 +14,7 @@ import CircularProgress from '@mui/material/CircularProgress'
 import Dialog from '@mui/material/Dialog'
 import DialogActions from '@mui/material/DialogActions'
 import DialogContent from '@mui/material/DialogContent'
+import DialogContentText from '@mui/material/DialogContentText'
 import DialogTitle from '@mui/material/DialogTitle'
 import FormControl from '@mui/material/FormControl'
 import IconButton from '@mui/material/IconButton'
@@ -36,7 +37,7 @@ import Tooltip from '@mui/material/Tooltip'
 import Typography from '@mui/material/Typography'
 
 import { useAuth } from '@/contexts/AuthContext'
-import { apiFetch, getApiBaseUrl } from '@/lib/ccasa/api'
+import { apiFetch, getApiBaseUrl, getHttpErrorMessage } from '@/lib/ccasa/api'
 import type { LogbookDTO } from '@/lib/ccasa/types'
 
 type ConductivityType = 'High' | 'Low'
@@ -200,6 +201,8 @@ const ConductivityPanel = () => {
   const [rowsPerPage, setRowsPerPage] = useState(10)
   const [dialogOpen, setDialogOpen] = useState(false)
   const [reviewing, setReviewing] = useState<number | null>(null)
+  const [confirmReviewOpen, setConfirmReviewOpen] = useState(false)
+  const [reviewingId, setReviewingId] = useState<number | null>(null)
   const [submitting, setSubmitting] = useState(false)
 
   /** Filtros en la barra (UI); se aplican al servidor solo al pulsar Buscar. */
@@ -338,7 +341,7 @@ return filteredRecords.slice(start, start + rowsPerPage)
     setFormError(null)
 
     if (formType !== 'High' && formType !== 'Low') {
-      setFormError('El tipo es obligatorio.')
+      setFormError('Debes seleccionar el tipo.')
 
       return
     }
@@ -399,20 +402,20 @@ return filteredRecords.slice(start, start + rowsPerPage)
       })
 
       if (!res.ok) {
-        let msg = res.statusText
+        let msg = ''
 
         try {
           const errJson = (await res.json()) as { message?: string; error?: string }
 
-          msg = errJson.message || errJson.error || msg
+          msg = errJson.message || errJson.error || ''
         } catch {
           /* ignore */
         }
 
         setSnackbarSeverity('error')
-        setSnackbar(msg || `Error HTTP ${res.status}`)
-        
-return
+        setSnackbar(msg || getHttpErrorMessage(res.status))
+
+        return
       }
 
       const blob = await res.blob()
@@ -483,7 +486,7 @@ return
                 placeholder='Buscar en tabla…'
                 value={search}
                 onChange={e => setSearch(e.target.value)}
-                sx={{ minWidth: 200, flex: '1 1 180px' }}
+                sx={{ minWidth: { xs: '100%', sm: 220 }, flex: '1 1 180px' }}
                 inputProps={{ 'aria-label': 'Buscar en tabla de conductividad' }}
                 InputProps={{
                   startAdornment: (
@@ -657,7 +660,10 @@ return (
                                           color='primary'
                                           aria-label='Revisar'
                                           disabled={reviewing === row.conductivityId}
-                                          onClick={() => void handleReview(row.conductivityId)}
+                                          onClick={() => {
+                                            setReviewingId(row.conductivityId)
+                                            setConfirmReviewOpen(true)
+                                          }}
                                         >
                                           <Box component='i' className='ri-check-double-line' />
                                         </IconButton>
@@ -801,6 +807,41 @@ return (
           </Button>
           <Button variant='contained' onClick={() => void handleCreate()} disabled={!formValid || submitting}>
             {submitting ? 'Guardando…' : 'Guardar'}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      <Dialog open={confirmReviewOpen} onClose={() => setConfirmReviewOpen(false)} maxWidth='xs' fullWidth>
+        <DialogTitle>Confirmar revisión</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            ¿Estás seguro de que deseas aprobar este registro de conductividad? Esta acción no se puede deshacer.
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button
+            onClick={() => {
+              setConfirmReviewOpen(false)
+              setReviewingId(null)
+            }}
+          >
+            Cancelar
+          </Button>
+          <Button
+            variant='contained'
+            color='success'
+            onClick={() => {
+              setConfirmReviewOpen(false)
+              const id = reviewingId
+
+              setReviewingId(null)
+
+              if (id != null) {
+                void handleReview(id)
+              }
+            }}
+          >
+            Confirmar
           </Button>
         </DialogActions>
       </Dialog>

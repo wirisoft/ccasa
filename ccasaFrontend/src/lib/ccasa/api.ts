@@ -8,7 +8,7 @@ export function getApiBaseUrl(): string {
 
 export { getStoredAccessToken }
 
-function getHttpErrorMessage(status: number): string {
+export function getHttpErrorMessage(status: number): string {
   const messages: Record<number, string> = {
     400: 'Solicitud inválida. Verifica los datos ingresados.',
     401: 'Tu sesión ha expirado. Por favor inicia sesión nuevamente.',

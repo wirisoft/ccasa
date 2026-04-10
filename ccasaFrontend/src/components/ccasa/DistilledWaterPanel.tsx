@@ -31,7 +31,7 @@ import Tooltip from '@mui/material/Tooltip'
 import Typography from '@mui/material/Typography'
 
 // Lib Imports
-import { apiFetch, getApiBaseUrl } from '@/lib/ccasa/api'
+import { apiFetch, getApiBaseUrl, getHttpErrorMessage } from '@/lib/ccasa/api'
 import type {
   CrudResponseDTO,
   DistilledWaterRequestDTO,
@@ -195,7 +195,7 @@ function DistilledWaterResultTable({ data }: { data: DistilledWaterResponseDTO }
   const rows = responseToTableRows(data)
 
   return (
-    <TableContainer>
+    <TableContainer sx={{ overflowX: 'auto' }}>
       <Table size='small'>
         <TableBody>
           {rows.map(row => (
@@ -354,18 +354,18 @@ const DistilledWaterPanel = () => {
         )
 
         if (!res.ok) {
-          let msg = res.statusText
+          let msg = ''
 
           try {
             const errJson = (await res.json()) as { message?: string; error?: string }
 
-            msg = errJson.message || errJson.error || msg
+            msg = errJson.message || errJson.error || ''
           } catch {
             /* ignore */
           }
 
           setSnackbarSeverity('error')
-          setSnackbarMessage(msg || `Error HTTP ${res.status}`)
+          setSnackbarMessage(msg || getHttpErrorMessage(res.status))
           setSnackbarOpen(true)
 
           return

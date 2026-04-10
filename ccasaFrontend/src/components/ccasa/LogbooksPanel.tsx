@@ -275,7 +275,7 @@ const LogbooksPanel = ({ title = 'Bitácoras activas', showCard = true }: Logboo
                 placeholder='Buscar...'
                 value={searchQuery}
                 onChange={e => setSearchQuery(e.target.value)}
-                sx={{ minWidth: 220 }}
+                sx={{ minWidth: { xs: '100%', sm: 220 } }}
                 inputProps={{ 'aria-label': 'Buscar bitácoras' }}
                 InputProps={{
                   startAdornment: (
@@ -325,7 +325,7 @@ const LogbooksPanel = ({ title = 'Bitácoras activas', showCard = true }: Logboo
             </Typography>
           ) : (
             <>
-              <TableContainer>
+              <TableContainer sx={{ overflowX: 'auto', maxHeight: 440 }}>
                 <Table size='small'>
                   <TableHead>
                     <TableRow>
