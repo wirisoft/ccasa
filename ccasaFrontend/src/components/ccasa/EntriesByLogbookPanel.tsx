@@ -106,6 +106,10 @@ const EntriesByLogbookPanel = ({ logbookId }: EntriesByLogbookPanelProps) => {
         }
       />
       <CardContent>
+        <Alert severity='info' variant='outlined' sx={{ mb: 2, fontSize: '0.82rem' }}>
+          Entradas registradas en esta bitácora. Cada entrada es la base para registros de temperatura, lavado, pesadas y
+          otros módulos. Las entradas Bloqueadas no se pueden modificar.
+        </Alert>
         {loading ? (
           <Box className='flex justify-center p-6'>
             <CircularProgress />

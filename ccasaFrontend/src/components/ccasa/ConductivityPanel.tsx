@@ -44,7 +44,7 @@ import {
   getHttpErrorMessage,
   PDF_DOWNLOAD_ERROR
 } from '@/lib/ccasa/api'
-import { CONDUCTIVITY_TYPE_LABELS } from '@/lib/ccasa/crudDisplay'
+import { CONDUCTIVITY_TYPE_LABELS, getSectionInfo } from '@/lib/ccasa/crudDisplay'
 import { formatDateDdMmYyyy } from '@/lib/ccasa/formatters'
 import type {
   ConductivityRecord,
@@ -442,11 +442,18 @@ return filteredRecords.slice(start, start + rowsPerPage)
     !Number.isNaN(weightNumPreview) &&
     weightNumPreview > 0
 
+  const conductivitySectionInfo = getSectionInfo('/api/v1/entry-conductivity')
+
   return (
     <>
       <Card variant='outlined'>
         <CardHeader title='Registros de conductividad' titleTypographyProps={{ variant: 'subtitle1' }} />
         <CardContent>
+          {conductivitySectionInfo ? (
+            <Alert severity='info' variant='outlined' sx={{ mb: 2, fontSize: '0.82rem' }}>
+              {conductivitySectionInfo}
+            </Alert>
+          ) : null}
           <Stack spacing={2} sx={{ mb: 2 }}>
             <Stack direction='row' flexWrap='wrap' useFlexGap spacing={1} alignItems='center'>
               <TextField

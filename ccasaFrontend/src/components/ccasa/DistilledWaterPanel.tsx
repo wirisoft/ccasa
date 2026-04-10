@@ -35,7 +35,7 @@ import Typography from '@mui/material/Typography'
 // Lib Imports
 import { apiFetch, getApiBaseUrl, getErrorMessage, getHttpErrorMessage, PDF_DOWNLOAD_ERROR } from '@/lib/ccasa/api'
 import { clearCcasaClientSession } from '@/lib/ccasa/clientSession'
-import { ENTRY_STATUS_LABELS } from '@/lib/ccasa/crudDisplay'
+import { ENTRY_STATUS_LABELS, getSectionInfo } from '@/lib/ccasa/crudDisplay'
 import { formatDateDdMmYyyy } from '@/lib/ccasa/formatters'
 import type {
   CrudResponseDTO,
@@ -60,12 +60,6 @@ const EMPTY_FORM: Record<string, string> = {
   referenceDifference: '',
   controlStandardPct: '',
   waterBatchId: ''
-}
-
-const FORM_SECTION_CAPTION_SX = {
-  fontWeight: 600,
-  textTransform: 'uppercase' as const,
-  letterSpacing: 0.5
 }
 
 type Option = { value: number; label: string }
@@ -577,6 +571,8 @@ const DistilledWaterPanel = () => {
     setSearchId(v === '' ? '' : String(v))
   }
 
+  const distilledWaterSectionInfo = getSectionInfo('/api/v1/entry-distilled-water')
+
   return (
     <Stack spacing={4}>
       {noToken ? (
@@ -678,6 +674,11 @@ const DistilledWaterPanel = () => {
       <Card variant='outlined'>
         <CardHeader title='Nueva entrada de agua destilada' titleTypographyProps={{ variant: 'subtitle1' }} />
         <CardContent>
+          {distilledWaterSectionInfo ? (
+            <Alert severity='info' variant='outlined' sx={{ mb: 2, fontSize: '0.82rem' }}>
+              {distilledWaterSectionInfo}
+            </Alert>
+          ) : null}
           <Box component='form' onSubmit={handleCreateSubmit}>
             <Grid container spacing={2}>
               <Grid item xs={12} md={4}>
@@ -754,7 +755,15 @@ const DistilledWaterPanel = () => {
               </Grid>
 
               <Grid item xs={12}>
-                <Typography variant='caption' color='text.secondary' sx={FORM_SECTION_CAPTION_SX}>
+                <Typography
+                  variant='caption'
+                  sx={{
+                    fontWeight: 600,
+                    textTransform: 'uppercase',
+                    letterSpacing: 0.5,
+                    color: 'text.secondary'
+                  }}
+                >
                   Lecturas de pH
                 </Typography>
                 <Divider sx={{ mt: 0.5 }} />
@@ -800,7 +809,15 @@ const DistilledWaterPanel = () => {
               </Grid>
 
               <Grid item xs={12}>
-                <Typography variant='caption' color='text.secondary' sx={FORM_SECTION_CAPTION_SX}>
+                <Typography
+                  variant='caption'
+                  sx={{
+                    fontWeight: 600,
+                    textTransform: 'uppercase',
+                    letterSpacing: 0.5,
+                    color: 'text.secondary'
+                  }}
+                >
                   Lecturas de CE (µS/cm)
                 </Typography>
                 <Divider sx={{ mt: 0.5 }} />
@@ -846,7 +863,15 @@ const DistilledWaterPanel = () => {
               </Grid>
 
               <Grid item xs={12}>
-                <Typography variant='caption' color='text.secondary' sx={FORM_SECTION_CAPTION_SX}>
+                <Typography
+                  variant='caption'
+                  sx={{
+                    fontWeight: 600,
+                    textTransform: 'uppercase',
+                    letterSpacing: 0.5,
+                    color: 'text.secondary'
+                  }}
+                >
                   Control de calidad
                 </Typography>
                 <Divider sx={{ mt: 0.5 }} />

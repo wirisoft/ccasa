@@ -32,6 +32,7 @@ import Typography from '@mui/material/Typography'
 
 // Lib Imports
 import { apiFetch, getErrorMessage } from '@/lib/ccasa/api'
+import { getSectionInfo } from '@/lib/ccasa/crudDisplay'
 import { LOGBOOK_CONFIG } from '@/lib/ccasa/crudFields'
 import type { LogbookDTO } from '@/lib/ccasa/types'
 
@@ -241,8 +242,15 @@ const LogbooksPanel = ({ title = 'Bitácoras activas', showCard = true }: Logboo
 
   const formTitle = editingRow ? `Editar ${LOGBOOK_CONFIG.label.toLowerCase()}` : `Nueva ${LOGBOOK_CONFIG.label.toLowerCase()}`
 
+  const logbooksSectionInfo = getSectionInfo('/api/v1/logbooks')
+
   const inner = (
     <>
+      {logbooksSectionInfo ? (
+        <Alert severity='info' variant='outlined' sx={{ mb: 2, fontSize: '0.82rem' }}>
+          {logbooksSectionInfo}
+        </Alert>
+      ) : null}
       {loading ? (
         <Box className='flex justify-center p-6'>
           <CircularProgress />
