@@ -348,7 +348,7 @@ const LogbooksPanel = ({ title = 'Bitácoras activas', showCard = true }: Logboo
             </Typography>
           ) : (
             <>
-              <TableContainer sx={{ overflowX: 'auto', maxHeight: 440 }}>
+              <TableContainer sx={{ overflowX: 'auto' }}>
                 <Table size='small'>
                   <TableHead>
                     <TableRow>
