@@ -30,6 +30,16 @@ public class EntryMaterialWashCrudController {
 		return ResponseEntity.ok(service.findAllActive());
 	}
 
+	@GetMapping("/{id}/pdf")
+	@PreAuthorize("hasAnyRole('ADMIN','ANALYST','SUPERVISOR','SAMPLER')")
+	public ResponseEntity<byte[]> pdf(@PathVariable Long id) {
+		byte[] bytes = service.generatePdf(id);
+		return ResponseEntity.ok()
+			.header("Content-Type", "application/pdf")
+			.header("Content-Disposition", "inline; filename=\"lavado-material-" + id + ".pdf\"")
+			.body(bytes);
+	}
+
 	@GetMapping("/{id}")
 	public ResponseEntity<CrudResponseDTO> getById(@PathVariable Long id) {
 		return ResponseEntity.ok(service.findById(id));
