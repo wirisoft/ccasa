@@ -1,4 +1,5 @@
-const CACHE_NAME = 'ccasa-lab-v1'
+/** Subir versión en cada despliegue relevante del shell HTML / rutas pre-cacheadas. */
+const CACHE_NAME = 'ccasa-lab-v2'
 
 const OFFLINE_HTML = `<!DOCTYPE html>
 <html lang="es">
@@ -89,8 +90,12 @@ self.addEventListener('fetch', event => {
     return
   }
 
+  // Navegación HTML: evitar respuesta obsoleta por caché HTTP del documento (títulos, RSC, etc.).
+  const isNavigation = request.mode === 'navigate'
+  const networkRequest = isNavigation ? new Request(request, { cache: 'no-store' }) : request
+
   event.respondWith(
-    fetch(request)
+    fetch(networkRequest)
       .then(response => {
         if (response.ok && request.method === 'GET') {
           const clone = response.clone()
