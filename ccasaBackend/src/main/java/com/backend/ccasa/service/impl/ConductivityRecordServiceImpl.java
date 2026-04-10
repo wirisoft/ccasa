@@ -81,8 +81,9 @@ public class ConductivityRecordServiceImpl implements IConductivityRecordService
 	private static final Color COLOR_RESULT_ROW = new Color(234, 236, 238);
 
 	private static final Font F_11_BOLD_NAVY = new Font(Font.HELVETICA, 11f, Font.BOLD, COLOR_NAVY);
-	private static final Font F_8_NORMAL_GRAY_DARK = new Font(Font.HELVETICA, 8f, Font.NORMAL, COLOR_GRAY_DARK);
+	private static final Font F_12_BOLD_NAVY = new Font(Font.HELVETICA, 12f, Font.BOLD, COLOR_NAVY);
 	private static final Font F_9_BOLD_NAVY = new Font(Font.HELVETICA, 9f, Font.BOLD, COLOR_NAVY);
+	private static final Font F_10_BOLD_NAVY = new Font(Font.HELVETICA, 10f, Font.BOLD, COLOR_NAVY);
 	private static final Font F_9_BOLD_BLACK = new Font(Font.HELVETICA, 9f, Font.BOLD, Color.BLACK);
 	private static final Font F_9_NORMAL_GRAY = new Font(Font.HELVETICA, 9f, Font.NORMAL, COLOR_GRAY_DARK);
 	private static final Font F_10_BOLD_BLACK = new Font(Font.HELVETICA, 10f, Font.BOLD, Color.BLACK);
@@ -549,7 +550,11 @@ public class ConductivityRecordServiceImpl implements IConductivityRecordService
 		centerCell.setVerticalAlignment(Element.ALIGN_MIDDLE);
 		centerCell.setPadding(4f);
 		centerCell.addElement(new Phrase("BITÁCORAS SERVICIOS AMBIENTALES", F_11_BOLD_NAVY));
-		centerCell.addElement(new Phrase("Laboratorio de análisis ambiental · Control de calidad", F_8_NORMAL_GRAY_DARK));
+		String analystName = safe(dto.createdByName()).trim();
+		if (!analystName.isEmpty()) {
+			centerCell.addElement(new Phrase(analystName.toUpperCase(Locale.ROOT), F_12_BOLD_NAVY));
+		}
+		centerCell.addElement(new Phrase("SERVICIOS AMBIENTALES", F_8_NORMAL_GRAY));
 		header.addCell(centerCell);
 
 		Font labelFont = F_8_NORMAL_GRAY;
@@ -607,18 +612,18 @@ public class ConductivityRecordServiceImpl implements IConductivityRecordService
 		return t;
 	}
 
-	private String tipoRfq05(ConductivityRecordResponseDTO dto) {
+	private String tipoConductividadCorta(ConductivityRecordResponseDTO dto) {
 		if (dto.type() == ConductivityTypeEnum.High) {
-			return "Alta (KCl) — Estándar RF-05";
+			return "Alta (KCl)";
 		}
 		if (dto.type() == ConductivityTypeEnum.Low) {
-			return "Baja (KCl) — Estándar RF-05";
+			return "Baja (KCl)";
 		}
 		return "—";
 	}
 
 	private PdfPTable conductivityTypeBanner(ConductivityRecordResponseDTO dto) {
-		PdfPTable outer = new PdfPTable(new float[] { 2.4f, 1f });
+		PdfPTable outer = new PdfPTable(new float[] { 2.2f, 1.4f, 0.9f });
 		outer.setWidthPercentage(100);
 
 		PdfPCell left = new PdfPCell();
@@ -626,8 +631,19 @@ public class ConductivityRecordServiceImpl implements IConductivityRecordService
 		left.setBorderColor(COLOR_GRAY_MID);
 		left.setBackgroundColor(COLOR_GRAY_LIGHT);
 		left.setPadding(10f);
-		left.addElement(new Paragraph("TIPO DE CONDUCTIVIDAD:", F_8_NORMAL_GRAY));
-		left.addElement(new Paragraph(tipoRfq05(dto), F_10_BOLD_BLACK));
+		left.setVerticalAlignment(Element.ALIGN_MIDDLE);
+		Paragraph conductividadLine = new Paragraph();
+		conductividadLine.add(new Phrase("CONDUCTIVIDAD ", F_10_BOLD_NAVY));
+		conductividadLine.add(new Phrase(tipoConductividadCorta(dto), F_10_BOLD_BLACK));
+		left.addElement(conductividadLine);
+
+		PdfPCell center = new PdfPCell(new Phrase("a partir del patrón primario", F_8_NORMAL_GRAY));
+		center.setBorder(Rectangle.BOX);
+		center.setBorderColor(COLOR_GRAY_MID);
+		center.setBackgroundColor(COLOR_GRAY_LIGHT);
+		center.setPadding(10f);
+		center.setVerticalAlignment(Element.ALIGN_MIDDLE);
+		center.setHorizontalAlignment(Element.ALIGN_CENTER);
 
 		PdfPCell right = new PdfPCell();
 		right.setBorder(Rectangle.BOX);
@@ -653,6 +669,7 @@ public class ConductivityRecordServiceImpl implements IConductivityRecordService
 		}
 
 		outer.addCell(left);
+		outer.addCell(center);
 		outer.addCell(right);
 		return outer;
 	}
@@ -713,13 +730,17 @@ public class ConductivityRecordServiceImpl implements IConductivityRecordService
 			"Peso: " + fixed(dto.weightGrams(), 4) + " g · Balanza M-BAD-01 F:25",
 			r++);
 		addPrepFullRow(table, "Horno: M-HS-01 F:05", r++);
+		Color bgConc = r % 2 == 0 ? COLOR_WHITE : COLOR_ROW_ALT;
+		PdfPCell concLabel = prepCell("obteniendo la concentración final de", F_9_NORMAL_BLACK, bgConc, Element.ALIGN_LEFT);
+		concLabel.setColspan(3);
+		table.addCell(concLabel);
+		PdfPCell concValue = prepCell(fixed(dto.calculatedValue(), 0) + " \u00B5S/cm", F_9_BOLD_NAVY, bgConc, Element.ALIGN_CENTER);
+		concValue.setColspan(2);
+		table.addCell(concValue);
+		r++;
 		addPrepFullRow(
 			table,
 			"Matraz Vol. 1000 ml. 01-FQ · Disolvente 1-MT/02 F:22 · Aforo 1000 ml",
-			r++);
-		addPrepFullRow(
-			table,
-			"Concentración final (lectura conductivímetro): " + fixed(dto.calculatedValue(), 0) + " \u00B5S/cm",
 			r);
 		return table;
 	}
@@ -733,7 +754,7 @@ public class ConductivityRecordServiceImpl implements IConductivityRecordService
 		p.setSpacingAfter(0f);
 		p.setLeading(11f);
 		document.add(p);
-		Paragraph v = new Paragraph("VERIFICACIÓN", F_9_BOLD_BLACK);
+		Paragraph v = new Paragraph("AJUSTE", F_9_BOLD_BLACK);
 		v.setAlignment(Element.ALIGN_CENTER);
 		v.setSpacingBefore(0f);
 		v.setSpacingAfter(0f);
@@ -769,19 +790,35 @@ public class ConductivityRecordServiceImpl implements IConductivityRecordService
 		sep.addCell(sepc);
 		cell.addElement(sep);
 
-		cell.addElement(new Paragraph(safe(name), F_10_BOLD_BLACK));
-		String rol = safe(nomenclature);
-		if (!rol.isEmpty()) {
-			cell.addElement(new Paragraph(rol, F_8_NORMAL_GRAY));
+		boolean skipImage = "ANALIZA".equals(roleHeader);
+		boolean revisaNomPrincipal = "REVISA".equals(roleHeader) && !safe(nomenclature).trim().isEmpty();
+		if (revisaNomPrincipal) {
+			cell.addElement(new Paragraph(safe(nomenclature).trim(), F_10_BOLD_BLACK));
 		}
 
-		if (!"ANALIZA".equals(roleHeader)) {
+		if (!skipImage) {
 			addSignatureImage(cell, user);
 		}
 
 		Paragraph sigLine = new Paragraph("_____________________________", F_8_NORMAL_GRAY);
 		sigLine.setAlignment(Element.ALIGN_CENTER);
 		cell.addElement(sigLine);
+
+		if ("REVISA".equals(roleHeader)) {
+			if (revisaNomPrincipal) {
+				cell.addElement(new Paragraph(safe(name), F_8_NORMAL_GRAY));
+			} else {
+				cell.addElement(new Paragraph(safe(name), F_10_BOLD_BLACK));
+			}
+		} else if ("PREPARA".equals(roleHeader)) {
+			cell.addElement(new Paragraph(safe(name), F_10_BOLD_BLACK));
+			String rol = safe(nomenclature);
+			if (!rol.isEmpty()) {
+				cell.addElement(new Paragraph(rol, F_8_NORMAL_GRAY));
+			}
+		} else {
+			cell.addElement(new Paragraph(safe(name), F_10_BOLD_BLACK));
+		}
 		return cell;
 	}
 
