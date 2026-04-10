@@ -442,18 +442,26 @@ return filteredRecords.slice(start, start + rowsPerPage)
     !Number.isNaN(weightNumPreview) &&
     weightNumPreview > 0
 
-  const conductivitySectionInfo = getSectionInfo('/api/v1/entry-conductivity')
+  const CONDUCTIVITY_CONTEXT =
+    'Registros de conductividad KCl (RF-05). El sistema calcula automáticamente la conductividad teórica y verifica si está en el rango de aceptación (~1400–1420 µS/cm para Alta). Requiere una bitácora activa. Para aprobar un registro, debe existir un usuario con nomenclatura TCM o TMC.'
 
   return (
     <>
       <Card variant='outlined'>
         <CardHeader title='Registros de conductividad' titleTypographyProps={{ variant: 'subtitle1' }} />
         <CardContent>
-          {conductivitySectionInfo ? (
-            <Alert severity='info' variant='outlined' sx={{ mb: 2, fontSize: '0.82rem' }}>
-              {conductivitySectionInfo}
-            </Alert>
-          ) : null}
+          <Alert
+            severity='info'
+            variant='outlined'
+            sx={{
+              mb: 2,
+              fontSize: '0.82rem',
+              color: 'text.primary',
+              '& .MuiAlert-message': { color: 'text.primary' }
+            }}
+          >
+            {getSectionInfo('/api/v1/entry-conductivity') ?? CONDUCTIVITY_CONTEXT}
+          </Alert>
           <Stack spacing={2} sx={{ mb: 2 }}>
             <Stack direction='row' flexWrap='wrap' useFlexGap spacing={1} alignItems='center'>
               <TextField

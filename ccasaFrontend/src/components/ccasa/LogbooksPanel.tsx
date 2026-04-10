@@ -242,15 +242,23 @@ const LogbooksPanel = ({ title = 'Bitácoras activas', showCard = true }: Logboo
 
   const formTitle = editingRow ? `Editar ${LOGBOOK_CONFIG.label.toLowerCase()}` : `Nueva ${LOGBOOK_CONFIG.label.toLowerCase()}`
 
-  const logbooksSectionInfo = getSectionInfo('/api/v1/logbooks')
+  const LOGBOOKS_CONTEXT =
+    'Las bitácoras son los libros de registro del laboratorio. El sistema crea automáticamente 15 bitácoras (códigos 1–15). Cada entrada de laboratorio pertenece a una bitácora.'
 
   const inner = (
     <>
-      {logbooksSectionInfo ? (
-        <Alert severity='info' variant='outlined' sx={{ mb: 2, fontSize: '0.82rem' }}>
-          {logbooksSectionInfo}
-        </Alert>
-      ) : null}
+      <Alert
+        severity='info'
+        variant='outlined'
+        sx={{
+          mb: 2,
+          fontSize: '0.82rem',
+          color: 'text.primary',
+          '& .MuiAlert-message': { color: 'text.primary' }
+        }}
+      >
+        {getSectionInfo('/api/v1/logbooks') ?? LOGBOOKS_CONTEXT}
+      </Alert>
       {loading ? (
         <Box className='flex justify-center p-6'>
           <CircularProgress />
