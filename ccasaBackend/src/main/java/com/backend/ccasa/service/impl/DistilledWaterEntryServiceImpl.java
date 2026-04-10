@@ -43,6 +43,7 @@ import java.time.Instant;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.util.Locale;
+import java.util.Map;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -54,6 +55,13 @@ public class DistilledWaterEntryServiceImpl implements IDistilledWaterEntryServi
 
 	private static final String PDF_LOGO_CLASSPATH = "static/images/lab-logo.png";
 	private static final DateTimeFormatter PDF_DATE = DateTimeFormatter.ofPattern("dd/MM/yyyy").withZone(ZoneOffset.UTC);
+
+	private static final Map<String, String> ENTRY_STATUS_LABELS = Map.of(
+		"Draft", "Borrador",
+		"Signed", "Firmado",
+		"Locked", "Bloqueado",
+		"Approved", "Aprobado"
+	);
 
 	private static final Color COLOR_NAVY = new Color(44, 62, 80);
 	private static final Color COLOR_GRAY_LIGHT = new Color(244, 246, 247);
@@ -246,14 +254,10 @@ public class DistilledWaterEntryServiceImpl implements IDistilledWaterEntryServi
 	}
 
 	private String pdfFolioDisplay(EntryEntity entry) {
-		FolioEntity folio = entry.getFolio();
-		if (folio != null && folio.getFolioNumber() != null) {
-			return String.valueOf(folio.getFolioNumber());
+		if (entry.getFolio() != null && entry.getFolio().getFolioNumber() != null) {
+			return entry.getFolio().getFolioNumber().toString();
 		}
-		if (entry.getId() != null) {
-			return "REG-" + entry.getId();
-		}
-		return "REG-";
+		return entry.getId() != null ? "REG-" + entry.getId() : "REG-";
 	}
 
 	private PdfPTable headerDividerThick() {
@@ -283,6 +287,10 @@ public class DistilledWaterEntryServiceImpl implements IDistilledWaterEntryServi
 	}
 
 	private PdfPCell dataHeaderCell(String text) {
+		return dataHeaderCell(text, true);
+	}
+
+	private PdfPCell dataHeaderCell(String text, boolean noWrap) {
 		PdfPCell c = new PdfPCell(new Phrase(safe(text), F_9_WHITE_BOLD));
 		c.setBackgroundColor(COLOR_NAVY);
 		c.setBorder(Rectangle.BOX);
@@ -291,6 +299,7 @@ public class DistilledWaterEntryServiceImpl implements IDistilledWaterEntryServi
 		c.setPadding(5f);
 		c.setHorizontalAlignment(Element.ALIGN_CENTER);
 		c.setVerticalAlignment(Element.ALIGN_MIDDLE);
+		c.setNoWrap(noWrap);
 		return c;
 	}
 
@@ -328,14 +337,16 @@ public class DistilledWaterEntryServiceImpl implements IDistilledWaterEntryServi
 	}
 
 	private PdfPTable distilledReadingsTable(EntryDistilledWaterEntity dw) {
-		PdfPTable table = new PdfPTable(new float[] { 0.9f, 1f, 1f, 1f, 1.1f, 1f, 1f, 1f, 1.1f });
+		PdfPTable table = new PdfPTable(new float[] { 0.9f, 1f, 1f, 1f, 1.1f, 1f, 1f, 1f, 1.35f });
 		table.setWidthPercentage(100);
 		table.setSpacingBefore(6f);
 		String[] headers = {
 			"Lectura", "pH 1", "pH 2", "pH 3", "Promedio pH", "CE 1", "CE 2", "CE 3", "Promedio CE"
 		};
-		for (String h : headers) {
-			table.addCell(dataHeaderCell(h));
+		for (int i = 0; i < headers.length; i++) {
+			String h = headers[i];
+			boolean noWrap = i != headers.length - 1;
+			table.addCell(dataHeaderCell(h, noWrap));
 		}
 		Color rowBg = COLOR_ROW_ALT;
 		table.addCell(dataBodyCell("Valor", F_9_NORMAL_BLACK, rowBg, Element.ALIGN_CENTER));
@@ -474,7 +485,11 @@ public class DistilledWaterEntryServiceImpl implements IDistilledWaterEntryServi
 		c1.setBorderWidth(0.5f);
 		c1.setPadding(8f);
 		c1.addElement(new Paragraph("ESTADO DEL REGISTRO", F_8_NORMAL_GRAY));
-		c1.addElement(new Paragraph(entry.getStatus() != null ? entry.getStatus().name() : "—", F_10_BOLD_BLACK));
+		String statusKey = entry.getStatus() != null ? entry.getStatus().name() : "";
+		String statusLabel = statusKey.isEmpty()
+			? "—"
+			: ENTRY_STATUS_LABELS.getOrDefault(statusKey, statusKey);
+		c1.addElement(new Paragraph(statusLabel, F_10_BOLD_BLACK));
 		PdfPCell c2 = new PdfPCell();
 		c2.setBorder(Rectangle.BOX);
 		c2.setBorderColor(COLOR_GRAY_MID);
