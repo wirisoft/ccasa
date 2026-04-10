@@ -1,8 +1,12 @@
-// Next Imports
 import dynamic from 'next/dynamic'
 
-// Component Imports
+import type { Metadata } from 'next'
+
 import AccountSettings from '@views/account-settings'
+
+export const metadata: Metadata = {
+  title: 'Mi cuenta — BSA Lab'
+}
 
 const AccountTab = dynamic(() => import('@views/account-settings/account'))
 

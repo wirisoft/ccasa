@@ -1,6 +1,12 @@
+import type { Metadata } from 'next'
+
 // MUI Imports
 import Grid from '@mui/material/Grid'
 import Typography from '@mui/material/Typography'
+
+export const metadata: Metadata = {
+  title: 'Bitácoras — BSA Lab'
+}
 
 // Component Imports
 import LogbooksPanel from '@components/ccasa/LogbooksPanel'

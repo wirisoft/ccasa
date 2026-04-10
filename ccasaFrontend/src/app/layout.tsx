@@ -24,7 +24,7 @@ export const metadata: Metadata = {
   appleWebApp: {
     capable: true,
     statusBarStyle: 'default',
-    title: 'BSA Lab'
+    title: 'Bitácoras Servicios Ambientales'
   },
   formatDetection: {
     telephone: false

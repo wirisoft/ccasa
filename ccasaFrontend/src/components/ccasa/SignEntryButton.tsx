@@ -3,6 +3,7 @@
 import { useCallback, useState } from 'react'
 
 import Alert from '@mui/material/Alert'
+import Box from '@mui/material/Box'
 import Button from '@mui/material/Button'
 import Dialog from '@mui/material/Dialog'
 import DialogActions from '@mui/material/DialogActions'
@@ -10,6 +11,7 @@ import DialogContent from '@mui/material/DialogContent'
 import DialogContentText from '@mui/material/DialogContentText'
 import DialogTitle from '@mui/material/DialogTitle'
 import Snackbar from '@mui/material/Snackbar'
+import Tooltip from '@mui/material/Tooltip'
 
 import { apiFetch, getErrorMessage } from '@/lib/ccasa/api'
 import { ENTRY_STATUS_LABELS, ROLE_LABELS } from '@/lib/ccasa/crudDisplay'
@@ -26,6 +28,40 @@ const ROLE_TO_SIGNATURE: Record<string, string> = {
   Supervisor: 'Supervisor'
 }
 
+type SigningHint = {
+  title: string
+  iconClass: string
+  color: string
+}
+
+function signingStatusHint(status: string): SigningHint | null {
+  if (status === 'Draft') {
+    return {
+      title: 'Pendiente de firma del analista',
+      iconClass: 'ri-time-line',
+      color: 'text.disabled'
+    }
+  }
+
+  if (status === 'Signed') {
+    return {
+      title: 'Pendiente de aprobación del supervisor',
+      iconClass: 'ri-time-line',
+      color: 'text.disabled'
+    }
+  }
+
+  if (status === 'Locked' || status === 'Approved') {
+    return {
+      title: 'Entrada aprobada',
+      iconClass: 'ri-checkbox-circle-line',
+      color: 'success.main'
+    }
+  }
+
+  return null
+}
+
 const SignEntryButton = ({ entryId, currentStatus, onSigned }: SignEntryButtonProps) => {
   const { role } = useAuth()
   const [open, setOpen] = useState(false)
@@ -35,7 +71,6 @@ const SignEntryButton = ({ entryId, currentStatus, onSigned }: SignEntryButtonPr
 
   const signatureType = role ? ROLE_TO_SIGNATURE[role] : null
 
-  // Determinar si este usuario puede firmar según el estado actual
   const canSign =
     (currentStatus === 'Draft' && role === 'Analyst') ||
     (currentStatus === 'Signed' && role === 'Supervisor')
@@ -63,7 +98,31 @@ const SignEntryButton = ({ entryId, currentStatus, onSigned }: SignEntryButtonPr
   }, [entryId, signatureType, onSigned])
 
   if (!canSign) {
-    return null
+    const hint = signingStatusHint(currentStatus)
+
+    if (!hint) {
+      return null
+    }
+
+    return (
+      <Tooltip title={hint.title} arrow>
+        <Box
+          component='span'
+          sx={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            color: hint.color,
+            cursor: 'default',
+            userSelect: 'none',
+            fontSize: '1.25rem',
+            lineHeight: 1
+          }}
+          aria-label={hint.title}
+        >
+          <i className={hint.iconClass} />
+        </Box>
+      </Tooltip>
+    )
   }
 
   const actionLabel = role === 'Analyst' ? 'Firmar como Analista' : 'Firmar como Supervisor'

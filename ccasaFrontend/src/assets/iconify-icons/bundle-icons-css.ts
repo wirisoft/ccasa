@@ -140,6 +140,7 @@ const sources: BundleScriptConfig = {
         'team-line',
         'temp-hot-line',
         'test-tube-line',
+        'time-line',
         'thumb-up-fill',
         'tools-line',
         'twitter-fill',

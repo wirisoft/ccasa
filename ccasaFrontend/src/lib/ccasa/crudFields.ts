@@ -334,7 +334,7 @@ export const ALERT_FIELDS: CrudFieldDef[] = [
     type: 'text',
     required: true,
     gridCols: 6,
-    placeholder: 'Ej. Critical Oven'
+    placeholder: 'Ej. Temperatura crítica en horno'
   },
   {
     key: 'message',

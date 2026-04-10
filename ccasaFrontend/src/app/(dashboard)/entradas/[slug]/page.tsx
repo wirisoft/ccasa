@@ -1,13 +1,26 @@
 import { notFound } from 'next/navigation'
 
+import type { Metadata } from 'next'
+
 // Component Imports
 import EntradaTipoClient from './EntradaTipoClient'
 
 // Config Imports
 import { ENTRADA_SLUGS, getEntradaModulo } from '@configs/ccasaModules'
 
+const ENTRADA_METADATA_TITLE: Record<string, string> = {
+  conductividad: 'Conductividad — BSA Lab',
+  'agua-destilada': 'Agua destilada — BSA Lab'
+}
+
 type PageProps = {
   params: { slug: string }
+}
+
+export function generateMetadata({ params }: PageProps): Metadata {
+  const title = ENTRADA_METADATA_TITLE[params.slug] ?? 'Entrada — BSA Lab'
+
+  return { title }
 }
 
 export function generateStaticParams() {

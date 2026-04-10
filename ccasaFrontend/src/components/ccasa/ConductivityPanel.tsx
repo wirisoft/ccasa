@@ -614,7 +614,7 @@ return (
                                     </IconButton>
                                   </Tooltip>
                                   {row.status !== 'Locked' ? (
-                                    <Tooltip title='Revisar / aprobar'>
+                                    <Tooltip title='Aprobar registro — requiere nomenclatura TCM o TMC' arrow>
                                       <span>
                                         <IconButton
                                           size='small'
