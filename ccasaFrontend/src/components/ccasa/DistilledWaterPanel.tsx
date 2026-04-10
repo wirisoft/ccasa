@@ -170,18 +170,49 @@ function buildCreateDto(form: Record<string, string>): { ok: true; dto: Distille
     return { ok: false, message: 'Selecciona un usuario.' }
   }
 
-  const phValues = [form.phReading1, form.phReading2, form.phReading3].map(v => parseOptionalNumber(v ?? ''))
-  const phFilled = phValues.filter(v => v !== undefined).length
+  const phStrings = [form.phReading1 ?? '', form.phReading2 ?? '', form.phReading3 ?? '']
+  const ceStrings = [form.ceReading1 ?? '', form.ceReading2 ?? '', form.ceReading3 ?? '']
+
+  const phParsed = phStrings.map(s => parseOptionalNumber(s))
+  const phFilled = phParsed.filter(v => v !== undefined).length
 
   if (phFilled > 0 && phFilled < 3) {
     return { ok: false, message: 'Ingresa las tres lecturas de pH (1, 2 y 3) o deja todas vacías.' }
   }
 
-  const ceValues = [form.ceReading1, form.ceReading2, form.ceReading3].map(v => parseOptionalNumber(v ?? ''))
-  const ceFilled = ceValues.filter(v => v !== undefined).length
+  const ceParsed = ceStrings.map(s => parseOptionalNumber(s))
+  const ceFilled = ceParsed.filter(v => v !== undefined).length
 
   if (ceFilled > 0 && ceFilled < 3) {
     return { ok: false, message: 'Ingresa las tres lecturas de CE (1, 2 y 3) o deja todas vacías.' }
+  }
+
+  const phCellsNonEmpty = phStrings.filter(v => v.trim() !== '').length
+  const ceCellsNonEmpty = ceStrings.filter(v => v.trim() !== '').length
+
+  if (phCellsNonEmpty === 0 && ceCellsNonEmpty === 0) {
+    return {
+      ok: false,
+      message: 'Debes ingresar al menos las tres lecturas de pH y CE para registrar el agua destilada.'
+    }
+  }
+
+  const phNums = phParsed.filter((v): v is number => v !== undefined)
+
+  if (phNums.length > 0 && phNums.some(v => v < 0 || v > 14)) {
+    return { ok: false, message: 'Las lecturas de pH deben estar entre 0 y 14.' }
+  }
+
+  const ceNums = ceParsed.filter((v): v is number => v !== undefined)
+
+  if (ceNums.length > 0 && ceNums.some(v => v <= 0)) {
+    return { ok: false, message: 'Las lecturas de CE deben ser mayores a 0.' }
+  }
+
+  const controlPct = parseOptionalNumber(form.controlStandardPct ?? '')
+
+  if (controlPct !== undefined && (controlPct < 0 || controlPct > 100)) {
+    return { ok: false, message: 'El % de control estándar debe estar entre 0 y 100.' }
   }
 
   const dto: DistilledWaterRequestDTO = { folioId, logbookId, userId }
@@ -778,7 +809,8 @@ const DistilledWaterPanel = () => {
                   value={formState.phReading1 ?? ''}
                   onChange={ev => setFormState(prev => ({ ...prev, phReading1: ev.target.value }))}
                   disabled={!token || creating}
-                  inputProps={{ inputMode: 'decimal' }}
+                  helperText='Valor entre 0 y 14'
+                  inputProps={{ inputMode: 'decimal', min: 0, max: 14, step: 0.001 }}
                 />
               </Grid>
               <Grid item xs={12} md={4}>
@@ -791,7 +823,8 @@ const DistilledWaterPanel = () => {
                   value={formState.phReading2 ?? ''}
                   onChange={ev => setFormState(prev => ({ ...prev, phReading2: ev.target.value }))}
                   disabled={!token || creating}
-                  inputProps={{ inputMode: 'decimal' }}
+                  helperText='Valor entre 0 y 14'
+                  inputProps={{ inputMode: 'decimal', min: 0, max: 14, step: 0.001 }}
                 />
               </Grid>
               <Grid item xs={12} md={4}>
@@ -804,7 +837,8 @@ const DistilledWaterPanel = () => {
                   value={formState.phReading3 ?? ''}
                   onChange={ev => setFormState(prev => ({ ...prev, phReading3: ev.target.value }))}
                   disabled={!token || creating}
-                  inputProps={{ inputMode: 'decimal' }}
+                  helperText='Valor entre 0 y 14'
+                  inputProps={{ inputMode: 'decimal', min: 0, max: 14, step: 0.001 }}
                 />
               </Grid>
 
@@ -832,7 +866,8 @@ const DistilledWaterPanel = () => {
                   value={formState.ceReading1 ?? ''}
                   onChange={ev => setFormState(prev => ({ ...prev, ceReading1: ev.target.value }))}
                   disabled={!token || creating}
-                  inputProps={{ inputMode: 'decimal' }}
+                  helperText='Valor en µS/cm, mayor a 0'
+                  inputProps={{ inputMode: 'decimal', min: 0, step: 0.0001 }}
                 />
               </Grid>
               <Grid item xs={12} md={4}>
@@ -845,7 +880,8 @@ const DistilledWaterPanel = () => {
                   value={formState.ceReading2 ?? ''}
                   onChange={ev => setFormState(prev => ({ ...prev, ceReading2: ev.target.value }))}
                   disabled={!token || creating}
-                  inputProps={{ inputMode: 'decimal' }}
+                  helperText='Valor en µS/cm, mayor a 0'
+                  inputProps={{ inputMode: 'decimal', min: 0, step: 0.0001 }}
                 />
               </Grid>
               <Grid item xs={12} md={4}>
@@ -858,7 +894,8 @@ const DistilledWaterPanel = () => {
                   value={formState.ceReading3 ?? ''}
                   onChange={ev => setFormState(prev => ({ ...prev, ceReading3: ev.target.value }))}
                   disabled={!token || creating}
-                  inputProps={{ inputMode: 'decimal' }}
+                  helperText='Valor en µS/cm, mayor a 0'
+                  inputProps={{ inputMode: 'decimal', min: 0, step: 0.0001 }}
                 />
               </Grid>
 
@@ -886,7 +923,7 @@ const DistilledWaterPanel = () => {
                   value={formState.referenceDifference ?? ''}
                   onChange={ev => setFormState(prev => ({ ...prev, referenceDifference: ev.target.value }))}
                   disabled={!token || creating}
-                  inputProps={{ inputMode: 'decimal' }}
+                  inputProps={{ inputMode: 'decimal', step: 0.0001 }}
                 />
               </Grid>
               <Grid item xs={12} md={6}>
@@ -899,7 +936,8 @@ const DistilledWaterPanel = () => {
                   value={formState.controlStandardPct ?? ''}
                   onChange={ev => setFormState(prev => ({ ...prev, controlStandardPct: ev.target.value }))}
                   disabled={!token || creating}
-                  inputProps={{ inputMode: 'decimal' }}
+                  helperText='Valor entre 0 y 100'
+                  inputProps={{ inputMode: 'decimal', min: 0, max: 100, step: 0.01 }}
                 />
               </Grid>
 
