@@ -46,7 +46,7 @@ public class UserCrudController {
 	}
 
 	@GetMapping
-	@PreAuthorize("hasAnyRole('ADMIN', 'SUPERVISOR')")
+	@PreAuthorize("hasAnyRole('ADMIN', 'SUPERVISOR', 'ANALYST', 'SAMPLER')")
 	public ResponseEntity<List<CrudResponseDTO>> getAll() {
 		return ResponseEntity.ok(service.findAllActive());
 	}
