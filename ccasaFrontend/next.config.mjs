@@ -6,6 +6,11 @@ const nextConfig = {
     cpus: 1
   },
 
+  /** Muchos navegadores piden /favicon.ico aunque metadata.icons use /logo.png. */
+  async rewrites() {
+    return [{ source: '/favicon.ico', destination: '/logo.png' }]
+  },
+
   async headers() {
     return [
       {
