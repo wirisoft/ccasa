@@ -27,7 +27,7 @@ import TextField from '@mui/material/TextField'
 import { useAuth } from '@/contexts/AuthContext'
 
 // Lib Imports
-import { apiFetch } from '@/lib/ccasa/api'
+import { apiFetch, getErrorMessage } from '@/lib/ccasa/api'
 import type { CrudFieldDef, CrudFieldType } from '@/lib/ccasa/crudFields'
 import type { CrudResponseDTO } from '@/lib/ccasa/types'
 
@@ -208,6 +208,18 @@ function buildCleanPayload(fields: CrudFieldDef[], formState: Record<string, unk
   return out
 }
 
+function isForbiddenUserListError(error: unknown): boolean {
+  const msg = getErrorMessage(error, '').toLowerCase()
+
+  return (
+    msg.includes('403') ||
+    msg.includes('forbidden') ||
+    msg.includes('access denied') ||
+    msg.includes('access_denied') ||
+    msg.includes('no tienes permiso')
+  )
+}
+
 function getFormHelperText(title: string): string | null {
   const t = title.toLowerCase()
 
@@ -305,7 +317,7 @@ const CrudFormDialog = ({
   loading = false,
   error = null
 }: CrudFormDialogProps) => {
-  const { token } = useAuth()
+  const { token, userId: authUserId, firstName: authFirstName, lastName: authLastName, email: authEmail } = useAuth()
 
   const isEditMode = initialValues != null
 
@@ -364,11 +376,29 @@ const CrudFormDialog = ({
 
           setAsyncOptions(prev => ({ ...prev, [field.key]: options }))
         })
-        .catch(() => {
+        .catch(err => {
+          if (field.key === 'userId' && authUserId != null && isForbiddenUserListError(err)) {
+            const nameLabel = `${authFirstName ?? ''} ${authLastName ?? ''}`.trim()
+            const label = nameLabel || authEmail?.trim() || 'Mi usuario'
+
+            setAsyncOptions(prev => ({ ...prev, [field.key]: [{ value: authUserId, label }] }))
+            setFormState(prev => {
+              const cur = prev[field.key]
+
+              if (cur === '' || cur == null || cur === undefined) {
+                return { ...prev, [field.key]: String(authUserId) }
+              }
+
+              return prev
+            })
+
+            return
+          }
+
           setAsyncOptions(prev => ({ ...prev, [field.key]: [] }))
         })
     })
-  }, [open, visibleFields, token])
+  }, [open, visibleFields, token, authUserId, authFirstName, authLastName, authEmail])
 
   const setValue = useCallback((key: string, value: unknown) => {
     setFormState(prev => ({ ...prev, [key]: value }))
