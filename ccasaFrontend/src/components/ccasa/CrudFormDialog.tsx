@@ -209,22 +209,23 @@ function buildCleanPayload(fields: CrudFieldDef[], formState: Record<string, unk
 }
 
 /** true si el error parece 403 / permisos (p. ej. listar usuarios sin rol adecuado). */
-function isAsyncSelectPermissionError(error: unknown): boolean {
-  if (!(error instanceof Error)) {
+function isAsyncSelectPermissionError(err: unknown): boolean {
+  if (!(err instanceof Error)) {
     return false
   }
 
-  const msg = error.message.toLowerCase()
+  const msg = err.message.toLowerCase()
 
   return (
     msg.includes('403') ||
+    msg.includes('access denied') ||
+    msg.includes('access_denied') ||
     msg.includes('denied') ||
     msg.includes('forbidden') ||
     msg.includes('acceso') ||
     msg.includes('permiso') ||
-    msg.includes('access denied') ||
-    msg.includes('access_denied') ||
-    msg.includes('no tienes permiso')
+    msg.includes('no tienes permiso') ||
+    msg.includes('unauthorized')
   )
 }
 
