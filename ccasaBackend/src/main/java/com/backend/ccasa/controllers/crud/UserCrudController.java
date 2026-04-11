@@ -8,6 +8,7 @@ import com.backend.ccasa.service.models.dtos.CrudResponseDTO;
 import com.backend.ccasa.service.models.dtos.ResetPasswordResponseDTO;
 import com.backend.ccasa.service.models.dtos.UserSignatureResponseDTO;
 import java.util.List;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -48,6 +49,20 @@ public class UserCrudController {
 	@PreAuthorize("hasAnyRole('ADMIN', 'SUPERVISOR')")
 	public ResponseEntity<List<CrudResponseDTO>> getAll() {
 		return ResponseEntity.ok(service.findAllActive());
+	}
+
+	/**
+	 * Perfil CRUD del usuario autenticado (por email del JWT). Debe declararse antes de {@code /{id}} para que
+	 * {@code "me"} no se interprete como id numérico.
+	 */
+	@GetMapping("/me")
+	@PreAuthorize("isAuthenticated()")
+	public ResponseEntity<CrudResponseDTO> getMe(@AuthenticationPrincipal CcasaUserDetails principal) {
+		String email = principal != null ? principal.getEmail() : null;
+		if (email == null || email.isBlank()) {
+			return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+		}
+		return ResponseEntity.ok(service.findByEmail(email.trim()));
 	}
 
 	@GetMapping("/{id}")

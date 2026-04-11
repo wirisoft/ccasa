@@ -1,5 +1,6 @@
 package com.backend.ccasa.service.impl;
 
+import com.backend.ccasa.exceptions.UserNotFoundException;
 import com.backend.ccasa.persistence.entities.UserEntity;
 import com.backend.ccasa.persistence.repositories.UserRepository;
 import com.backend.ccasa.security.CcasaUserDetails;
@@ -13,12 +14,24 @@ import java.util.Map;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class UserCrudService extends AbstractEntityCrudService<UserEntity> implements IUserCrudService {
 
+	private final UserRepository userRepository;
+
 	public UserCrudService(UserRepository repository, EntityManager entityManager) {
 		super(repository, entityManager, UserEntity.class, "USER");
+		this.userRepository = repository;
+	}
+
+	@Override
+	@Transactional(readOnly = true)
+	public CrudResponseDTO findByEmail(String email) {
+		UserEntity user = userRepository.findByEmail(email)
+				.orElseThrow(() -> new UserNotFoundException(0L));
+		return toDto(user);
 	}
 
 	@Override

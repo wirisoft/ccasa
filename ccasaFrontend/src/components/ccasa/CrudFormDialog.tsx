@@ -354,9 +354,11 @@ const CrudFormDialog = ({
     const asyncFields = visibleFields.filter(f => f.type === 'async-select' && f.optionsApiPath)
 
     asyncFields.forEach(field => {
-      apiFetch<CrudResponseDTO[]>(field.optionsApiPath!, { token: token ?? undefined })
+      apiFetch<CrudResponseDTO | CrudResponseDTO[]>(field.optionsApiPath!, { token: token ?? undefined })
         .then(data => {
-          const options = (Array.isArray(data) ? data : []).map(item => {
+          const list = Array.isArray(data) ? data : data != null ? [data] : []
+
+          const options = list.map(item => {
             const valueKey = field.optionValueKey || 'id'
             const value = valueKey === 'id' ? item.id : (item.values?.[valueKey] as number)
 
