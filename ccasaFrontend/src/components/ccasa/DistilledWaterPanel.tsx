@@ -110,27 +110,6 @@ function formatEntryStatus(status: string | null | undefined): string {
   return ENTRY_STATUS_LABELS[status] ?? 'Desconocido'
 }
 
-/** true si el error parece 403 / permisos (p. ej. listar usuarios sin rol adecuado). */
-function isSamplerOptionsPermissionError(err: unknown): boolean {
-  if (!(err instanceof Error)) {
-    return false
-  }
-
-  const msg = err.message.toLowerCase()
-
-  return (
-    msg.includes('403') ||
-    msg.includes('access denied') ||
-    msg.includes('access_denied') ||
-    msg.includes('denied') ||
-    msg.includes('forbidden') ||
-    msg.includes('acceso') ||
-    msg.includes('permiso') ||
-    msg.includes('no tienes permiso') ||
-    msg.includes('unauthorized')
-  )
-}
-
 function mapCrudUsersToOptions(rows: CrudResponseDTO[]): Option[] {
   return rows.map(r => ({
     value: r.id,
@@ -372,26 +351,9 @@ const DistilledWaterPanel = () => {
           }))
         )
       }),
-      (async () => {
-        try {
-          const rows = await apiFetch<CrudResponseDTO[]>('/api/v1/users', opts)
-
-          setSamplerUserOptions(mapCrudUsersToOptions(Array.isArray(rows) ? rows : []))
-        } catch (e) {
-          if (isSamplerOptionsPermissionError(e)) {
-            try {
-              const data = await apiFetch<CrudResponseDTO | CrudResponseDTO[]>('/api/v1/users/me', opts)
-              const arr = Array.isArray(data) ? data : data != null ? [data] : []
-
-              setSamplerUserOptions(mapCrudUsersToOptions(arr))
-            } catch {
-              setSamplerUserOptions([])
-            }
-          } else {
-            setSamplerUserOptions([])
-          }
-        }
-      })(),
+      apiFetch<CrudResponseDTO[]>('/api/v1/users/by-role/Sampler', opts)
+        .then(rows => setSamplerUserOptions(mapCrudUsersToOptions(Array.isArray(rows) ? rows : [])))
+        .catch(() => setSamplerUserOptions([])),
       apiFetch<CrudResponseDTO[]>('/api/v1/batches', opts).then(rows =>
         setBatchOptions(
           (Array.isArray(rows) ? rows : []).map(item => ({

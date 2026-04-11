@@ -576,7 +576,7 @@ export const ENTRY_DISTILLED_WATER_FIELDS: CrudFieldDef[] = [
     type: 'async-select',
     required: false,
     gridCols: 6,
-    optionsApiPath: '/api/v1/users/me',
+    optionsApiPath: '/api/v1/users/by-role/Sampler',
     optionLabelKey: ['firstName', 'lastName']
   }
 ]
@@ -943,7 +943,7 @@ export const ENTRY_ACCURACY_FIELDS: CrudFieldDef[] = [
     label: 'Muestreador',
     type: 'async-select',
     gridCols: 4,
-    optionsApiPath: '/api/v1/users/me',
+    optionsApiPath: '/api/v1/users/by-role/Sampler',
     optionLabelKey: ['firstName', 'lastName']
   },
   {

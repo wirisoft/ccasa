@@ -7,6 +7,7 @@ import com.backend.ccasa.security.CcasaUserDetails;
 import com.backend.ccasa.service.IUserCrudService;
 import com.backend.ccasa.service.models.dtos.CrudRequestDTO;
 import com.backend.ccasa.service.models.dtos.CrudResponseDTO;
+import com.backend.ccasa.service.models.enums.RoleNameEnum;
 import jakarta.persistence.EntityManager;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -32,6 +33,23 @@ public class UserCrudService extends AbstractEntityCrudService<UserEntity> imple
 		UserEntity user = userRepository.findByEmail(email)
 				.orElseThrow(() -> new UserNotFoundException(0L));
 		return toDto(user);
+	}
+
+	@Override
+	@Transactional(readOnly = true)
+	public List<CrudResponseDTO> findByRole(String roleName) {
+		if (roleName == null || roleName.isBlank()) {
+			return List.of();
+		}
+		RoleNameEnum role;
+		try {
+			role = RoleNameEnum.valueOf(roleName.trim());
+		} catch (IllegalArgumentException ex) {
+			return List.of();
+		}
+		return userRepository.findByRoleNameAndDeletedAtIsNull(role).stream()
+				.map(this::toDto)
+				.toList();
 	}
 
 	@Override

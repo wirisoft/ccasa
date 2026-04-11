@@ -65,6 +65,12 @@ public class UserCrudController {
 		return ResponseEntity.ok(service.findByEmail(email.trim()));
 	}
 
+	@GetMapping("/by-role/{roleName}")
+	@PreAuthorize("isAuthenticated()")
+	public ResponseEntity<List<CrudResponseDTO>> getByRole(@PathVariable String roleName) {
+		return ResponseEntity.ok(service.findByRole(roleName));
+	}
+
 	@GetMapping("/{id}")
 	@PreAuthorize("hasAnyRole('ADMIN', 'SUPERVISOR') or @ccasaUserSecurity.isSelf(#id)")
 	public ResponseEntity<CrudResponseDTO> getById(@PathVariable Long id) {
