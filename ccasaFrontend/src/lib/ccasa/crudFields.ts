@@ -569,6 +569,15 @@ export const ENTRY_DISTILLED_WATER_FIELDS: CrudFieldDef[] = [
     gridCols: 6,
     optionsApiPath: '/api/v1/batches',
     optionLabelKey: 'batchCode'
+  },
+  {
+    key: 'samplerUserId',
+    label: 'Muestreador (opcional)',
+    type: 'async-select',
+    required: false,
+    gridCols: 6,
+    optionsApiPath: '/api/v1/users/me',
+    optionLabelKey: ['firstName', 'lastName']
   }
 ]
 

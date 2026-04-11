@@ -50,6 +50,7 @@ export type DistilledWaterRequestDTO = {
   referenceDifference?: number | null
   controlStandardPct?: number | null
   waterBatchId?: number | null
+  samplerUserId?: number | null
 }
 
 /** Alineado con DistilledWaterResponseDTO del backend (GET /api/v1/entries/{entryId}/distilled-water) */
@@ -75,6 +76,9 @@ export type DistilledWaterResponseDTO = {
 
   /** Nombre completo del usuario de la entrada (firstName + lastName o email). */
   analystName: string
+
+  /** Nombre completo del muestreador asociado al registro (RF-08 ANALIZA en PDF). */
+  samplerName: string
 
   /** Folio mostrable (número de folio o REG-{id}). */
   folio: string

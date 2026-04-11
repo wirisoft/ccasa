@@ -59,7 +59,8 @@ const EMPTY_FORM: Record<string, string> = {
   ceReading3: '',
   referenceDifference: '',
   controlStandardPct: '',
-  waterBatchId: ''
+  waterBatchId: '',
+  samplerUserId: ''
 }
 
 type Option = { value: number; label: string }
@@ -109,6 +110,34 @@ function formatEntryStatus(status: string | null | undefined): string {
   return ENTRY_STATUS_LABELS[status] ?? 'Desconocido'
 }
 
+/** true si el error parece 403 / permisos (p. ej. listar usuarios sin rol adecuado). */
+function isSamplerOptionsPermissionError(err: unknown): boolean {
+  if (!(err instanceof Error)) {
+    return false
+  }
+
+  const msg = err.message.toLowerCase()
+
+  return (
+    msg.includes('403') ||
+    msg.includes('access denied') ||
+    msg.includes('access_denied') ||
+    msg.includes('denied') ||
+    msg.includes('forbidden') ||
+    msg.includes('acceso') ||
+    msg.includes('permiso') ||
+    msg.includes('no tienes permiso') ||
+    msg.includes('unauthorized')
+  )
+}
+
+function mapCrudUsersToOptions(rows: CrudResponseDTO[]): Option[] {
+  return rows.map(r => ({
+    value: r.id,
+    label: [r.values?.firstName, r.values?.lastName].filter(Boolean).join(' ') || String(r.id)
+  }))
+}
+
 function acceptableValueCell(v: boolean | null): ReactNode {
   if (v === true) {
     return <Chip label='Sí' color='success' size='small' />
@@ -126,6 +155,7 @@ function responseToTableRows(d: DistilledWaterResponseDTO): { label: string; val
     { label: 'Entrada', value: formatCell(d.entryId) },
     { label: 'Bitácora', value: formatCell(d.logbookName) },
     { label: 'Analista (entrada)', value: formatCell(d.analystName) },
+    { label: 'Muestreador', value: formatCell(d.samplerName?.trim() ? d.samplerName : null) },
     { label: 'Folio', value: formatCell(d.folio) },
     { label: 'Fecha registro', value: formatCell(d.recordedAt) },
     { label: 'ID registro', value: formatCell(d.distilledWaterEntryId) },
@@ -221,6 +251,10 @@ function buildCreateDto(form: Record<string, string>): { ok: true; dto: Distille
 
   if (batch !== undefined) dto.waterBatchId = batch
 
+  const samplerUserId = parseOptionalNumber(form.samplerUserId ?? '')
+
+  if (samplerUserId !== undefined) dto.samplerUserId = samplerUserId
+
   return { ok: true, dto }
 }
 
@@ -257,6 +291,7 @@ const DistilledWaterPanel = () => {
   const [folioOptions, setFolioOptions] = useState<Option[]>([])
   const [logbookOptions, setLogbookOptions] = useState<Option[]>([])
   const [userOptions, setUserOptions] = useState<Option[]>([])
+  const [samplerUserOptions, setSamplerUserOptions] = useState<Option[]>([])
   const [batchOptions, setBatchOptions] = useState<Option[]>([])
 
   const [formState, setFormState] = useState<Record<string, string>>(() => ({ ...EMPTY_FORM }))
@@ -281,6 +316,7 @@ const DistilledWaterPanel = () => {
       setFolioOptions([])
       setLogbookOptions([])
       setUserOptions([])
+      setSamplerUserOptions([])
       setBatchOptions([])
       setEntryOptions([])
       setEntryListsReady(false)
@@ -336,6 +372,26 @@ const DistilledWaterPanel = () => {
           }))
         )
       }),
+      (async () => {
+        try {
+          const rows = await apiFetch<CrudResponseDTO[]>('/api/v1/users', opts)
+
+          setSamplerUserOptions(mapCrudUsersToOptions(Array.isArray(rows) ? rows : []))
+        } catch (e) {
+          if (isSamplerOptionsPermissionError(e)) {
+            try {
+              const data = await apiFetch<CrudResponseDTO | CrudResponseDTO[]>('/api/v1/users/me', opts)
+              const arr = Array.isArray(data) ? data : data != null ? [data] : []
+
+              setSamplerUserOptions(mapCrudUsersToOptions(arr))
+            } catch {
+              setSamplerUserOptions([])
+            }
+          } else {
+            setSamplerUserOptions([])
+          }
+        }
+      })(),
       apiFetch<CrudResponseDTO[]>('/api/v1/batches', opts).then(rows =>
         setBatchOptions(
           (Array.isArray(rows) ? rows : []).map(item => ({
@@ -349,6 +405,7 @@ const DistilledWaterPanel = () => {
         setFolioOptions([])
         setLogbookOptions([])
         setUserOptions([])
+        setSamplerUserOptions([])
         setBatchOptions([])
         setEntryOptions([])
       })
@@ -575,6 +632,12 @@ const DistilledWaterPanel = () => {
     setFormState(prev => ({ ...prev, waterBatchId: v === '' ? '' : String(v) }))
   }
 
+  const onSamplerUserChange = (ev: SelectChangeEvent<number | ''>) => {
+    const v = ev.target.value
+
+    setFormState(prev => ({ ...prev, samplerUserId: v === '' ? '' : String(v) }))
+  }
+
   const onSearchEntryChange = (ev: SelectChangeEvent<number | ''>) => {
     const v = ev.target.value
 
@@ -756,6 +819,30 @@ const DistilledWaterPanel = () => {
                       <em>Seleccionar…</em>
                     </MenuItem>
                     {userOptions.map(opt => (
+                      <MenuItem key={opt.value} value={opt.value}>
+                        {opt.label}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+              </Grid>
+              <Grid item xs={12} md={4}>
+                <FormControl fullWidth size='small' disabled={!token || creating}>
+                  <InputLabel id='dw-sampler-label' shrink>
+                    Muestreador (opcional)
+                  </InputLabel>
+                  <Select
+                    labelId='dw-sampler-label'
+                    label='Muestreador (opcional)'
+                    notched
+                    value={selectNumberValue(formState.samplerUserId ?? '')}
+                    onChange={onSamplerUserChange}
+                    displayEmpty
+                  >
+                    <MenuItem value=''>
+                      <em>— Ninguno —</em>
+                    </MenuItem>
+                    {samplerUserOptions.map(opt => (
                       <MenuItem key={opt.value} value={opt.value}>
                         {opt.label}
                       </MenuItem>
@@ -947,8 +1034,9 @@ const DistilledWaterPanel = () => {
 
               <Grid item xs={12}>
                 <Alert severity='info' variant='outlined' sx={{ fontSize: '0.82rem' }}>
-                  Ingresa las tres lecturas de pH y CE para que el sistema calcule los promedios automáticamente. El campo
-                  Lote de agua es opcional.
+                  Ingresa las tres lecturas de pH y CE para que el sistema calcule los promedios automáticamente. Los
+                  campos Lote de agua y Muestreador son opcionales; el muestreador aparece en el bloque ANALIZA del PDF
+                  (RF-08).
                 </Alert>
               </Grid>
 

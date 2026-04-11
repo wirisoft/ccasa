@@ -2,6 +2,7 @@ package com.backend.ccasa.persistence.entities.entry;
 
 import com.backend.ccasa.persistence.entities.BatchEntity;
 import com.backend.ccasa.persistence.entities.EntryEntity;
+import com.backend.ccasa.persistence.entities.UserEntity;
 import com.backend.ccasa.persistence.entities.audit.Auditable;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -59,6 +60,10 @@ public class EntryDistilledWaterEntity extends Auditable {
 	@JoinColumn(name = "water_batch_id")
 	private BatchEntity waterBatch;
 
+	@ManyToOne(fetch = FetchType.LAZY)
+	@JoinColumn(name = "sampler_user_id")
+	private UserEntity samplerUser;
+
 	public Long getId() { return id; }
 	public void setId(Long id) { this.id = id; }
 	public EntryEntity getEntry() { return entry; }
@@ -87,4 +92,6 @@ public class EntryDistilledWaterEntity extends Auditable {
 	public void setIsAcceptable(Boolean v) { this.isAcceptable = v; }
 	public BatchEntity getWaterBatch() { return waterBatch; }
 	public void setWaterBatch(BatchEntity waterBatch) { this.waterBatch = waterBatch; }
+	public UserEntity getSamplerUser() { return samplerUser; }
+	public void setSamplerUser(UserEntity samplerUser) { this.samplerUser = samplerUser; }
 }

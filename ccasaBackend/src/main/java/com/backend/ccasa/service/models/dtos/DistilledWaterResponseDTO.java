@@ -24,6 +24,7 @@ public record DistilledWaterResponseDTO(
 	String entryStatus,
 	String logbookName,
 	String analystName,
+	String samplerName,
 	String folio,
 	String recordedAt
 ) implements Serializable {}

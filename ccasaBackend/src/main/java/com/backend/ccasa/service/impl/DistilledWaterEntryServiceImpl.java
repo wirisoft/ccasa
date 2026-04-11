@@ -150,6 +150,11 @@ public class DistilledWaterEntryServiceImpl implements IDistilledWaterEntryServi
 			BatchEntity batch = batchRepository.findByIdAndDeletedAtIsNull(dto.waterBatchId()).orElse(null);
 			dw.setWaterBatch(batch);
 		}
+		if (dto.samplerUserId() != null) {
+			UserEntity sampler = userRepository.findByIdAndDeletedAtIsNull(dto.samplerUserId())
+				.orElseThrow(() -> new UserNotFoundException(dto.samplerUserId()));
+			dw.setSamplerUser(sampler);
+		}
 		computeAveragesAndAcceptable(dw);
 		dw = distilledWaterRepository.save(dw);
 		return toResponseDto(entry, dw);
@@ -186,7 +191,7 @@ public class DistilledWaterEntryServiceImpl implements IDistilledWaterEntryServi
 		document.add(distilledReadingsTable(dw));
 		document.add(distilledResultsTable(dw));
 		addVerificationBlock(document);
-		document.add(signaturesBlock(entry));
+		document.add(signaturesBlock(entry, dw));
 		document.add(observationsBlock(entry));
 		document.add(pdfFooter());
 	}
@@ -404,7 +409,7 @@ public class DistilledWaterEntryServiceImpl implements IDistilledWaterEntryServi
 		document.add(v);
 	}
 
-	private PdfPTable signaturesBlock(EntryEntity entry) {
+	private PdfPTable signaturesBlock(EntryEntity entry, EntryDistilledWaterEntity dw) {
 		PdfPTable signatures = new PdfPTable(new float[] { 1f, 1f, 1f });
 		signatures.setWidthPercentage(100);
 		signatures.setSpacingBefore(8f);
@@ -417,10 +422,17 @@ public class DistilledWaterEntryServiceImpl implements IDistilledWaterEntryServi
 		String preparaName = fullName(preparaUser);
 		signatures.addCell(signatureBlockCell("PREPARA", preparaNom, preparaName, preparaUser));
 
-		UserEntity entryUser = entry.getUser();
-		String analizaNom = entryUser != null ? safe(entryUser.getNomenclature()) : "";
-		String analizaName = fullName(entryUser);
-		signatures.addCell(signatureBlockCell("ANALIZA", analizaNom, analizaName, entryUser));
+		UserEntity analizaUser = dw.getSamplerUser();
+		String analizaNom;
+		String analizaName;
+		if (analizaUser != null) {
+			analizaNom = safe(analizaUser.getNomenclature());
+			analizaName = fullName(analizaUser);
+		} else {
+			analizaNom = "";
+			analizaName = "—";
+		}
+		signatures.addCell(signatureBlockCell("ANALIZA", analizaNom, analizaName, analizaUser));
 
 		UserEntity revisaUser = supervisorSignature != null ? supervisorSignature.getSupervisorUser() : null;
 		String revisaNom = revisaUser != null ? safe(revisaUser.getNomenclature()) : "";
@@ -617,6 +629,9 @@ public class DistilledWaterEntryServiceImpl implements IDistilledWaterEntryServi
 		Instant recordedAt = entry.getRecordedAt();
 		String recordedAtStr = recordedAt != null ? PDF_DATE.format(recordedAt) : "";
 
+		UserEntity sampler = dw.getSamplerUser();
+		String samplerName = sampler != null ? fullName(sampler) : "";
+
 		return new DistilledWaterResponseDTO(
 			entry.getId(),
 			dw.getId(),
@@ -635,6 +650,7 @@ public class DistilledWaterEntryServiceImpl implements IDistilledWaterEntryServi
 			entry.getStatus().name(),
 			logbookName,
 			fullName(entry.getUser()),
+			samplerName,
 			pdfFolioDisplay(entry),
 			recordedAtStr
 		);

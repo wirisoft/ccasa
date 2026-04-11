@@ -19,6 +19,7 @@ public record DistilledWaterRequestDTO(
 	BigDecimal ceReading3,
 	BigDecimal referenceDifference,
 	BigDecimal controlStandardPct,
-	Long waterBatchId
+	Long waterBatchId,
+	Long samplerUserId
 ) implements Serializable {}
 
