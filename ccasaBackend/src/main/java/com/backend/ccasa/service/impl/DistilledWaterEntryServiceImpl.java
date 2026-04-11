@@ -417,8 +417,10 @@ public class DistilledWaterEntryServiceImpl implements IDistilledWaterEntryServi
 		String preparaName = fullName(preparaUser);
 		signatures.addCell(signatureBlockCell("PREPARA", preparaNom, preparaName, preparaUser));
 
-		// RF-08: no hay tipo de firma “Muestreo” en BD; columna reservada (sin texto fijo).
-		signatures.addCell(signatureBlockCell("ANALIZA", "", "—", null));
+		UserEntity entryUser = entry.getUser();
+		String analizaNom = entryUser != null ? safe(entryUser.getNomenclature()) : "";
+		String analizaName = fullName(entryUser);
+		signatures.addCell(signatureBlockCell("ANALIZA", analizaNom, analizaName, entryUser));
 
 		UserEntity revisaUser = supervisorSignature != null ? supervisorSignature.getSupervisorUser() : null;
 		String revisaNom = revisaUser != null ? safe(revisaUser.getNomenclature()) : "";
@@ -457,14 +459,11 @@ public class DistilledWaterEntryServiceImpl implements IDistilledWaterEntryServi
 		sepc.setPadding(0f);
 		sep.addCell(sepc);
 		cell.addElement(sep);
-		boolean skipImage = "ANALIZA".equals(roleHeader);
 		boolean revisaNomPrincipal = "REVISA".equals(roleHeader) && !safe(nomenclature).trim().isEmpty();
 		if (revisaNomPrincipal) {
 			cell.addElement(new Paragraph(safe(nomenclature).trim(), F_10_BOLD_BLACK));
 		}
-		if (!skipImage) {
-			addSignatureImage(cell, user);
-		}
+		addSignatureImage(cell, user);
 		Paragraph sigLine = new Paragraph("_____________________________", F_8_NORMAL_GRAY);
 		sigLine.setAlignment(Element.ALIGN_CENTER);
 		cell.addElement(sigLine);
@@ -474,7 +473,7 @@ public class DistilledWaterEntryServiceImpl implements IDistilledWaterEntryServi
 			} else {
 				cell.addElement(new Paragraph(safe(name), F_10_BOLD_BLACK));
 			}
-		} else if ("PREPARA".equals(roleHeader)) {
+		} else if ("PREPARA".equals(roleHeader) || "ANALIZA".equals(roleHeader)) {
 			cell.addElement(new Paragraph(safe(name), F_10_BOLD_BLACK));
 			String rol = safe(nomenclature);
 			if (!rol.isEmpty()) {
