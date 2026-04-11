@@ -12,7 +12,23 @@ const ServiceWorkerRegistrar = () => {
       return
     }
 
-    void navigator.serviceWorker.register('/sw.js')
+    const register = () => {
+      void navigator.serviceWorker.register('/sw.js', { updateViaCache: 'none' }).then(reg => {
+        void reg.update()
+      })
+    }
+
+    register()
+
+    const onFocus = () => {
+      void navigator.serviceWorker.getRegistration().then(reg => reg?.update())
+    }
+
+    window.addEventListener('focus', onFocus)
+
+    return () => {
+      window.removeEventListener('focus', onFocus)
+    }
   }, [])
 
   return null
