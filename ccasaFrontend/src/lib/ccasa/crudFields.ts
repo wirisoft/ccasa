@@ -527,8 +527,8 @@ export const ENTRY_CORE_FIELDS: CrudFieldDef[] = [
     type: 'async-select',
     required: false,
     gridCols: 4,
-    optionsApiPath: '/api/v1/users/me',
-    optionLabelKey: 'firstName'
+    optionsApiPath: '/api/v1/users',
+    optionLabelKey: ['firstName', 'lastName']
   }
 ]
 

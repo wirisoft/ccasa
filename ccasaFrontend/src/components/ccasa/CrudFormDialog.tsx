@@ -27,7 +27,7 @@ import TextField from '@mui/material/TextField'
 import { useAuth } from '@/contexts/AuthContext'
 
 // Lib Imports
-import { apiFetch, getErrorMessage } from '@/lib/ccasa/api'
+import { apiFetch } from '@/lib/ccasa/api'
 import type { CrudFieldDef, CrudFieldType } from '@/lib/ccasa/crudFields'
 import type { CrudResponseDTO } from '@/lib/ccasa/types'
 
@@ -208,16 +208,56 @@ function buildCleanPayload(fields: CrudFieldDef[], formState: Record<string, unk
   return out
 }
 
-function isForbiddenUserListError(error: unknown): boolean {
-  const msg = getErrorMessage(error, '').toLowerCase()
+/** true si el error parece 403 / permisos (p. ej. listar usuarios sin rol adecuado). */
+function isAsyncSelectPermissionError(error: unknown): boolean {
+  if (!(error instanceof Error)) {
+    return false
+  }
+
+  const msg = error.message.toLowerCase()
 
   return (
     msg.includes('403') ||
+    msg.includes('denied') ||
     msg.includes('forbidden') ||
+    msg.includes('acceso') ||
+    msg.includes('permiso') ||
     msg.includes('access denied') ||
     msg.includes('access_denied') ||
     msg.includes('no tienes permiso')
   )
+}
+
+/** Path del listado de usuarios (no incluye `/users/me`). */
+function isUsersDirectoryListPath(apiPath: string): boolean {
+  const base = apiPath.split('?')[0].replace(/\/$/, '')
+
+  return base === '/api/v1/users'
+}
+
+function normalizeCrudFetchList(data: CrudResponseDTO | CrudResponseDTO[] | undefined): CrudResponseDTO[] {
+  return Array.isArray(data) ? data : data != null ? [data] : []
+}
+
+function mapAsyncSelectOptionsFromCrudList(
+  field: CrudFieldDef,
+  list: CrudResponseDTO[]
+): { value: number; label: string }[] {
+  return list.map(item => {
+    const valueKey = field.optionValueKey || 'id'
+    const value = valueKey === 'id' ? item.id : (item.values?.[valueKey] as number)
+
+    const labelKey = field.optionLabelKey || 'name'
+    let label: string
+
+    if (Array.isArray(labelKey)) {
+      label = labelKey.map(k => item.values?.[k] ?? (item as Record<string, unknown>)[k] ?? '').join(' ').trim()
+    } else {
+      label = String(item.values?.[labelKey] ?? (item as Record<string, unknown>)[labelKey] ?? `#${item.id}`)
+    }
+
+    return { value: Number(value), label: label || `#${item.id}` }
+  })
 }
 
 function getFormHelperText(title: string): string | null {
@@ -317,7 +357,7 @@ const CrudFormDialog = ({
   loading = false,
   error = null
 }: CrudFormDialogProps) => {
-  const { token, userId: authUserId, firstName: authFirstName, lastName: authLastName, email: authEmail } = useAuth()
+  const { token } = useAuth()
 
   const isEditMode = initialValues != null
 
@@ -353,54 +393,56 @@ const CrudFormDialog = ({
 
     const asyncFields = visibleFields.filter(f => f.type === 'async-select' && f.optionsApiPath)
 
-    asyncFields.forEach(field => {
-      apiFetch<CrudResponseDTO | CrudResponseDTO[]>(field.optionsApiPath!, { token: token ?? undefined })
-        .then(data => {
-          const list = Array.isArray(data) ? data : data != null ? [data] : []
+    const loadAsyncForField = async (field: CrudFieldDef) => {
+      const path = field.optionsApiPath!
 
-          const options = list.map(item => {
-            const valueKey = field.optionValueKey || 'id'
-            const value = valueKey === 'id' ? item.id : (item.values?.[valueKey] as number)
+      const setOptionsFromList = (list: CrudResponseDTO[]) => {
+        const options = mapAsyncSelectOptionsFromCrudList(field, list)
 
-            const labelKey = field.optionLabelKey || 'name'
-            let label: string
+        setAsyncOptions(prev => ({ ...prev, [field.key]: options }))
+      }
 
-            if (Array.isArray(labelKey)) {
-              label = labelKey.map(k => item.values?.[k] ?? (item as Record<string, unknown>)[k] ?? '').join(' ').trim()
-            } else {
-              label = String(
-                item.values?.[labelKey] ?? (item as Record<string, unknown>)[labelKey] ?? `#${item.id}`
-              )
-            }
+      try {
+        const data = await apiFetch<CrudResponseDTO | CrudResponseDTO[]>(path, { token: token ?? undefined })
+        const list = normalizeCrudFetchList(data)
 
-            return { value: Number(value), label: label || `#${item.id}` }
-          })
-
-          setAsyncOptions(prev => ({ ...prev, [field.key]: options }))
-        })
-        .catch(err => {
-          if (field.key === 'userId' && authUserId != null && isForbiddenUserListError(err)) {
-            const nameLabel = `${authFirstName ?? ''} ${authLastName ?? ''}`.trim()
-            const label = nameLabel || authEmail?.trim() || 'Mi usuario'
-
-            setAsyncOptions(prev => ({ ...prev, [field.key]: [{ value: authUserId, label }] }))
-            setFormState(prev => {
-              const cur = prev[field.key]
-
-              if (cur === '' || cur == null || cur === undefined) {
-                return { ...prev, [field.key]: String(authUserId) }
-              }
-
-              return prev
+        setOptionsFromList(list)
+      } catch (err) {
+        if (isAsyncSelectPermissionError(err) && isUsersDirectoryListPath(path)) {
+          try {
+            const me = await apiFetch<CrudResponseDTO | CrudResponseDTO[]>('/api/v1/users/me', {
+              token: token ?? undefined
             })
 
-            return
-          }
+            const meList = normalizeCrudFetchList(me)
+            const options = mapAsyncSelectOptionsFromCrudList(field, meList)
 
+            setAsyncOptions(prev => ({ ...prev, [field.key]: options }))
+
+            if (meList.length === 1 && options.length === 1) {
+              setFormState(prev => {
+                const cur = prev[field.key]
+
+                if (cur === '' || cur == null || cur === undefined) {
+                  return { ...prev, [field.key]: String(options[0].value) }
+                }
+
+                return prev
+              })
+            }
+          } catch {
+            setAsyncOptions(prev => ({ ...prev, [field.key]: [] }))
+          }
+        } else {
           setAsyncOptions(prev => ({ ...prev, [field.key]: [] }))
-        })
-    })
-  }, [open, visibleFields, token, authUserId, authFirstName, authLastName, authEmail])
+        }
+      }
+    }
+
+    for (const field of asyncFields) {
+      void loadAsyncForField(field)
+    }
+  }, [open, visibleFields, token])
 
   const setValue = useCallback((key: string, value: unknown) => {
     setFormState(prev => ({ ...prev, [key]: value }))
