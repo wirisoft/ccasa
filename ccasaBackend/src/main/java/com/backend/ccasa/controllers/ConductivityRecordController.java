@@ -70,7 +70,7 @@ public class ConductivityRecordController {
 	}
 
 	@PostMapping("/{id}/review")
-	@PreAuthorize("hasAnyRole('ADMIN', 'SUPERVISOR', 'ANALYST')")
+	@PreAuthorize("hasAnyRole('ADMIN', 'SUPERVISOR') or @ccasaUserSecurity.canReviewConductivityRecord()")
 	public ResponseEntity<ConductivityRecordResponseDTO> review(
 		@PathVariable Long id,
 		@RequestBody(required = false) ConductivityReviewRequestDTO request,

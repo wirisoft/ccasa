@@ -51,6 +51,7 @@ import type {
   ConductivityRecordStatus,
   ConductivityType,
   CreateConductivityRequest,
+  CrudResponseDTO,
   LogbookDTO
 } from '@/lib/ccasa/types'
 
@@ -187,6 +188,29 @@ const ConductivityPanel = () => {
   const [snackbar, setSnackbar] = useState<string | null>(null)
   const [snackbarSeverity, setSnackbarSeverity] = useState<'success' | 'error'>('success')
   const [formError, setFormError] = useState<string | null>(null)
+
+  /** Nomenclatura TCM/TMC del usuario en sesión (desde /users/me); vacío = no puede aprobar desde UI. */
+  const [myNomenclature, setMyNomenclature] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (!token) {
+      setMyNomenclature(null)
+
+      return
+    }
+
+    apiFetch<CrudResponseDTO>('/api/v1/users/me', { token })
+      .then(data => {
+        const raw = data?.values?.nomenclature
+        const nom = typeof raw === 'string' ? raw.trim() : ''
+        const upper = nom.toUpperCase()
+
+        setMyNomenclature(upper === 'TCM' || upper === 'TMC' ? nom : null)
+      })
+      .catch(() => {
+        setMyNomenclature(null)
+      })
+  }, [token])
 
   const fetchRecords = useCallback(async () => {
     if (!token) {
@@ -406,7 +430,8 @@ return filteredRecords.slice(start, start + rowsPerPage)
       try {
         await apiFetch<ConductivityRecord>(`${CONDUCTIVITY_API}/${id}/review`, {
           method: 'POST',
-          body: JSON.stringify({})
+          body: JSON.stringify({}),
+          token: token ?? undefined
         })
         setSnackbarSeverity('success')
         setSnackbar('Registro revisado correctamente')
@@ -421,7 +446,7 @@ return filteredRecords.slice(start, start + rowsPerPage)
         setReviewing(null)
       }
     },
-    [fetchRecords]
+    [fetchRecords, token]
   )
 
   const handleChangePage = useCallback((_event: unknown, newPage: number) => {
@@ -644,7 +669,7 @@ return (
                                       <Box component='i' className='ri-file-pdf-line' />
                                     </IconButton>
                                   </Tooltip>
-                                  {row.status !== 'Locked' ? (
+                                  {myNomenclature && row.status === 'Draft' ? (
                                     <Tooltip title='Aprobar registro — requiere nomenclatura TCM o TMC' arrow>
                                       <span>
                                         <IconButton
