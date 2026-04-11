@@ -5,6 +5,7 @@ import com.backend.ccasa.persistence.entities.BatchEntity;
 import com.backend.ccasa.persistence.entities.EntryEntity;
 import com.backend.ccasa.persistence.entities.FolioEntity;
 import com.backend.ccasa.persistence.entities.LogbookEntity;
+import com.backend.ccasa.persistence.entities.SignatureEntity;
 import com.backend.ccasa.persistence.entities.UserEntity;
 import com.backend.ccasa.persistence.entities.entry.EntryDistilledWaterEntity;
 import com.backend.ccasa.persistence.repositories.BatchRepository;
@@ -12,11 +13,13 @@ import com.backend.ccasa.persistence.repositories.EntryDistilledWaterRepository;
 import com.backend.ccasa.persistence.repositories.EntryRepository;
 import com.backend.ccasa.persistence.repositories.FolioRepository;
 import com.backend.ccasa.persistence.repositories.LogbookRepository;
+import com.backend.ccasa.persistence.repositories.SignatureRepository;
 import com.backend.ccasa.persistence.repositories.UserRepository;
 import com.backend.ccasa.service.IDistilledWaterEntryService;
 import com.backend.ccasa.service.models.dtos.DistilledWaterRequestDTO;
 import com.backend.ccasa.service.models.dtos.DistilledWaterResponseDTO;
 import com.backend.ccasa.service.models.enums.EntryStatusEnum;
+import com.backend.ccasa.service.models.enums.SignatureTypeEnum;
 import com.backend.ccasa.exceptions.EntryNotFoundException;
 import com.backend.ccasa.exceptions.FolioNotFoundException;
 import com.backend.ccasa.exceptions.LogbookNotFoundException;
@@ -42,6 +45,7 @@ import java.nio.file.Path;
 import java.time.Instant;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import org.springframework.stereotype.Service;
@@ -90,19 +94,22 @@ public class DistilledWaterEntryServiceImpl implements IDistilledWaterEntryServi
 	private final LogbookRepository logbookRepository;
 	private final UserRepository userRepository;
 	private final BatchRepository batchRepository;
+	private final SignatureRepository signatureRepository;
 
 	public DistilledWaterEntryServiceImpl(EntryRepository entryRepository,
 			EntryDistilledWaterRepository distilledWaterRepository,
 			FolioRepository folioRepository,
 			LogbookRepository logbookRepository,
 			UserRepository userRepository,
-			BatchRepository batchRepository) {
+			BatchRepository batchRepository,
+			SignatureRepository signatureRepository) {
 		this.entryRepository = entryRepository;
 		this.distilledWaterRepository = distilledWaterRepository;
 		this.folioRepository = folioRepository;
 		this.logbookRepository = logbookRepository;
 		this.userRepository = userRepository;
 		this.batchRepository = batchRepository;
+		this.signatureRepository = signatureRepository;
 	}
 
 	@Override
@@ -401,13 +408,35 @@ public class DistilledWaterEntryServiceImpl implements IDistilledWaterEntryServi
 		PdfPTable signatures = new PdfPTable(new float[] { 1f, 1f, 1f });
 		signatures.setWidthPercentage(100);
 		signatures.setSpacingBefore(8f);
-		UserEntity analyst = entry.getUser();
-		String analystNom = analyst != null ? safe(analyst.getNomenclature()) : "";
-		String analystName = fullName(analyst);
-		signatures.addCell(signatureBlockCell("PREPARA", analystNom, analystName, analyst));
-		signatures.addCell(signatureBlockCell("ANALIZA", "", "MUESTREO", null));
-		signatures.addCell(signatureBlockCell("REVISA", "", "", null));
+		List<SignatureEntity> signatureList = signatureRepository.findByEntry(entry);
+		SignatureEntity analystSignature = findSignatureByType(signatureList, SignatureTypeEnum.Analyst);
+		SignatureEntity supervisorSignature = findSignatureByType(signatureList, SignatureTypeEnum.Supervisor);
+
+		UserEntity preparaUser = analystSignature != null ? analystSignature.getSupervisorUser() : entry.getUser();
+		String preparaNom = preparaUser != null ? safe(preparaUser.getNomenclature()) : "";
+		String preparaName = fullName(preparaUser);
+		signatures.addCell(signatureBlockCell("PREPARA", preparaNom, preparaName, preparaUser));
+
+		// RF-08: no hay tipo de firma “Muestreo” en BD; columna reservada (sin texto fijo).
+		signatures.addCell(signatureBlockCell("ANALIZA", "", "—", null));
+
+		UserEntity revisaUser = supervisorSignature != null ? supervisorSignature.getSupervisorUser() : null;
+		String revisaNom = revisaUser != null ? safe(revisaUser.getNomenclature()) : "";
+		String revisaName = revisaUser != null ? fullName(revisaUser) : "";
+		signatures.addCell(signatureBlockCell("REVISA", revisaNom, revisaName, revisaUser));
 		return signatures;
+	}
+
+	private static SignatureEntity findSignatureByType(List<SignatureEntity> signatures, SignatureTypeEnum type) {
+		if (signatures == null) {
+			return null;
+		}
+		for (SignatureEntity s : signatures) {
+			if (s.getSignatureType() == type) {
+				return s;
+			}
+		}
+		return null;
 	}
 
 	private PdfPCell signatureBlockCell(String roleHeader, String nomenclature, String name, UserEntity user) {
@@ -496,6 +525,7 @@ public class DistilledWaterEntryServiceImpl implements IDistilledWaterEntryServi
 		c2.setBorderWidth(0.5f);
 		c2.setPadding(8f);
 		c2.addElement(new Paragraph("OBSERVACIONES", F_8_NORMAL_GRAY));
+		// EntryEntity no tiene campo de observaciones; mostrar placeholder hasta exista en el modelo.
 		c2.addElement(new Paragraph("—", F_9_NORMAL_BLACK));
 		obs.addCell(c1);
 		obs.addCell(c2);
@@ -583,6 +613,11 @@ public class DistilledWaterEntryServiceImpl implements IDistilledWaterEntryServi
 	}
 
 	private DistilledWaterResponseDTO toResponseDto(EntryEntity entry, EntryDistilledWaterEntity dw) {
+		LogbookEntity logbook = entry.getLogbook();
+		String logbookName = logbook != null && logbook.getName() != null ? logbook.getName().trim() : "";
+		Instant recordedAt = entry.getRecordedAt();
+		String recordedAtStr = recordedAt != null ? PDF_DATE.format(recordedAt) : "";
+
 		return new DistilledWaterResponseDTO(
 			entry.getId(),
 			dw.getId(),
@@ -598,7 +633,11 @@ public class DistilledWaterEntryServiceImpl implements IDistilledWaterEntryServi
 			dw.getControlStandardPct(),
 			dw.getIsAcceptable(),
 			dw.getWaterBatch() != null ? dw.getWaterBatch().getId() : null,
-			entry.getStatus().name()
+			entry.getStatus().name(),
+			logbookName,
+			fullName(entry.getUser()),
+			pdfFolioDisplay(entry),
+			recordedAtStr
 		);
 	}
 }

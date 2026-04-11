@@ -124,6 +124,10 @@ function acceptableValueCell(v: boolean | null): ReactNode {
 function responseToTableRows(d: DistilledWaterResponseDTO): { label: string; value: ReactNode }[] {
   return [
     { label: 'Entrada', value: formatCell(d.entryId) },
+    { label: 'Bitácora', value: formatCell(d.logbookName) },
+    { label: 'Analista (entrada)', value: formatCell(d.analystName) },
+    { label: 'Folio', value: formatCell(d.folio) },
+    { label: 'Fecha registro', value: formatCell(d.recordedAt) },
     { label: 'ID registro', value: formatCell(d.distilledWaterEntryId) },
     { label: 'pH Lectura 1', value: formatCell(d.phReading1) },
     { label: 'pH Lectura 2', value: formatCell(d.phReading2) },

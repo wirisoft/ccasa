@@ -69,6 +69,18 @@ export type DistilledWaterResponseDTO = {
   isAcceptable: boolean | null
   waterBatchId: number | null
   entryStatus: string
+
+  /** Nombre de la bitácora (entry.logbook). */
+  logbookName: string
+
+  /** Nombre completo del usuario de la entrada (firstName + lastName o email). */
+  analystName: string
+
+  /** Folio mostrable (número de folio o REG-{id}). */
+  folio: string
+
+  /** Fecha de registro (UTC) formato dd/MM/yyyy alineado con el PDF. */
+  recordedAt: string
 }
 
 /** Mapa de lookups para resolver FKs: { columnKey → { id → label } } */

@@ -21,6 +21,10 @@ public record DistilledWaterResponseDTO(
 	BigDecimal controlStandardPct,
 	Boolean isAcceptable,
 	Long waterBatchId,
-	String entryStatus
+	String entryStatus,
+	String logbookName,
+	String analystName,
+	String folio,
+	String recordedAt
 ) implements Serializable {}
 
