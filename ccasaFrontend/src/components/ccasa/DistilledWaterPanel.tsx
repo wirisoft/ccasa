@@ -2,7 +2,7 @@
 
 // React Imports
 import type { FormEvent, ReactNode } from 'react'
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 
 // MUI Imports
 import Alert from '@mui/material/Alert'
@@ -141,8 +141,9 @@ function responseToTableRows(d: DistilledWaterResponseDTO): { label: string; val
   ]
 }
 
+/** Parsea número opcional; admite coma decimal (es-ES) y espacios. */
 function parseOptionalNumber(raw: string): number | undefined {
-  const t = raw.trim()
+  const t = raw.trim().replace(/\s/g, '').replace(',', '.')
 
   if (t === '') {
     return undefined
@@ -255,6 +256,12 @@ const DistilledWaterPanel = () => {
   const [batchOptions, setBatchOptions] = useState<Option[]>([])
 
   const [formState, setFormState] = useState<Record<string, string>>(() => ({ ...EMPTY_FORM }))
+
+  /** Siempre el último formulario; evita cierres obsoletos en submit si el callback no coincidía con el render actual. */
+  const formStateRef = useRef(formState)
+
+  formStateRef.current = formState
+
   const [creating, setCreating] = useState(false)
   const [createError, setCreateError] = useState<string | null>(null)
   const [createSuccess, setCreateSuccess] = useState(false)
@@ -496,7 +503,7 @@ const DistilledWaterPanel = () => {
       setCreateError(null)
       setCreateSuccess(false)
 
-      const built = buildCreateDto(formState)
+      const built = buildCreateDto(formStateRef.current)
 
       if (!built.ok) {
         setCreateError(built.message)
@@ -525,7 +532,7 @@ const DistilledWaterPanel = () => {
         setCreating(false)
       }
     },
-    [token, formState]
+    [token]
   )
 
   const noToken = hydrated && !token
