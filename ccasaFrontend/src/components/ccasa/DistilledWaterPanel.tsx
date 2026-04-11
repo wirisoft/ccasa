@@ -314,18 +314,17 @@ const DistilledWaterPanel = () => {
           setEntryOptions([])
         }
       }),
-      apiFetch<CrudResponseDTO[]>('/api/v1/users', opts).then(rows =>
-        setUserOptions(
-          (Array.isArray(rows) ? rows : []).map(item => {
-            const name = `${item.values?.firstName ?? ''} ${item.values?.lastName ?? ''}`.trim()
+      apiFetch<CrudResponseDTO | CrudResponseDTO[]>('/api/v1/users/me', opts).then(data => {
+        const rows = Array.isArray(data) ? data : data != null ? [data] : []
 
-            return {
-              value: item.id,
-              label: name || `#${item.id}`
-            }
-          })
+        setUserOptions(
+          rows.map(r => ({
+            value: r.id,
+            label:
+              [r.values?.firstName, r.values?.lastName].filter(Boolean).join(' ') || String(r.id)
+          }))
         )
-      ),
+      }),
       apiFetch<CrudResponseDTO[]>('/api/v1/batches', opts).then(rows =>
         setBatchOptions(
           (Array.isArray(rows) ? rows : []).map(item => ({
