@@ -368,7 +368,7 @@ export const ALERT_FIELDS: CrudFieldDef[] = [
     label: 'Usuario destino',
     type: 'async-select',
     gridCols: 6,
-    optionsApiPath: '/api/v1/users',
+    optionsApiPath: '/api/v1/users/me',
     optionLabelKey: ['firstName', 'lastName']
   }
 ]
@@ -416,7 +416,7 @@ export const SIGNATURE_FIELDS: CrudFieldDef[] = [
     label: 'Supervisor',
     type: 'async-select',
     gridCols: 6,
-    optionsApiPath: '/api/v1/users',
+    optionsApiPath: '/api/v1/users/me',
     optionLabelKey: ['firstName', 'lastName']
   }
 ]
@@ -527,7 +527,7 @@ export const ENTRY_CORE_FIELDS: CrudFieldDef[] = [
     type: 'async-select',
     required: false,
     gridCols: 4,
-    optionsApiPath: '/api/v1/users',
+    optionsApiPath: '/api/v1/users/me',
     optionLabelKey: ['firstName', 'lastName']
   }
 ]
@@ -699,7 +699,7 @@ export const ENTRY_DRYING_OVEN_FIELDS: CrudFieldDef[] = [
     label: 'Analista',
     type: 'async-select',
     gridCols: 4,
-    optionsApiPath: '/api/v1/users',
+    optionsApiPath: '/api/v1/users/me',
     optionLabelKey: ['firstName', 'lastName']
   },
   {
@@ -707,7 +707,7 @@ export const ENTRY_DRYING_OVEN_FIELDS: CrudFieldDef[] = [
     label: 'Supervisor',
     type: 'async-select',
     gridCols: 4,
-    optionsApiPath: '/api/v1/users',
+    optionsApiPath: '/api/v1/users/me',
     optionLabelKey: ['firstName', 'lastName']
   }
 ]
@@ -802,7 +802,7 @@ export const ENTRY_MATERIAL_WASH_FIELDS: CrudFieldDef[] = [
     label: 'Analista',
     type: 'async-select',
     gridCols: 4,
-    optionsApiPath: '/api/v1/users',
+    optionsApiPath: '/api/v1/users/me',
     optionLabelKey: ['firstName', 'lastName']
   },
   {
@@ -810,7 +810,7 @@ export const ENTRY_MATERIAL_WASH_FIELDS: CrudFieldDef[] = [
     label: 'Supervisor',
     type: 'async-select',
     gridCols: 4,
-    optionsApiPath: '/api/v1/users',
+    optionsApiPath: '/api/v1/users/me',
     optionLabelKey: ['firstName', 'lastName']
   }
 ]
@@ -855,7 +855,7 @@ export const ENTRY_SOLUTION_PREP_FIELDS: CrudFieldDef[] = [
     label: 'Analista',
     type: 'async-select',
     gridCols: 6,
-    optionsApiPath: '/api/v1/users',
+    optionsApiPath: '/api/v1/users/me',
     optionLabelKey: ['firstName', 'lastName']
   }
 ]
@@ -934,7 +934,7 @@ export const ENTRY_ACCURACY_FIELDS: CrudFieldDef[] = [
     label: 'Muestreador',
     type: 'async-select',
     gridCols: 4,
-    optionsApiPath: '/api/v1/users',
+    optionsApiPath: '/api/v1/users/me',
     optionLabelKey: ['firstName', 'lastName']
   },
   {
@@ -992,7 +992,7 @@ export const ENTRY_FLASK_TREATMENT_FIELDS: CrudFieldDef[] = [
     label: 'Supervisor',
     type: 'async-select',
     gridCols: 4,
-    optionsApiPath: '/api/v1/users',
+    optionsApiPath: '/api/v1/users/me',
     optionLabelKey: ['firstName', 'lastName']
   }
 ]
