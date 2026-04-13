@@ -44,6 +44,15 @@ import {
   getHttpErrorMessage,
   PDF_DOWNLOAD_ERROR
 } from '@/lib/ccasa/api'
+import {
+  countConductivityOutboxPending,
+  downloadTextFile,
+  enqueueConductivityCreate,
+  exportConductivityOutboxAsSql,
+  flushConductivityOutboxFifo,
+  loadLogbooksCache,
+  saveLogbooksCache
+} from '@/lib/ccasa/conductivityOfflineDb'
 import { CONDUCTIVITY_TYPE_LABELS } from '@/lib/ccasa/crudDisplay'
 import { formatDateDdMmYyyy } from '@/lib/ccasa/formatters'
 import type {
@@ -57,6 +66,18 @@ import type {
 
 const CONDUCTIVITY_API = '/api/v1/conductivity-records'
 const LOGBOOKS_API = '/api/v1/logbooks'
+
+function isLikelyNetworkError(e: unknown): boolean {
+  if (e instanceof TypeError) {
+    return true
+  }
+
+  if (e instanceof Error) {
+    return /failed to fetch|networkerror|load failed|network request failed/i.test(e.message)
+  }
+
+  return false
+}
 
 function formatWeight(v: number | null | undefined): string {
   if (v == null || Number.isNaN(Number(v))) return '—'
@@ -189,8 +210,27 @@ const ConductivityPanel = () => {
   const [snackbarSeverity, setSnackbarSeverity] = useState<'success' | 'error'>('success')
   const [formError, setFormError] = useState<string | null>(null)
 
+  /** PWA: cola local (FIFO) y detección de red para sincronizar al reconectar. */
+  const [isOnline, setIsOnline] = useState(
+    typeof navigator !== 'undefined' ? navigator.onLine : true
+  )
+
+  const [outboxCount, setOutboxCount] = useState(0)
+  const [logbooksFromCache, setLogbooksFromCache] = useState(false)
+  const [flushRunning, setFlushRunning] = useState(false)
+
   /** Nomenclatura TCM/TMC del usuario en sesión (desde /users/me); vacío = no puede aprobar desde UI. */
   const [myNomenclature, setMyNomenclature] = useState<string | null>(null)
+
+  const refreshOutboxCount = useCallback(async () => {
+    try {
+      const n = await countConductivityOutboxPending()
+
+      setOutboxCount(n)
+    } catch {
+      setOutboxCount(0)
+    }
+  }, [])
 
   useEffect(() => {
     if (!token) {
@@ -241,6 +281,44 @@ return
     }
   }, [token, appliedFilters])
 
+  const runFlushOutbox = useCallback(async () => {
+    if (!token || !navigator.onLine) {
+      return
+    }
+
+    setFlushRunning(true)
+
+    try {
+      const result = await flushConductivityOutboxFifo(async body => {
+        await apiFetch<ConductivityRecord>(CONDUCTIVITY_API, {
+          method: 'POST',
+          body: JSON.stringify(body)
+        })
+      })
+
+      await refreshOutboxCount()
+
+      if (result.sent > 0) {
+        void fetchRecords()
+      }
+
+      if (result.sent > 0 && !result.stoppedAt) {
+        setSnackbarSeverity('success')
+        setSnackbar(`Se sincronizaron ${result.sent} registro(s) pendiente(s).`)
+      } else if (result.sent > 0 && result.stoppedAt) {
+        setSnackbarSeverity('error')
+        setSnackbar(
+          `Se enviaron ${result.sent} registro(s); la cola se detuvo: ${result.stoppedAt}`
+        )
+      } else if (result.stoppedAt) {
+        setSnackbarSeverity('error')
+        setSnackbar(`No se pudo sincronizar la cola: ${result.stoppedAt}`)
+      }
+    } finally {
+      setFlushRunning(false)
+    }
+  }, [fetchRecords, refreshOutboxCount, token])
+
   const fetchLogbooks = useCallback(async () => {
     if (!token) {
       return
@@ -248,10 +326,24 @@ return
 
     try {
       const data = await apiFetch<LogbookDTO[]>(LOGBOOKS_API)
+      const list = Array.isArray(data) ? data : []
 
-      setLogbooks(Array.isArray(data) ? data : [])
+      setLogbooks(list)
+      setLogbooksFromCache(false)
+
+      if (list.length > 0) {
+        await saveLogbooksCache(list)
+      }
     } catch {
-      setLogbooks([])
+      const cached = await loadLogbooksCache()
+
+      if (cached && cached.length > 0) {
+        setLogbooks(cached)
+        setLogbooksFromCache(true)
+      } else {
+        setLogbooks([])
+        setLogbooksFromCache(false)
+      }
     }
   }, [token])
 
@@ -262,6 +354,34 @@ return
   useEffect(() => {
     void fetchRecords()
   }, [fetchRecords])
+
+  useEffect(() => {
+    void refreshOutboxCount()
+  }, [refreshOutboxCount])
+
+  useEffect(() => {
+    const onOnline = () => {
+      setIsOnline(true)
+      void runFlushOutbox()
+    }
+
+    const onOffline = () => setIsOnline(false)
+
+    setIsOnline(navigator.onLine)
+    window.addEventListener('online', onOnline)
+    window.addEventListener('offline', onOffline)
+
+    return () => {
+      window.removeEventListener('online', onOnline)
+      window.removeEventListener('offline', onOffline)
+    }
+  }, [runFlushOutbox])
+
+  useEffect(() => {
+    if (token && navigator.onLine) {
+      void runFlushOutbox()
+    }
+  }, [token, runFlushOutbox])
 
   const filteredRecords = useMemo(() => {
     return records.filter(r => recordMatchesSearch(r, search))
@@ -343,13 +463,30 @@ return filteredRecords.slice(start, start + rowsPerPage)
 
     setSubmitting(true)
 
+    const body: CreateConductivityRequest = {
+      type: formType,
+      weightGrams: weightNum,
+      preparationTime: formPreparationTime.trim() || null,
+      observation: formObservation.trim() || null,
+      logbookId: Number(formLogbookId)
+    }
+
+    const finishQueuedSuccess = async () => {
+      setFormError(null)
+      setDialogOpen(false)
+      setSnackbarSeverity('success')
+      setSnackbar(
+        'Guardado en cola local. Se enviará al servidor cuando haya conexión (orden FIFO).'
+      )
+      await refreshOutboxCount()
+    }
+
     try {
-      const body: CreateConductivityRequest = {
-        type: formType,
-        weightGrams: weightNum,
-        preparationTime: formPreparationTime.trim() || null,
-        observation: formObservation.trim() || null,
-        logbookId: Number(formLogbookId)
+      if (!navigator.onLine) {
+        await enqueueConductivityCreate(body)
+        await finishQueuedSuccess()
+
+        return
       }
 
       await apiFetch<ConductivityRecord>(CONDUCTIVITY_API, {
@@ -362,8 +499,18 @@ return filteredRecords.slice(start, start + rowsPerPage)
       setSnackbar('Registro creado correctamente')
       void fetchRecords()
     } catch (e) {
-      setSnackbarSeverity('error')
-      setSnackbar(getErrorMessage(e, 'Error al crear registro'))
+      if (isLikelyNetworkError(e)) {
+        try {
+          await enqueueConductivityCreate(body)
+          await finishQueuedSuccess()
+        } catch (queueErr) {
+          setSnackbarSeverity('error')
+          setSnackbar(getErrorMessage(queueErr, 'No se pudo guardar en cola local.'))
+        }
+      } else {
+        setSnackbarSeverity('error')
+        setSnackbar(getErrorMessage(e, 'Error al crear registro'))
+      }
     } finally {
       setSubmitting(false)
     }
@@ -373,7 +520,8 @@ return filteredRecords.slice(start, start + rowsPerPage)
     formObservation,
     formPreparationTime,
     formType,
-    formWeight
+    formWeight,
+    refreshOutboxCount
   ])
 
   const handleDownloadPdf = useCallback(
@@ -491,10 +639,66 @@ return filteredRecords.slice(start, start + rowsPerPage)
             <Typography variant='body2' sx={{ color: '#01579b', fontSize: '0.82rem' }}>
               Registros de conductividad KCl (RF-05). El sistema calcula automáticamente la conductividad teórica y
               verifica si está en el rango de aceptación (~1400–1420 µS/cm para Alta). Requiere una bitácora activa.
-              Para aprobar un registro, debe existir un usuario con nomenclatura TCM o TMC.
+              Para aprobar un registro, debe existir un usuario con nomenclatura TCM o TMC. Sin conexión, los nuevos
+              registros se guardan en una cola local (IndexedDB) y se envían en orden al reconectar.
             </Typography>
           </Box>
         </Box>
+        {!isOnline ? (
+          <Box sx={{ px: 2.5, pb: 1 }}>
+            <Alert severity='warning' sx={{ fontSize: '0.85rem' }}>
+              Sin conexión: puedes usar &quot;Nuevo registro&quot; si tienes bitácoras en caché (última sesión con
+              red). Los guardados quedan en cola y se suben solos al volver en línea.
+            </Alert>
+          </Box>
+        ) : null}
+        {outboxCount > 0 ? (
+          <Box sx={{ px: 2.5, pb: 1 }}>
+            <Alert
+              severity='info'
+              sx={{ fontSize: '0.85rem' }}
+              action={
+                <Stack direction='row' spacing={1} alignItems='center' sx={{ flexShrink: 0 }}>
+                  <Button
+                    color='inherit'
+                    size='small'
+                    disabled={!isOnline || flushRunning || !token}
+                    onClick={() => void runFlushOutbox()}
+                  >
+                    {flushRunning ? 'Sincronizando…' : 'Sincronizar ahora'}
+                  </Button>
+                  <Button
+                    color='inherit'
+                    size='small'
+                    onClick={() => {
+                      void (async () => {
+                        try {
+                          const sql = await exportConductivityOutboxAsSql()
+
+                          downloadTextFile(
+                            `conductividad-cola-${new Date().toISOString().slice(0, 10)}.sql`,
+                            sql,
+                            'application/sql'
+                          )
+                          setSnackbarSeverity('success')
+                          setSnackbar('Archivo .sql de la cola descargado.')
+                        } catch (e) {
+                          setSnackbarSeverity('error')
+                          setSnackbar(getErrorMessage(e, 'No se pudo exportar la cola.'))
+                        }
+                      })()
+                    }}
+                  >
+                    Exportar cola (.sql)
+                  </Button>
+                </Stack>
+              }
+            >
+              Hay {outboxCount} registro{outboxCount === 1 ? '' : 's'} pendiente{outboxCount === 1 ? '' : 's'} de
+              sincronizar (cola FIFO en este dispositivo).
+            </Alert>
+          </Box>
+        ) : null}
         <CardContent>
           <Stack spacing={2} sx={{ mb: 2 }}>
             <Stack direction='row' flexWrap='wrap' useFlexGap spacing={1} alignItems='center'>
@@ -572,6 +776,16 @@ return filteredRecords.slice(start, start + rowsPerPage)
               <Button variant='outlined' startIcon={<Box component='i' className='ri-filter-3-line' />} onClick={handleSearchFilters}>
                 Buscar
               </Button>
+              <Chip
+                size='small'
+                label={isOnline ? 'En línea' : 'Sin conexión'}
+                color={isOnline ? 'success' : 'warning'}
+                variant={isOnline ? 'filled' : 'filled'}
+                sx={{ height: 32 }}
+              />
+              {outboxCount > 0 ? (
+                <Chip size='small' label={`Cola: ${outboxCount}`} color='info' variant='outlined' sx={{ height: 32 }} />
+              ) : null}
               <Tooltip
                 title='Registra una medición de conductividad KCl. Solo necesitas seleccionar el tipo (Alta o Baja) e ingresar el peso en gramos. El sistema calcula automáticamente la conductividad y verifica si está en rango.'
                 arrow
@@ -717,6 +931,11 @@ return (
         <DialogTitle sx={{ borderBottom: '1px solid', borderColor: 'divider', pb: 2 }}>Nuevo registro</DialogTitle>
         <DialogContent sx={{ pt: 3 }}>
           <Stack spacing={2} sx={{ mt: 1 }}>
+            {logbooksFromCache ? (
+              <Alert severity='warning' sx={{ fontSize: '0.82rem' }}>
+                Lista de bitácoras desde caché local (sin red). Verifica que sea la bitácora correcta antes de guardar.
+              </Alert>
+            ) : null}
             <FormControl fullWidth required size='small'>
               <InputLabel id='form-type-label'>Tipo</InputLabel>
               <Select<ConductivityType | ''>

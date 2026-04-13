@@ -11,9 +11,12 @@ import Typography from '@mui/material/Typography'
 import { getEntradaModulo } from '@configs/ccasaModules'
 import { getEntryConfigBySlug } from '@/lib/ccasa/crudFields'
 
-const ConductivityPanel = dynamic(() => import('@/components/ccasa/ConductivityPanel'), {
-  loading: () => <CircularProgress size={28} />
-})
+const ConductivityPanel = dynamic(
+  () => import(/* webpackPrefetch: true */ '@/components/ccasa/ConductivityPanel'),
+  {
+    loading: () => <CircularProgress size={28} />
+  }
+)
 
 const DistilledWaterPanel = dynamic(() => import('@/components/ccasa/DistilledWaterPanel'), {
   loading: () => <CircularProgress size={28} />
