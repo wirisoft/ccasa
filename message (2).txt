@@ -1,0 +1,68 @@
+ Informe — Mejoras PWA: conductividad offline y cola de sincronización
+
+Este documento resume el trabajo realizado en el **frontend** (`ccasaFrontend`) para que el flujo de **conductividad** sea usable con poca o nula conectividad y para que los registros pendientes se **reenvíen al servidor** cuando vuelva la red.
+
+## Contexto
+
+- La aplicación ya era una **PWA** con `manifest.json`, metadatos en el layout raíz y un **service worker** propio (`public/sw.js`) que cachea respuestas GET y ofrece una página genérica “Sin conexión” cuando no hay recurso en caché.
+- El formulario de conductividad dependía siempre del **API** para listar bitácoras y para **crear** registros; sin red, el usuario no podía completar el flujo de forma fiable.
+- Se pidió un comportamiento tipo **cola** (orden de envío), persistencia local y, como referencia de auditoría, poder **exportar** datos en formato compatible con **SQL** (sin sustituir el backend por SQLite en el navegador).
+
+## Objetivos alcanzados
+
+1. **Persistencia local** de intentos de creación de registros de conductividad cuando no hay red o cuando el `fetch` falla por error de red.
+2. **Cola FIFO**: el primer guardado encolado es el primero en enviarse al reconectar.
+3. **Caché de bitácoras** en el cliente tras un listado exitoso, para rellenar el desplegable del formulario cuando la API de bitácoras no responde.
+4. **Indicadores en UI**: estado en línea / sin conexión, contador de pendientes, avisos y acciones manuales de sincronización y exportación.
+5. **Mitigación** de carga del módulo de conductividad mediante **prefetch** del chunk generado por `next/dynamic`.
+
+## Enfoque técnico
+
+### IndexedDB frente a SQLite en el navegador
+
+En el cliente no se incorporó SQLite por WASM (peso y complejidad). Se usó **IndexedDB** como almacén durable:
+
+- Base de datos lógica: `ccasa_conductivity_offline_v1`.
+- Almacén **`conductivity_outbox`**: cola de creaciones pendientes (cada ítem con `localId`, `createdAt`, `payload` alineado con `CreateConductivityRequest`).
+- Almacén **`meta`**: entrada `logbooks_v1` con la última lista de bitácoras y marca de tiempo.
+
+La exportación **`.sql`** genera sentencias `CREATE TABLE` + `INSERT` con el JSON del payload: sirve como **volcado legible / auditoría**, no como motor de ejecución en la app.
+
+### Integración en el panel
+
+En `ConductivityPanel.tsx`:
+
+- Tras cargar bitácoras con éxito, se **persiste** la lista en IndexedDB.
+- Si la petición falla, se intenta **recuperar** la lista desde IndexedDB y se muestra un aviso en el diálogo de “Nuevo registro”.
+- Al **guardar** sin conexión (`navigator.onLine === false`) o ante fallo de red probable (`TypeError` / mensajes típicos de `fetch`), el cuerpo del `POST` se **encola** en lugar de perderse.
+- Al evento **`online`**, al montar con sesión en línea y con el botón **“Sincronizar ahora”**, se ejecuta el vaciado de la cola mediante `POST` consecutivos al endpoint existente `/api/v1/conductivity-records`.
+
+### Service worker y Next.js
+
+No se modificó `public/sw.js` en este entregable. Sigue aplicando la limitación ya conocida: la **primera** visita a una ruta **solo offline** puede no tener el JavaScript necesario en caché. El **prefetch** del chunk de conductividad reduce el riesgo cuando el usuario navega desde otras vistas ya cargadas con red.
+
+## Archivos relevantes
+
+| Archivo | Rol |
+|---------|-----|
+| `ccasaFrontend/src/lib/ccasa/conductivityOfflineDb.ts` | Apertura de BD, encolar, listar FIFO, vaciar cola, caché de bitácoras, exportación `.sql`, descarga de archivo. |
+| `ccasaFrontend/src/components/ccasa/ConductivityPanel.tsx` | UI (chips, alertas, botones), detección online/offline, integración con `apiFetch`, flujo de guardado y sincronización. |
+| `ccasaFrontend/src/app/(dashboard)/entradas/[slug]/EntradaTipoClient.tsx` | Comentario `webpackPrefetch: true` en el `dynamic import` del panel de conductividad. |
+
+## Documentación de pruebas
+
+Los casos de QA detallados (prerrequisitos, pasos y criterios de aceptación) están en **[QA_CONDUCTIVIDAD_OFFLINE_PWA.md](QA_CONDUCTIVIDAD_OFFLINE_PWA.md)**.
+
+## Commit de referencia (frontend)
+
+Implementación registrada en Git: **`171fcba`** — `feat(frontend): cola offline FIFO y caché de bitácoras en conductividad`.
+
+## Posibles evoluciones (fuera de este informe)
+
+- Extender el mismo patrón a otros formularios de entradas.
+- Precache explícito de rutas o chunks en `sw.js` para endurecer el “cold start” offline.
+- Reintentos con backoff o cola de “fallidos” separada de errores 4xx de negocio.
+
+---
+
+*Documento generado para dejar constancia del entregable PWA/conductividad offline en ccasa.*

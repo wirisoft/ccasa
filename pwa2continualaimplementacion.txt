@@ -1,0 +1,335 @@
+You are a Principal Software Architect + Senior Fullstack Engineer working on a Next.js 14 App Router project (TypeScript strict, pnpm, MUI v5, Tailwind CSS) called ccasa-frontend.
+
+The project ALREADY HAS a PWA offline layer implemented for the conductivity module:
+- IndexedDB (idb)
+- FIFO sync queue
+- Sync engine
+- Service Worker
+- Hooks (useConnectivity, useConductivityQueue)
+- Logger
+- Offline page
+- Partial UI integration
+
+⚠️ IMPORTANT:
+This is NOT a greenfield implementation.
+You MUST:
+- NOT remove existing functionality
+- NOT rewrite modules from scratch
+- ONLY extend, harden, and optimize
+- Preserve backward compatibility
+- Follow existing architecture patterns
+
+The current system works, but has critical gaps:
+- Only CREATE is implemented offline
+- No optimistic UI (slow UX)
+- No conflict handling
+- Sync performance can degrade
+- No UI for failed operations
+
+Your task is to EVOLVE this into a production-grade offline-first system optimized for:
+- Speed (UX-first)
+- Reliability (ERP-grade)
+- Observability (debuggable)
+- Full CRUD offline support
+
+---
+
+# OPERATING MODE — TWO PHASES (MANDATORY)
+
+DO NOT MODIFY FILES UNTIL PHASE 1 IS COMPLETE.
+
+═══════════════════════════════════════════════════════════
+PHASE 1 — DEEP ANALYSIS (READ-ONLY)
+═══════════════════════════════════════════════════════════
+
+Spawn 3 subagents:
+
+──────────────────────────────────────────
+Subagent A — Current Offline System Audit
+──────────────────────────────────────────
+Tasks:
+1. Read ALL existing offline-related files:
+   - src/lib/ccasa/conductivityOfflineDb.ts
+   - src/lib/ccasa/conductivitySyncEngine.ts
+   - src/hooks/useConductivityQueue.ts
+   - src/hooks/useConnectivity.ts
+   - src/lib/logger.ts
+   - public/sw.js
+
+2. Document:
+   - Queue structure (OutboxRecord usage)
+   - Sync flow step-by-step
+   - Retry behavior
+   - Error handling
+   - Logging coverage (where logs exist and where missing)
+
+3. Identify:
+   - Where CREATE is implemented
+   - Where UPDATE is missing
+   - Where DELETE is missing
+
+──────────────────────────────────────────
+Subagent B — UI & UX Audit
+──────────────────────────────────────────
+Tasks:
+1. Read:
+   - src/components/ccasa/ConductivityPanel.tsx
+
+2. Document:
+   - How data is loaded
+   - How state is managed
+   - How CREATE works in UI
+   - If optimistic updates exist (likely NO)
+
+3. Identify:
+   - Where to inject optimistic UI
+   - Where UPDATE/DELETE handlers exist or should exist
+
+──────────────────────────────────────────
+Subagent C — Performance & Consistency Audit
+──────────────────────────────────────────
+Tasks:
+1. Analyze:
+   - Sync engine (FIFO strictly sequential)
+   - Potential bottlenecks
+   - Service Worker interaction (202 responses)
+   - Risk of duplication (SW vs frontend enqueue)
+
+2. Identify:
+   - Where batching could be introduced safely
+   - Where conflicts can occur (404, 409)
+   - Where data inconsistency may appear
+
+---
+
+## PHASE 1 OUTPUT
+
+Print:
+
+### CURRENT STATE
+- What works correctly
+- What is missing
+
+### CRITICAL GAPS
+(MUST include)
+- Missing CRUD operations
+- Missing optimistic UI
+- Missing conflict handling
+- Performance risks
+
+### IMPLEMENTATION PLAN
+
+List EXACT files to:
+- MODIFY
+- EXTEND
+- CREATE (only if necessary)
+
+Print:
+"PHASE 1 COMPLETE — awaiting confirmation"
+
+---
+
+═══════════════════════════════════════════════════════════
+PHASE 2 — IMPLEMENTATION (SAFE EVOLUTION)
+═══════════════════════════════════════════════════════════
+
+After confirmation, implement in order:
+
+---
+
+# SECTION 1 — FULL CRUD OFFLINE SUPPORT (MANDATORY)
+
+Extend existing logic (DO NOT replace):
+
+In ConductivityPanel.tsx:
+
+1. UPDATE:
+   - When offline → enqueue:
+     operationType: 'UPDATE'
+     resourceId: record.id
+
+2. DELETE:
+   - When offline → enqueue:
+     operationType: 'DELETE'
+     payload: {}
+     resourceId: record.id
+
+3. Online fallback:
+   - If network fails → fallback to enqueue
+
+4. Add logger:
+   log.info('Offline UPDATE queued', { id })
+   log.info('Offline DELETE queued', { id })
+
+---
+
+# SECTION 2 — OPTIMISTIC UI (CRITICAL FOR SPEED)
+
+Implement immediate UI updates:
+
+CREATE:
+- Add temporary record with:
+  - tempId: `temp-${Date.now()}`
+  - flag: isLocal = true
+
+UPDATE:
+- Update UI immediately before sync
+
+DELETE:
+- Remove from UI immediately
+
+Sync reconciliation:
+- When sync succeeds:
+  - Replace tempId with real ID
+- When sync fails permanently:
+  - revert or mark visually
+
+---
+
+# SECTION 3 — LOCAL STATE CACHE LAYER
+
+Create in-memory cache:
+
+File:
+  src/lib/ccasa/conductivityLocalStore.ts
+
+Responsibilities:
+- Hold current records in memory
+- Sync with IndexedDB
+- Serve UI instantly
+
+Expose:
+- getRecords()
+- setRecords()
+- updateRecord()
+- removeRecord()
+
+---
+
+# SECTION 4 — SYNC ENGINE IMPROVEMENTS
+
+Enhance existing engine:
+
+1. Keep FIFO per record, but:
+   - Allow micro-batching (max 3 concurrent IF different resourceId)
+
+2. Add:
+   - Deduplication logic:
+     - If CREATE + UPDATE → merge
+     - If CREATE + DELETE → drop both
+
+3. Improve logging:
+   log.debug('Processing record', { localId, operationType })
+
+---
+
+# SECTION 5 — CONFLICT HANDLING
+
+When:
+- 404
+- 409
+
+Then:
+- markFailedPermanent
+- ADD UI FLAG
+
+Extend OutboxRecord:
+  conflict?: boolean
+
+---
+
+# SECTION 6 — FAILED OPERATIONS UI
+
+In ConductivityPanel:
+
+Add section:
+- “Errores de sincronización”
+
+Show:
+- failed_permanent records
+
+Actions:
+- Reintentar
+- Eliminar
+
+---
+
+# SECTION 7 — CLEANUP STRATEGY
+
+Extend DB:
+
+1. Auto-clean:
+   - failed_permanent older than 7 days
+   - max queue size (e.g. 1000 records)
+
+2. Log cleanup:
+   log.info('Cleanup executed', { removed })
+
+---
+
+# SECTION 8 — SERVICE WORKER HARDENING
+
+DO NOT REMOVE existing behavior.
+
+Add:
+
+1. Prevent duplicate enqueue:
+   - Respect header: X-Sync-Engine
+
+2. Improve logging:
+   console.warn('[SW] Offline mutation intercepted', url)
+
+---
+
+# SECTION 9 — OBSERVABILITY BOOST
+
+Ensure logger is used in:
+
+- enqueue
+- sync start/end
+- retry
+- failure
+- UI actions
+
+Add:
+- correlationId per operation
+
+---
+
+# SECTION 10 — DOCUMENTATION
+
+Update:
+  IMPLEMENTATION_NOTES_PWA.md
+
+Add:
+
+1. Optimistic UI flow
+2. Conflict resolution flow
+3. Queue deduplication rules
+4. Performance improvements
+5. Debugging guide using logger
+
+---
+
+# GLOBAL RULES
+
+- DO NOT break existing functionality
+- DO NOT remove existing code
+- ONLY extend
+- TypeScript strict
+- No any
+- All logs via logger
+- Spanish UI text
+
+---
+
+# FINAL CHECKLIST
+
+[ ] CRUD offline completo
+[ ] Optimistic UI funcionando
+[ ] Sync engine mejorado
+[ ] Conflicts manejados
+[ ] UI para errores
+[ ] Logger cubre todo
+[ ] Sin errores TypeScript
+[ ] Documentación actualizada

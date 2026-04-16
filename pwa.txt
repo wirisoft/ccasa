@@ -1,0 +1,611 @@
+You are a senior fullstack engineer working on a Next.js 14 App Router project (TypeScript strict, 
+pnpm, MUI v5, Tailwind CSS) called ccasa-frontend. 
+The project has NO existing PWA setup (no service worker, no manifest confirmed yet).
+Your task is to implement a production-grade PWA offline layer for the conductivity module 
+with a FIFO sync queue, structured logging, and full CRUD offline support (GET, POST, PUT/PATCH, DELETE).
+
+---
+
+## OPERATING MODE — TWO PHASES, DO NOT SKIP PHASE 1
+
+Work in two explicit phases. Do NOT write or edit any file until Phase 1 is fully complete, 
+consolidated, and you have listed your exact implementation plan.
+
+═══════════════════════════════════════════════════════════
+PHASE 1 — ANALYSIS (READ-ONLY, zero file modifications)
+═══════════════════════════════════════════════════════════
+
+Spawn three subagents to explore in parallel. Each subagent must read and report findings 
+before Phase 2 begins.
+
+──────────────────────────────────────────
+Subagent A — Conductivity module audit
+──────────────────────────────────────────
+Tasks:
+  1. Find all files related to conductivity:
+       glob: src/**/*onductiv*
+       glob: src/**/*conductiv*
+  2. Read every file found completely.
+  3. For each API call found, document:
+       - HTTP method (GET/POST/PUT/PATCH/DELETE)
+       - Endpoint URL (e.g. /api/v1/conductivity-records)
+       - Request payload shape (TypeScript interface if possible)
+       - Response shape
+       - Where it's called (component name, function name, line)
+  4. Read all shared API utilities: 
+       glob: src/lib/**/*api*
+       glob: src/lib/**/*fetch*
+       glob: src/utils/**/*api*
+     Document the apiFetch/fetcher function signature exactly.
+  5. Find and read all TypeScript types for conductivity:
+       glob: src/types/**/*onductiv*
+       glob: src/**/*onductiv*.types.ts
+  6. Note any existing error handling patterns used in the module.
+
+──────────────────────────────────────────
+Subagent B — PWA & project foundation audit
+──────────────────────────────────────────
+Tasks:
+  1. Check for existing PWA files:
+       - Does public/sw.js exist? Read it fully if so.
+       - Does public/manifest.json or app/manifest.ts exist? Read it.
+       - Does src/app/layout.tsx have PWA meta tags? Read it.
+  2. Check next.config.mjs fully — note any PWA plugins or custom webpack config.
+  3. Check package.json for: next-pwa, @ducanh2912/next-pwa, workbox-*, idb, dexie, localforage.
+  4. Check pnpm-lock.yaml for the same packages (they may be transitive).
+  5. Read src/app/layout.tsx and src/app/(dashboard)/layout.tsx if they exist.
+  6. Note the exact Next.js version (from package.json).
+  7. Check if src/app has a not-found.tsx or offline.tsx page.
+
+──────────────────────────────────────────
+Subagent C — Project patterns audit
+──────────────────────────────────────────
+Tasks:
+  1. Read one complete non-conductivity panel/component to understand code style:
+       glob: src/components/**/*Panel*  (pick the first result)
+  2. Find and read any existing logger or debug utility:
+       glob: src/lib/**/*log*
+       glob: src/utils/**/*log*
+       glob: src/lib/**/*debug*
+  3. Read tsconfig.json fully — note path aliases, strict settings.
+  4. Read tailwind.config.ts — note if MUI and Tailwind coexist via prefix or specific setup.
+  5. Find how hooks are organized:
+       glob: src/hooks/**/*
+     List all existing hooks.
+  6. Check if there is an existing toast/notification system (look for Snackbar, toast, notistack 
+     in existing components).
+
+──────────────────────────────────────────
+PHASE 1 CONSOLIDATION REPORT (required before Phase 2)
+──────────────────────────────────────────
+After all three subagents complete, print a structured report:
+
+  ## CONDUCTIVITY API MAP
+  List every endpoint, method, payload shape, and response shape found.
+
+  ## PWA BASELINE
+  List exactly what exists and what is missing.
+
+  ## PROJECT CONVENTIONS
+  - apiFetch signature
+  - Existing logger (yes/no, what)
+  - Toast system (yes/no, what)
+  - Path alias for @ (e.g. @/ = src/)
+  - Any MUI/Tailwind coexistence rules
+
+  ## IMPLEMENTATION PLAN
+  Exact list of files to CREATE (with path) and files to MODIFY (with path + what changes).
+
+  ## RISKS
+  Any conflicts, missing dependencies, or ambiguities.
+
+Print "PHASE 1 COMPLETE — awaiting confirmation" and wait.
+
+
+═══════════════════════════════════════════════════════════
+PHASE 2 — IMPLEMENTATION (only after Phase 1 confirmed)
+═══════════════════════════════════════════════════════════
+
+Implement sections in order. After each section, run:
+  pnpm exec tsc --noEmit --skipLibCheck
+Fix ALL type errors before moving to the next section.
+
+══════════════════════════
+SECTION 1 — Dependencies
+══════════════════════════
+
+Install missing dependencies:
+  pnpm add idb
+  (only if not already in package.json)
+
+Do NOT install next-pwa or workbox packages — we will write a custom service worker.
+
+══════════════════════════════════════════
+SECTION 2 — Logger
+File: src/lib/logger.ts
+══════════════════════════════════════════
+
+/**
+ * Lightweight structured logger for ccasa-frontend.
+ * Usage: const log = createLogger('MyModule')
+ *        log.info('Record saved', { id: 42 })
+ */
+
+Requirements:
+- Log levels: 'debug' | 'info' | 'warn' | 'error'
+- Each log entry shape:
+    { timestamp: string; level: LogLevel; module: string; message: string; meta?: unknown }
+- In development: console output with prefixes and colors:
+    [DEBUG] [ModuleName] message  → gray
+    [INFO]  [ModuleName] message  → blue  
+    [WARN]  [ModuleName] message  → amber
+    [ERROR] [ModuleName] message  → red
+- In production: silent console + circular buffer of last 200 entries in memory
+- Exports:
+    createLogger(module: string): Logger
+    getLogBuffer(): LogEntry[]   (for debug export, production only)
+    clearLogBuffer(): void
+- Interface Logger: { debug, info, warn, error } — all (message: string, meta?: unknown) => void
+- RULE: No raw console.log anywhere in new code. Always use createLogger.
+
+══════════════════════════════════════════════════════════════
+SECTION 3 — Types
+File: src/types/conductivityOffline.ts
+══════════════════════════════════════════════════════════════
+
+/**
+ * Shared TypeScript types for the conductivity offline/PWA layer.
+ * Import from here across all offline files — single source of truth.
+ */
+
+Define these types (infer shapes from Phase 1 API map findings):
+
+  OperationType = 'CREATE' | 'UPDATE' | 'DELETE'
+  OutboxStatus = 'pending' | 'syncing' | 'failed_retryable' | 'failed_permanent' | 'done'
+
+  OutboxRecord {
+    localId?: number          // IDB auto-increment key
+    operationType: OperationType
+    resourceId: string | null // null for CREATE; real server ID for UPDATE/DELETE
+    payload: unknown          // request body — typed as unknown, cast at usage
+    endpoint: string          // e.g. '/api/v1/conductivity-records'
+    method: 'POST' | 'PUT' | 'PATCH' | 'DELETE'
+    status: OutboxStatus
+    retryCount: number
+    maxRetries: number        // default 5
+    lastError: string | null
+    createdAt: number         // Date.now()
+    updatedAt: number
+  }
+
+  QueueStats {
+    pending: number
+    syncing: number
+    failedRetryable: number
+    failedPermanent: number
+    done: number
+    total: number
+  }
+
+  SyncResult {
+    processed: number
+    succeeded: number
+    failedRetryable: number
+    failedPermanent: number
+    skipped: number
+  }
+
+  LogbookCache {
+    data: unknown[]           // use actual Logbook type from existing types if found in Phase 1
+    fetchedAt: number
+    expiresAt: number         // fetchedAt + 24h in ms
+  }
+
+  // Match the exact signature of the project's apiFetch found in Phase 1
+  ApiFetchFn = (url: string, options?: RequestInit) => Promise<Response>
+
+══════════════════════════════════════════════════════════════
+SECTION 4 — IndexedDB Layer
+File: src/lib/ccasa/conductivityOfflineDb.ts
+══════════════════════════════════════════════════════════════
+
+/**
+ * IndexedDB persistence layer for conductivity offline queue and logbook cache.
+ * Uses the 'idb' library for promise-based access.
+ * DB: ccasa_conductivity_offline_v2
+ *
+ * Stores:
+ *   conductivity_outbox — FIFO queue of pending CRUD operations
+ *   meta               — key-value store for cached API responses
+ */
+
+Use the idb library (import { openDB } from 'idb').
+
+Schema:
+  DB name: 'ccasa_conductivity_offline_v2'
+  Version: 1
+  
+  Store 'conductivity_outbox':
+    keyPath: 'localId'
+    autoIncrement: true
+    Indexes:
+      'by-status'    on 'status'
+      'by-createdAt' on 'createdAt'
+      'by-operation' on 'operationType'
+  
+  Store 'meta':
+    keyPath: 'key'
+
+Export these functions — all must use the logger and try/catch:
+
+  getDB(): Promise<IDBPDatabase>   // singleton, opens once
+
+  enqueue(record: Omit<OutboxRecord, 'localId'|'status'|'retryCount'|'lastError'|'createdAt'|'updatedAt'>): Promise<number>
+    // sets status='pending', retryCount=0, timestamps, returns localId
+
+  getPendingQueue(): Promise<OutboxRecord[]>
+    // returns records where status IN ('pending','failed_retryable'), ordered by createdAt ASC (FIFO)
+
+  markSyncing(localId: number): Promise<void>
+  markDone(localId: number): Promise<void>
+  markFailedRetryable(localId: number, error: string): Promise<void>
+    // increments retryCount; if retryCount >= maxRetries → set status='failed_permanent'
+  markFailedPermanent(localId: number, error: string): Promise<void>
+
+  getQueueStats(): Promise<QueueStats>
+
+  clearDoneRecords(olderThanMs?: number): Promise<number>
+    // deletes done records; if olderThanMs provided, only those older than now-olderThanMs
+
+  saveLogbooksCache(data: unknown[]): Promise<void>
+    // saves with fetchedAt=now, expiresAt=now+86400000
+
+  getLogbooksCache(): Promise<LogbookCache | null>
+    // returns null if not found OR if expiresAt < now (expired)
+
+  exportQueueAsSQL(): Promise<string>
+    // returns a string with:
+    //   CREATE TABLE IF NOT EXISTS conductivity_outbox (...)
+    //   followed by INSERT INTO ... for every non-done record
+    // useful for audit/debugging
+
+  downloadSQLExport(): Promise<void>
+    // calls exportQueueAsSQL(), creates a Blob, triggers browser download
+
+══════════════════════════════════════════════════════════════
+SECTION 5 — Sync Engine
+File: src/lib/ccasa/conductivitySyncEngine.ts
+══════════════════════════════════════════════════════════════
+
+/**
+ * FIFO sync engine for the conductivity offline queue.
+ * Processes one record at a time to preserve operation ordering.
+ * Idempotent: safe to call concurrently (module-level lock).
+ *
+ * Retry policy:
+ *   - Network errors / HTTP 5xx → failed_retryable (retry up to maxRetries)
+ *   - HTTP 4xx                  → failed_permanent (bad data, never retry)
+ *   - HTTP 2xx                  → done
+ */
+
+Requirements:
+- Module-level lock: let isSyncing = false  — if syncQueue called while syncing, return immediately
+- Process records strictly by createdAt ASC (FIFO)
+- For each record:
+    1. markSyncing(localId)
+    2. Call apiFetch(record.endpoint, { method, body: JSON.stringify(payload), headers: {'Content-Type':'application/json'} })
+    3. On success (2xx): markDone
+    4. On 4xx: markFailedPermanent (do not retry — business logic rejection)
+    5. On 5xx or TypeError (network): markFailedRetryable
+    6. After each record: call onProgress(await getQueueStats())
+    7. Log every transition at appropriate level (info/warn/error)
+- After processing all records: clearDoneRecords(olderThanMs: 7 * 24 * 60 * 60 * 1000)
+- Export:
+    syncQueue(apiFetch: ApiFetchFn, onProgress?: (stats: QueueStats) => void): Promise<SyncResult>
+    getIsSyncing(): boolean
+
+══════════════════════════════════════════════════════════════
+SECTION 6 — React Hooks
+Files: 
+  src/hooks/useConnectivity.ts
+  src/hooks/useConductivityQueue.ts
+══════════════════════════════════════════════════════════════
+
+── useConnectivity.ts ──
+
+/**
+ * Tracks browser online/offline state and transition history.
+ */
+
+Returns:
+  {
+    isOnline: boolean
+    wasOffline: boolean        // became true once we go offline; stays true for session
+    connectionChangedAt: Date | null   // timestamp of last transition
+  }
+
+- Initialize from navigator.onLine
+- Listen to window 'online' and 'offline' events
+- Cleanup listeners on unmount
+- Log transitions: log.info('Network online') / log.warn('Network offline')
+
+── useConductivityQueue.ts ──
+
+/**
+ * Manages the conductivity sync queue state and triggers sync on reconnect.
+ * Use this hook in ConductivityPanel to drive the status bar and sync button.
+ */
+
+Signature:
+  useConductivityQueue(apiFetch: ApiFetchFn): {
+    stats: QueueStats | null
+    isSyncing: boolean
+    lastSyncAt: Date | null
+    syncError: string | null
+    triggerSync: () => Promise<void>
+    exportSQL: () => Promise<void>
+  }
+
+Behavior:
+- On mount: load stats from getQueueStats()
+- On mount + when isOnline becomes true: if stats.pending > 0, auto-sync (debounce 1500ms)
+- Every 30s while online: refresh stats (catches records added by other tabs)
+- Use BroadcastChannel('ccasa_conductivity_sync') to:
+    - Post message when sync completes
+    - Listen for messages from other tabs and refresh stats
+- triggerSync: calls syncQueue, updates stats, sets lastSyncAt
+- On any sync error: set syncError string
+
+══════════════════════════════════════════════════════════════
+SECTION 7 — Update ConductivityPanel.tsx
+══════════════════════════════════════════════════════════════
+
+Modify (do NOT rewrite from scratch — preserve all existing logic):
+
+  A. Import and initialize:
+       const log = createLogger('ConductivityPanel')
+       const { isOnline } = useConnectivity()
+       const { stats, isSyncing, triggerSync, exportSQL, syncError } = useConductivityQueue(apiFetch)
+
+  B. Logbook loading (modify existing fetch):
+       - On success → saveLogbooksCache(data)
+       - On failure → try getLogbooksCache(); if hit, use cached data + show MUI Alert warning:
+           "Usando lista de bitácoras guardada. Sin conexión al servidor."
+       - If both fail → existing error state
+
+  C. Form save (modify existing submit handler):
+       Wrap in this offline-aware logic:
+
+       async function saveRecord(payload) {
+         if (!isOnline) {
+           // Offline path — enqueue immediately
+           await enqueue({ operationType: 'CREATE', payload, endpoint: '/api/v1/conductivity-records', method: 'POST', resourceId: null, maxRetries: 5 })
+           showOfflineToast()
+           return
+         }
+         try {
+           // Online path — try real API
+           const res = await apiFetch('/api/v1/conductivity-records', { method: 'POST', body: JSON.stringify(payload) })
+           if (!res.ok) throw new Error(`HTTP ${res.status}`)
+           showSuccessToast()
+         } catch (err) {
+           if (err instanceof TypeError || isNetworkError(err)) {
+             // Network failure while "online" — enqueue as fallback
+             await enqueue({ operationType: 'CREATE', ... })
+             showOfflineToast()
+           } else {
+             throw err  // business error, bubble up
+           }
+         }
+       }
+
+       Apply the same pattern to UPDATE (PUT/PATCH) and DELETE operations.
+       For UPDATE: resourceId = the record's server ID
+       For DELETE: payload = {}, resourceId = the record's server ID, method = 'DELETE'
+
+  D. Status bar — add at the top of the panel (use MUI Box/Chip/IconButton):
+
+       [●] En línea / Sin conexión    [3 pendientes]    [Sincronizar ahora ▶]    [Exportar .sql ⬇]
+
+       - Connectivity dot: green MUI Chip when online, red when offline, yellow (pulsing) when syncing
+       - "N pendientes" badge: only visible when stats.pending > 0
+       - "Sincronizar ahora": disabled when offline OR isSyncing
+       - "Exportar .sql": always enabled if queue has records
+       - If syncError: show MUI Alert error below status bar
+
+  E. Helper:
+       function isNetworkError(err: unknown): boolean {
+         if (err instanceof TypeError) return true
+         if (err instanceof Error) {
+           const msg = err.message.toLowerCase()
+           return msg.includes('network') || msg.includes('fetch') || msg.includes('failed to fetch')
+         }
+         return false
+       }
+
+  F. Use the existing toast/notification system found in Phase 1. 
+     If none exists, use MUI Snackbar. All messages in Spanish.
+
+══════════════════════════════════════════════════════════════
+SECTION 8 — PWA Manifest & Meta Tags
+══════════════════════════════════════════════════════════════
+
+A. Create src/app/manifest.ts (Next.js 14 native manifest):
+
+   import type { MetadataRoute } from 'next'
+   export default function manifest(): MetadataRoute.Manifest {
+     return {
+       name: 'CCASA',
+       short_name: 'CCASA',
+       description: 'Sistema de gestión CCASA',
+       start_url: '/',
+       display: 'standalone',
+       background_color: '#ffffff',
+       theme_color: '#1976d2',      // match MUI primary color from the project's theme
+       orientation: 'portrait-primary',
+       icons: [
+         { src: '/icons/icon-192.png', sizes: '192x192', type: 'image/png' },
+         { src: '/icons/icon-512.png', sizes: '512x512', type: 'image/png' },
+         { src: '/icons/icon-512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
+       ],
+     }
+   }
+
+B. Update src/app/layout.tsx — add inside <head> (or via Next.js metadata export):
+   - viewport themeColor
+   - apple-mobile-web-app-capable
+   - apple-touch-icon
+   - mobile-web-app-capable
+
+C. Check if public/icons/ exists. If not, create a placeholder README inside it:
+   public/icons/README.md with instructions to add icon-192.png and icon-512.png.
+   Do NOT generate or create fake PNG files.
+
+══════════════════════════════════════════════════════════════
+SECTION 9 — Service Worker
+File: public/sw.js
+══════════════════════════════════════════════════════════════
+
+If public/sw.js already exists from Phase 1: extend it without removing existing behavior.
+If it does not exist: create it from scratch.
+
+The service worker must be registered via a client component. 
+Create: src/components/ServiceWorkerRegistrar.tsx
+  'use client'
+  import { useEffect } from 'react'
+  export function ServiceWorkerRegistrar() {
+    useEffect(() => {
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('/sw.js')
+          .then(reg => console.info('[SW] Registered', reg.scope))
+          .catch(err => console.error('[SW] Registration failed', err))
+      }
+    }, [])
+    return null
+  }
+
+Add <ServiceWorkerRegistrar /> to src/app/layout.tsx (client island pattern).
+
+SW content requirements:
+
+  INSTALL event:
+    - Cache shell: '/', '/offline', any found offline fallback page
+    - Log: console.info('[SW ccasa] Installing, caching shell')
+    - self.skipWaiting()
+
+  ACTIVATE event:
+    - Delete old caches (any cache key not in current CACHE_VERSION)
+    - self.clients.claim()
+    - Log: console.info('[SW ccasa] Activated')
+
+  FETCH event — strategy by request type:
+
+    1. Static assets (_next/static/**, *.png, *.ico, *.svg, *.woff2):
+       Strategy: CacheFirst
+       Cache name: 'ccasa-static-v1'
+       Max age: 30 days (check via Date header or just store indefinitely)
+
+    2. GET /api/v1/logbooks (or whatever logbook endpoint found in Phase 1):
+       Strategy: StaleWhileRevalidate
+       Cache name: 'ccasa-api-v1'
+       Serve stale immediately, update cache in background
+
+    3. GET /api/v1/conductivity-records* :
+       Strategy: NetworkFirst with 3s timeout
+       On timeout or offline: serve from cache if available
+       Cache name: 'ccasa-api-v1'
+
+    4. POST/PUT/PATCH/DELETE to /api/* while offline:
+       Return synthetic response:
+         new Response(JSON.stringify({ queued: true, offline: true }), {
+           status: 202,
+           headers: { 'Content-Type': 'application/json', 'X-Offline-Queue': 'true' }
+         })
+       Log: console.warn('[SW ccasa] Offline mutation intercepted:', event.request.url)
+
+    5. Navigation requests (HTML pages) offline:
+       Serve '/' from cache, or '/offline' if cached
+
+  SYNC event (Background Sync API):
+    self.addEventListener('sync', event => {
+      if (event.tag === 'ccasa-conductivity-sync') {
+        event.waitUntil(
+          self.clients.matchAll().then(clients =>
+            clients.forEach(c => c.postMessage({ type: 'TRIGGER_SYNC', tag: event.tag }))
+          )
+        )
+      }
+    })
+
+  MESSAGE event:
+    Listen for { type: 'SKIP_WAITING' } and call self.skipWaiting()
+
+  In useConductivityQueue.ts, add:
+    navigator.serviceWorker?.controller?.postMessage({ type: 'SKIP_WAITING' })
+    when a new SW is detected (navigator.serviceWorker.addEventListener('controllerchange', ...))
+
+══════════════════════════════════════════════════════════════
+SECTION 10 — Register Background Sync on network errors
+══════════════════════════════════════════════════════════════
+
+In conductivitySyncEngine.ts or useConductivityQueue.ts, after a failed fetch:
+  if ('serviceWorker' in navigator && 'SyncManager' in window) {
+    const reg = await navigator.serviceWorker.ready
+    await reg.sync.register('ccasa-conductivity-sync')
+    log.info('Background sync registered')
+  }
+
+══════════════════════════════════════════════════════════════
+SECTION 11 — Offline Status Page (optional but recommended)
+File: src/app/offline/page.tsx
+══════════════════════════════════════════════════════════════
+
+Simple server component:
+  - MUI-styled message: "Sin conexión. Tus cambios se guardan localmente y se enviarán al reconectar."
+  - Link back to home
+
+══════════════════════════════════════════════════════════════
+SECTION 12 — Documentation
+File: IMPLEMENTATION_NOTES_PWA.md (project root)
+══════════════════════════════════════════════════════════════
+
+Write a markdown document with:
+  1. Architecture overview (what each file does, one sentence each)
+  2. Offline CRUD flow diagram (text-based, ASCII or mermaid)
+  3. Sync engine retry policy table
+  4. How to test offline behavior (Chrome DevTools steps)
+  5. Known limitations
+  6. Suggested next steps (other modules to extend, precache improvements, etc.)
+
+═══════════════════════════════════════════════════════════════════
+GLOBAL QUALITY RULES (apply to every file in every section)
+═══════════════════════════════════════════════════════════════════
+
+- TypeScript strict: no `any` without an inline comment explaining why
+- Every async function: try/catch with logger.error on catch
+- Every file: JSDoc block at top with purpose, dependencies, usage example
+- All user-visible strings: Spanish
+- No raw console.log — use createLogger
+- No breaking changes to existing functionality
+- After each section: pnpm exec tsc --noEmit --skipLibCheck → fix all errors before next section
+
+═══════════════════════════════════════════════════════════════════
+FINAL CHECKLIST — verify before declaring done
+═══════════════════════════════════════════════════════════════════
+
+  [ ] pnpm exec tsc --noEmit --skipLibCheck → zero errors
+  [ ] All new files have JSDoc header
+  [ ] Logger used everywhere, no raw console.log in new files
+  [ ] IDB schema has all indexes (by-status, by-createdAt, by-operation)
+  [ ] FIFO order guaranteed (getPendingQueue sorts by createdAt ASC)
+  [ ] Sync engine is idempotent (isSyncing lock)
+  [ ] CREATE, UPDATE, DELETE all enqueue when offline
+  [ ] 4xx → failed_permanent (no retry), 5xx/TypeError → failed_retryable (retry up to maxRetries)
+  [ ] Logbook cache fallback with expiry
+  [ ] SW registered via ServiceWorkerRegistrar client component
+  [ ] SW intercepts offline mutations → 202 response
+  [ ] Manifest at src/app/manifest.ts
+  [ ] Status bar shows: connectivity, pending count, sync button, export button
+  [ ] BroadcastChannel syncs queue state across tabs
+  [ ] IMPLEMENTATION_NOTES_PWA.md written
+  [ ] All user-facing strings in Spanish

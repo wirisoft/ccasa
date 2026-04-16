@@ -1,0 +1,360 @@
+You are a senior fullstack engineer and software architect working on a Next.js 14 App Router project (TypeScript strict, pnpm, MUI v5, Tailwind CSS) called ccasa-frontend.
+
+The project ALREADY HAS an offline-first PWA layer implemented for the conductivity module:
+- IndexedDB queue (outbox)
+- Sync engine (FIFO)
+- Offline CRUD (CREATE, UPDATE, DELETE)
+- Optimistic UI
+- Logger
+- Retry system
+
+Your task is NOT to rewrite anything.
+
+Your task is to HARDEN and EVOLVE the existing implementation to production-grade distributed offline consistency by fixing critical architectural gaps WITHOUT breaking existing behavior.
+
+---
+
+# 🚨 CRITICAL RULES
+
+- DO NOT delete or rewrite existing logic
+- ONLY extend and improve
+- Maintain backward compatibility
+- Respect all existing types and patterns
+- Use existing logger everywhere
+- TypeScript strict must pass at all times
+- Every change must be incremental and safe
+
+---
+
+# OPERATING MODE — TWO PHASES
+
+DO NOT MODIFY FILES UNTIL PHASE 1 IS COMPLETE
+
+═══════════════════════════════════════════════════════════
+PHASE 1 — DEEP AUDIT (READ-ONLY)
+═══════════════════════════════════════════════════════════
+
+Spawn FOUR subagents.
+
+──────────────────────────────────────────
+Subagent A — Queue + Sync Engine audit
+──────────────────────────────────────────
+
+1. Locate:
+   - conductivityOfflineDb.ts
+   - conductivitySyncEngine.ts
+
+2. Analyze:
+   - enqueue logic
+   - queue ordering
+   - retry logic
+   - how records transition states
+   - how CREATE responses are handled
+
+3. Detect:
+   - Is there tempId → serverId reconciliation?
+   - Is there deduplication? (likely NO)
+   - Is FIFO global only? (likely YES)
+   - Is retryCount respected?
+
+──────────────────────────────────────────
+Subagent B — Local Store & UI state audit
+──────────────────────────────────────────
+
+1. Locate:
+   - ConductivityPanel.tsx
+   - any local store (setLocalStoreRecords, getRecords)
+
+2. Analyze:
+   - how server fetch replaces state
+   - how local pending records are stored
+   - how sync completion updates UI
+
+3. Detect:
+   - Is there merge(serverData, localData)? or replace?
+   - Are local unsynced records protected?
+   - Is optimistic UI reversible?
+
+──────────────────────────────────────────
+Subagent C — Operation lifecycle audit
+──────────────────────────────────────────
+
+Trace full lifecycle:
+
+CREATE → UPDATE → DELETE
+
+Check:
+
+- What happens if:
+    CREATE (offline)
+    UPDATE (offline)
+    DELETE (offline)
+
+- Does the system:
+    send all 3? (BAD)
+    collapse operations? (GOOD)
+
+──────────────────────────────────────────
+Subagent D — Failure & retry audit
+──────────────────────────────────────────
+
+1. Analyze:
+   - retry button behavior
+   - retryCount usage
+   - maxRetries enforcement
+
+2. Detect:
+   - Can retry loop infinitely?
+   - Can user override permanently failed ops?
+   - Are failed ops blocking queue?
+
+──────────────────────────────────────────
+PHASE 1 OUTPUT (MANDATORY)
+──────────────────────────────────────────
+
+## CURRENT STATE
+- Queue behavior
+- Sync behavior
+- Store behavior
+
+## CRITICAL GAPS
+Explicitly confirm presence/absence of:
+
+[ ] Temp ID reconciliation
+[ ] Merge strategy
+[ ] Queue deduplication
+[ ] Retry control
+[ ] Per-resource ordering
+[ ] Sync-side state updates
+
+## IMPLEMENTATION PLAN
+List EXACT files to modify and what will be added.
+
+Print:
+"PHASE 1 COMPLETE — awaiting confirmation"
+
+STOP.
+
+---
+
+# PHASE 2 — HARDENING IMPLEMENTATION
+
+After confirmation, implement in order.
+
+---
+
+# SECTION 1 — QUEUE DEDUPLICATION ENGINE
+
+File: src/lib/ccasa/conductivityQueueOptimizer.ts
+
+Purpose:
+Reduce redundant operations BEFORE sync.
+
+Implement:
+
+function optimizeQueue(records: OutboxRecord[]): OutboxRecord[]
+
+Rules:
+
+1. CREATE + DELETE → REMOVE BOTH
+2. CREATE + UPDATE → MERGE INTO CREATE
+3. UPDATE + UPDATE → KEEP LAST
+4. UPDATE + DELETE → KEEP DELETE ONLY
+5. DELETE + CREATE → CONVERT TO UPDATE (edge case)
+
+Grouping:
+- Group by resourceId OR local correlationId
+
+Return optimized queue preserving logical order.
+
+⚠️ MUST log transformations:
+log.info('Queue optimized', { before: n, after: m })
+
+---
+
+# SECTION 2 — PER-RESOURCE ORDERING (NOT GLOBAL FIFO)
+
+Modify:
+conductivitySyncEngine.ts
+
+Change:
+
+FROM:
+global FIFO (createdAt)
+
+TO:
+grouped execution:
+
+- Group by resourceId (or localId for CREATE)
+- Maintain order inside each group
+- Process groups sequentially
+- (optional future: parallel groups)
+
+---
+
+# SECTION 3 — TEMP ID RECONCILIATION (CRITICAL)
+
+When a CREATE succeeds:
+
+You MUST:
+
+1. Extract serverId from response
+2. Map localId → serverId
+
+Implement:
+
+replaceTempId(localId, serverId)
+
+Apply:
+
+- Update local store
+- Update pending queue records referencing that localId
+- Update UI immediately
+
+⚠️ If this is missing → duplicates WILL happen
+
+---
+
+# SECTION 4 — SAFE MERGE STRATEGY (ANTI-DATA LOSS)
+
+Create:
+
+src/lib/ccasa/conductivityMerge.ts
+
+function mergeServerWithLocal(serverData, localPendingRecords)
+
+Rules:
+
+- Server data NEVER overwrites:
+    local pending CREATE
+    local pending UPDATE
+
+- Local pending wins over server
+
+- Deleted locally → must not reappear from server
+
+---
+
+Modify:
+
+ConductivityPanel.tsx
+
+REPLACE:
+
+setRecords(serverData)
+
+WITH:
+
+setRecords(mergeServerWithLocal(serverData, localPendingRecords))
+
+---
+
+# SECTION 5 — RETRY CONTROL HARDENING
+
+Modify retry logic:
+
+if (retryCount >= maxRetries) {
+   status = 'failed_permanent'
+   disable retry button
+}
+
+Add:
+
+Manual override:
+"Reintentar forzado"
+
+This resets retryCount = 0 ONLY if user confirms
+
+---
+
+# SECTION 6 — SYNC WITHOUT FULL REFETCH
+
+🚫 REMOVE RELIANCE ON:
+sync → fetchRecords()
+
+✅ INSTEAD:
+
+Sync engine MUST:
+
+- Return applied changes
+- Update local store directly
+
+Example:
+
+onSuccess:
+  applyServerResponseToStore()
+
+Only fallback to fetch if:
+- unknown inconsistency
+- version mismatch
+
+---
+
+# SECTION 7 — FAILED OPERATIONS ISOLATION
+
+Ensure:
+
+- failed_permanent does NOT block queue
+- failed_retryable stays in queue
+
+Queue execution must SKIP:
+- failed_permanent
+
+---
+
+# SECTION 8 — LOGGING (CRITICAL FOR DEBUGGING)
+
+Add logs for:
+
+- Queue optimization
+- ID reconciliation
+- Merge decisions
+- Retry decisions
+- Sync grouping
+
+Example:
+
+log.debug('Merging server + local', {...})
+log.warn('Retry limit reached', {...})
+log.info('TempId replaced', {...})
+
+---
+
+# SECTION 9 — DOCUMENTATION
+
+Update:
+
+IMPLEMENTATION_NOTES_PWA.md
+
+Add sections:
+
+1. Queue optimization rules
+2. ID reconciliation flow
+3. Merge strategy
+4. Retry lifecycle
+5. Failure isolation
+6. Sync architecture (before vs after)
+
+---
+
+# GLOBAL RULES
+
+- No breaking changes
+- No removal of existing features
+- Strict typing
+- Full logger usage
+- Every function must have try/catch
+- Spanish UI messages
+
+---
+
+# FINAL CHECKLIST
+
+[ ] No TypeScript errors
+[ ] No data loss on sync
+[ ] No duplicate records after sync
+[ ] Queue optimized correctly
+[ ] Temp IDs replaced correctly
+[ ] Retry is controlled
+[ ] Sync does NOT require full refetch
+[ ] Logs clearly show system behavior
