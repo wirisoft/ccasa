@@ -9,6 +9,7 @@
 - **[QA_CONDUCTIVIDAD_OFFLINE_PWA.md](QA_CONDUCTIVIDAD_OFFLINE_PWA.md)** — Casos de prueba (QA) para la cola offline FIFO, caché de bitácoras y sincronización PWA del formulario de conductividad.
 - **[INFORME_PWA_CONDUCTIVIDAD_OFFLINE.md](INFORME_PWA_CONDUCTIVIDAD_OFFLINE.md)** — Informe del entregable: objetivos, decisiones técnicas, archivos tocados y enlace al plan de QA.
 - **[HARDENING_PWA_ANTI_DUPLICADOS.md](HARDENING_PWA_ANTI_DUPLICADOS.md)** — Hardening anti-duplicados: queue optimizer, reconciliación tempId→serverId, merge strategy y recuperación de registros atascados.
+- **[QA_HARDENING_ANTI_DUPLICADOS.md](QA_HARDENING_ANTI_DUPLICADOS.md)** — Plan de QA (17 test cases) para validar idempotencia, optimización de cola, merge, recuperación de registros y escenarios edge.
 
 El listado hoja por hoja de los 28 Excel analizados está en la raíz del proyecto: `excel_analysis_summary.md` (generado con `analyze_excel.py` y `excel_summary.py`).
 
