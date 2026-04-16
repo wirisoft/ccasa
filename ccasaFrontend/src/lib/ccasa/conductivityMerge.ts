@@ -41,9 +41,11 @@ export function mergeServerWithLocal(
 
     for (const op of pendingQueue) {
       if (!op.resourceId) continue
+
       if (op.operationType === 'DELETE') {
         pendingDeletes.add(op.resourceId)
       }
+
       if (op.operationType === 'UPDATE') {
         pendingUpdates.set(op.resourceId, op)
       }
@@ -62,6 +64,7 @@ export function mergeServerWithLocal(
       if (pendingUpdates.has(resId)) {
         const updateOp = pendingUpdates.get(resId)!
         const localChanges = updateOp.payload as Record<string, unknown>
+
         merged.push({
           ...serverRec,
           ...localChanges,
@@ -91,6 +94,7 @@ export function mergeServerWithLocal(
     return merged
   } catch (err) {
     log.error('Error en merge — fallback a servidor + locales', err)
+
     return [
       ...serverRecords.map(r => ({ ...r, isLocal: false, tempId: undefined } as LocalConductivityRecord)),
       ...localPending,

@@ -38,6 +38,7 @@ import {
 } from '@/lib/ccasa/conductivityOfflineDb'
 import { confirmLocalRecord } from '@/lib/ccasa/conductivityLocalStore'
 import { optimizeQueue } from '@/lib/ccasa/conductivityQueueOptimizer'
+import type { ConductivityRecord } from '@/lib/ccasa/types'
 import type { ApiFetchFn, OutboxRecord, QueueStats, SyncResult } from '@/types/conductivityOffline'
 
 const log = createLogger('conductivitySyncEngine')
@@ -158,23 +159,23 @@ export async function syncQueue(
   }
 
   try {
-    // Recover records stuck in 'syncing' from a previous crash
     const recovered = await recoverStuckSyncing()
+
     if (recovered > 0) {
       log.info(`Recuperados ${recovered} registro(s) atascados en syncing`, { correlationId })
     }
 
     const rawQueue = await getPendingQueue()
+
     log.info(`Cola pendiente: ${rawQueue.length} elemento(s)`, { correlationId })
 
-    // Optimize queue: collapse redundant ops (superset of old deduplicateQueue)
     const { optimized: deduped, dropped } = optimizeQueue(rawQueue)
 
-    // Remove dropped records from IDB (they were cancelled by optimization)
     for (const localId of dropped) {
       await removeQueueItem(localId).catch(err =>
         log.error('Error al eliminar registro optimizado', { localId, err })
       )
+
       result.skipped++
     }
 
@@ -225,20 +226,22 @@ export async function syncQueue(
             operationType: record.operationType,
           })
 
-          // TempId → serverId reconciliation for CREATE operations
           if (record.operationType === 'CREATE' && record.localObjectId) {
             try {
               const text = await res.text()
+
               if (text) {
                 const serverRecord = JSON.parse(text) as Record<string, unknown>
                 const serverId = serverRecord.conductivityId
+
                 if (serverId != null) {
                   confirmLocalRecord(
                     record.localObjectId,
-                    serverRecord as unknown as import('@/lib/ccasa/types').ConductivityRecord
+                    serverRecord as unknown as ConductivityRecord
                   )
 
                   const serverIdStr = String(serverId)
+
                   await updateQueueResourceId(
                     record.localObjectId,
                     serverIdStr,

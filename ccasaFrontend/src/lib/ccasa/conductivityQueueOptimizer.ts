@@ -31,6 +31,7 @@ const log = createLogger('conductivityQueueOptimizer')
 function getGroupKey(record: OutboxRecord): string {
   if (record.resourceId) return `res:${record.resourceId}`
   if (record.localObjectId) return `local:${record.localObjectId}`
+
   return `unique:${record.localId ?? record.createdAt}`
 }
 
@@ -41,14 +42,18 @@ function getGroupKey(record: OutboxRecord): string {
  * The returned `optimized` array preserves chronological order.
  */
 export function optimizeQueue(queue: OutboxRecord[]): OptimizeResult {
-  if (queue.length <= 1) return { optimized: [...queue], dropped: [] }
+  if (queue.length <= 1) {
+    return { optimized: [...queue], dropped: [] }
+  }
 
   const dropped: number[] = []
 
   const groups = new Map<string, OutboxRecord[]>()
+
   for (const record of queue) {
     const key = getGroupKey(record)
     const group = groups.get(key) ?? []
+
     group.push(record)
     groups.set(key, group)
   }
@@ -72,6 +77,7 @@ export function optimizeQueue(queue: OutboxRecord[]): OptimizeResult {
       for (const r of group) {
         if (r.localId !== undefined) dropped.push(r.localId)
       }
+
       log.info('Optimización: CREATE+DELETE cancelados', {
         groupKey,
         createId: creates[0].localId,
@@ -93,11 +99,13 @@ export function optimizeQueue(queue: OutboxRecord[]): OptimizeResult {
           ...(lastUpdate.payload as Record<string, unknown>),
         },
       }
+
       optimized.push(merged)
 
       for (const r of group) {
         if (r !== create && r.localId !== undefined) dropped.push(r.localId)
       }
+
       log.info('Optimización: CREATE fusionado con UPDATE(s)', {
         groupKey,
         createId: create.localId,
@@ -109,11 +117,13 @@ export function optimizeQueue(queue: OutboxRecord[]): OptimizeResult {
     // Rule 4: UPDATE(s) + DELETE → keep only the last DELETE
     if (updates.length > 0 && deletes.length > 0 && creates.length === 0) {
       const lastDelete = deletes[deletes.length - 1]
+
       optimized.push(lastDelete)
 
       for (const r of group) {
         if (r !== lastDelete && r.localId !== undefined) dropped.push(r.localId)
       }
+
       log.info('Optimización: UPDATE(s)+DELETE reducidos a DELETE', {
         groupKey,
         keptDeleteId: lastDelete.localId,
@@ -125,11 +135,13 @@ export function optimizeQueue(queue: OutboxRecord[]): OptimizeResult {
     // Rule 3: multiple UPDATEs → keep only the last one
     if (updates.length > 1 && deletes.length === 0) {
       const lastUpdate = updates[updates.length - 1]
+
       optimized.push(lastUpdate)
 
       for (const r of group) {
         if (r !== lastUpdate && r.localId !== undefined) dropped.push(r.localId)
       }
+
       log.info('Optimización: múltiples UPDATE reducidos a uno', {
         groupKey,
         keptId: lastUpdate.localId,
@@ -138,11 +150,9 @@ export function optimizeQueue(queue: OutboxRecord[]): OptimizeResult {
       continue
     }
 
-    // No rule matched — keep all records in this group
     optimized.push(...group)
   }
 
-  // Pass 2: exact duplicate CREATEs (same endpoint + serialized payload) → keep oldest
   const createSignatures = new Map<string, number>()
   const duplicateCreateIds: number[] = []
 
@@ -152,6 +162,7 @@ export function optimizeQueue(queue: OutboxRecord[]): OptimizeResult {
 
     const sig = `${r.endpoint}|${JSON.stringify(r.payload)}`
     const existing = createSignatures.get(sig)
+
     if (existing !== undefined) {
       duplicateCreateIds.push(r.localId)
       dropped.push(r.localId)

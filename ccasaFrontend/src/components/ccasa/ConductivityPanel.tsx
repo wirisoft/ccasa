@@ -348,6 +348,7 @@ return
       const pendingQueue = await getPendingQueue()
       const localPending = getLocalPendingRecords()
       const merged = mergeServerWithLocal(list, localPending, pendingQueue)
+
       setMergedStore(merged)
       setRecords(getRecords())
     } catch (e) {

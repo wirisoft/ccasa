@@ -435,6 +435,7 @@ export async function updateQueueResourceId(
   try {
     const db = await getDB()
     const all = (await db.getAll(STORE_OUTBOX)) as OutboxRecord[]
+
     const targets = all.filter(
       r =>
         r.localObjectId === localObjectId &&
@@ -442,9 +443,13 @@ export async function updateQueueResourceId(
         r.operationType !== 'CREATE'
     )
 
-    if (targets.length === 0) return 0
+    if (targets.length === 0) {
+
+      return 0
+    }
 
     const tx = db.transaction(STORE_OUTBOX, 'readwrite')
+
     for (const r of targets) {
       await tx.store.put({
         ...r,
@@ -453,6 +458,7 @@ export async function updateQueueResourceId(
         updatedAt: Date.now(),
       })
     }
+
     await tx.done
 
     log.info('ResourceId actualizado en cola pendiente', {
@@ -464,6 +470,7 @@ export async function updateQueueResourceId(
     return targets.length
   } catch (err) {
     log.error('Error al actualizar resourceId en cola', { localObjectId, err })
+
     return 0
   }
 }
@@ -482,9 +489,13 @@ export async function recoverStuckSyncing(maxAgeMs = 60_000): Promise<number> {
     const cutoff = Date.now() - maxAgeMs
     const stuck = all.filter(r => r.status === 'syncing' && r.updatedAt < cutoff)
 
-    if (stuck.length === 0) return 0
+    if (stuck.length === 0) {
+
+      return 0
+    }
 
     const tx = db.transaction(STORE_OUTBOX, 'readwrite')
+
     for (const r of stuck) {
       await tx.store.put({
         ...r,
@@ -492,6 +503,7 @@ export async function recoverStuckSyncing(maxAgeMs = 60_000): Promise<number> {
         updatedAt: Date.now(),
       })
     }
+
     await tx.done
 
     log.warn('Registros atascados en syncing recuperados', {
@@ -502,6 +514,7 @@ export async function recoverStuckSyncing(maxAgeMs = 60_000): Promise<number> {
     return stuck.length
   } catch (err) {
     log.error('Error al recuperar registros syncing atascados', err)
+
     return 0
   }
 }
