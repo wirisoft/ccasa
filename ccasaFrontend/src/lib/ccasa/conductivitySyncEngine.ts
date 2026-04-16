@@ -32,8 +32,12 @@ import {
   markFailedPermanent,
   markFailedRetryable,
   markSyncing,
+  recoverStuckSyncing,
   removeQueueItem,
+  updateQueueResourceId,
 } from '@/lib/ccasa/conductivityOfflineDb'
+import { confirmLocalRecord } from '@/lib/ccasa/conductivityLocalStore'
+import { optimizeQueue } from '@/lib/ccasa/conductivityQueueOptimizer'
 import type { ApiFetchFn, OutboxRecord, QueueStats, SyncResult } from '@/types/conductivityOffline'
 
 const log = createLogger('conductivitySyncEngine')
@@ -154,22 +158,28 @@ export async function syncQueue(
   }
 
   try {
+    // Recover records stuck in 'syncing' from a previous crash
+    const recovered = await recoverStuckSyncing()
+    if (recovered > 0) {
+      log.info(`Recuperados ${recovered} registro(s) atascados en syncing`, { correlationId })
+    }
+
     const rawQueue = await getPendingQueue()
     log.info(`Cola pendiente: ${rawQueue.length} elemento(s)`, { correlationId })
 
-    // Dedup before processing
-    const { deduped, dropped } = deduplicateQueue(rawQueue)
+    // Optimize queue: collapse redundant ops (superset of old deduplicateQueue)
+    const { optimized: deduped, dropped } = optimizeQueue(rawQueue)
 
-    // Remove dropped records from IDB (they were cancelled by dedup)
+    // Remove dropped records from IDB (they were cancelled by optimization)
     for (const localId of dropped) {
       await removeQueueItem(localId).catch(err =>
-        log.error('Error al eliminar registro deduplicado', { localId, err })
+        log.error('Error al eliminar registro optimizado', { localId, err })
       )
       result.skipped++
     }
 
     if (dropped.length > 0) {
-      log.info(`Deduplicación: ${dropped.length} registro(s) eliminado(s)`, { correlationId })
+      log.info(`Optimización: ${dropped.length} registro(s) eliminado(s)`, { correlationId })
     }
 
     for (const record of deduped) {
@@ -214,6 +224,41 @@ export async function syncQueue(
             status: res.status,
             operationType: record.operationType,
           })
+
+          // TempId → serverId reconciliation for CREATE operations
+          if (record.operationType === 'CREATE' && record.localObjectId) {
+            try {
+              const text = await res.text()
+              if (text) {
+                const serverRecord = JSON.parse(text) as Record<string, unknown>
+                const serverId = serverRecord.conductivityId
+                if (serverId != null) {
+                  confirmLocalRecord(
+                    record.localObjectId,
+                    serverRecord as unknown as import('@/lib/ccasa/types').ConductivityRecord
+                  )
+
+                  const serverIdStr = String(serverId)
+                  await updateQueueResourceId(
+                    record.localObjectId,
+                    serverIdStr,
+                    record.endpoint
+                  )
+
+                  log.info('TempId reconciliado con servidor', {
+                    correlationId,
+                    localObjectId: record.localObjectId,
+                    serverId,
+                  })
+                }
+              }
+            } catch (parseErr) {
+              log.debug('No se pudo parsear respuesta CREATE para reconciliación', {
+                localId,
+                parseErr,
+              })
+            }
+          }
         } else if (res.status === 404 || res.status === 409) {
           // Conflict — permanently failed, mark with conflict flag
           const errorText = await res.text().catch(() => `HTTP ${res.status}`)

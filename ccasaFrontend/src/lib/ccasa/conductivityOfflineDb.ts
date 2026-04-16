@@ -419,6 +419,93 @@ export async function cleanupQueue(
   }
 }
 
+/**
+ * Updates the resourceId and endpoint of pending queue records that share a
+ * given localObjectId. Used after a CREATE succeeds and the server assigns a
+ * real ID — any subsequent UPDATE/DELETE enqueued for the same local object
+ * must target the real server resource instead of the temp placeholder.
+ *
+ * @returns Number of records updated
+ */
+export async function updateQueueResourceId(
+  localObjectId: string,
+  newResourceId: string,
+  newEndpointBase: string
+): Promise<number> {
+  try {
+    const db = await getDB()
+    const all = (await db.getAll(STORE_OUTBOX)) as OutboxRecord[]
+    const targets = all.filter(
+      r =>
+        r.localObjectId === localObjectId &&
+        r.status !== 'done' &&
+        r.operationType !== 'CREATE'
+    )
+
+    if (targets.length === 0) return 0
+
+    const tx = db.transaction(STORE_OUTBOX, 'readwrite')
+    for (const r of targets) {
+      await tx.store.put({
+        ...r,
+        resourceId: newResourceId,
+        endpoint: `${newEndpointBase}/${newResourceId}`,
+        updatedAt: Date.now(),
+      })
+    }
+    await tx.done
+
+    log.info('ResourceId actualizado en cola pendiente', {
+      localObjectId,
+      newResourceId,
+      updatedCount: targets.length,
+    })
+
+    return targets.length
+  } catch (err) {
+    log.error('Error al actualizar resourceId en cola', { localObjectId, err })
+    return 0
+  }
+}
+
+/**
+ * Recovers records stuck in 'syncing' status (e.g. app crashed mid-sync).
+ * Resets them to 'pending' so they are retried on the next sync run.
+ *
+ * @param maxAgeMs  Only recover records whose updatedAt is older than now - maxAgeMs (default 60s)
+ * @returns Number of records recovered
+ */
+export async function recoverStuckSyncing(maxAgeMs = 60_000): Promise<number> {
+  try {
+    const db = await getDB()
+    const all = (await db.getAll(STORE_OUTBOX)) as OutboxRecord[]
+    const cutoff = Date.now() - maxAgeMs
+    const stuck = all.filter(r => r.status === 'syncing' && r.updatedAt < cutoff)
+
+    if (stuck.length === 0) return 0
+
+    const tx = db.transaction(STORE_OUTBOX, 'readwrite')
+    for (const r of stuck) {
+      await tx.store.put({
+        ...r,
+        status: 'pending',
+        updatedAt: Date.now(),
+      })
+    }
+    await tx.done
+
+    log.warn('Registros atascados en syncing recuperados', {
+      count: stuck.length,
+      localIds: stuck.map(r => r.localId),
+    })
+
+    return stuck.length
+  } catch (err) {
+    log.error('Error al recuperar registros syncing atascados', err)
+    return 0
+  }
+}
+
 /** Escapes single quotes for SQL string literals. */
 function sqlQuoteString(s: string): string {
   return `'${s.replace(/'/g, "''")}'`

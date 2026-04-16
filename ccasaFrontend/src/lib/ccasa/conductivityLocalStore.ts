@@ -111,3 +111,27 @@ export function clearLocalRecords(): void {
   store = store.filter(r => !r.isLocal)
   log.debug('Registros locales limpiados', { removed: before - store.length })
 }
+
+/** Returns only the records marked as local (isLocal=true, pending sync). */
+export function getLocalPendingRecords(): LocalConductivityRecord[] {
+  return store.filter(r => r.isLocal === true)
+}
+
+/** Removes a local record by its tempId (used after sync confirms the CREATE). */
+export function removeLocalByTempId(tempId: string): void {
+  const before = store.length
+  store = store.filter(r => r.tempId !== tempId)
+  if (store.length < before) {
+    log.debug('Registro local eliminado por tempId', { tempId })
+  }
+}
+
+/**
+ * Replaces the entire store with an already-merged list of records.
+ * Unlike setRecords(), this does NOT re-append isLocal records —
+ * the caller is responsible for including them in the input.
+ */
+export function setMergedStore(records: LocalConductivityRecord[]): void {
+  store = [...records]
+  log.debug('Store reemplazado con merge', { total: store.length })
+}

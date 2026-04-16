@@ -79,21 +79,67 @@ User action (form submit)
 
 ---
 
+## Queue Optimization (anti-duplicados)
+
+Before processing the outbox, the sync engine runs `optimizeQueue()` (`conductivityQueueOptimizer.ts`) which collapses redundant operations on the same resource:
+
+| Input | Output |
+|-------|--------|
+| CREATE + DELETE | Both removed (cancel out) |
+| CREATE + UPDATE | Merged into a single CREATE with latest payload |
+| UPDATE + UPDATE | Keep last UPDATE only |
+| UPDATE + DELETE | Keep DELETE only |
+| Duplicate CREATEs (same endpoint + payload) | Keep oldest |
+
+Grouping key: `resource-${serverId}` for server records, `tempId` for local creates.
+
+---
+
+## TempId → ServerId Reconciliation
+
+When a CREATE succeeds (HTTP 2xx), the sync engine:
+
+1. Reads the response body to extract the server-assigned `conductivityId`.
+2. Calls `confirmLocalRecord(tempId, serverRecord)` to replace the optimistic row in the local store.
+3. Calls `updateQueueResourceId(localObjectId, serverId, endpoint)` to fix any pending operations referencing the same local object.
+
+This prevents the UI from showing duplicate rows (optimistic + server-confirmed) after sync.
+
+---
+
+## Merge Strategy (anti data-loss)
+
+`mergeServerWithLocal()` (`conductivityMerge.ts`) runs on every `fetchRecords()`:
+
+- Server records with a pending DELETE → **excluded** from the result.
+- Server records with a pending UPDATE → **local changes applied** over server data.
+- Local CREATE records (isLocal=true) → **preserved** as-is.
+
+This replaces the old direct `setRecords(serverData)` which could overwrite pending local changes.
+
+---
+
+## Stuck Syncing Recovery
+
+`recoverStuckSyncing()` runs at the start of every `syncQueue()` call. Records left in `syncing` status for more than 60 seconds (e.g. app crash mid-sync) are reset to `pending`.
+
+---
+
 ## Known Limitations
 
-- **Only CREATE operations** are currently integrated in the UI offline path. UPDATE and DELETE need the same `enqueue()` pattern added to their respective handlers when those features are built.
+- **Full CRUD offline** — CREATE, UPDATE, and DELETE are all supported offline with optimistic UI and enqueue.
 - **Background Sync API** (`SyncManager`) is only available in Chromium-based browsers; Safari and Firefox silently skip background sync registration.
 - **Service worker** only registers in `production` mode (see `ServiceWorkerRegistrar.tsx`). In development, offline behaviour relies on `navigator.onLine` detection in the app code only.
 - **IndexedDB v1 data** (from the old `ccasa_conductivity_offline_v1` database) is not migrated. Any records pending in v1 before this deployment will remain in the old DB until the user clears site data. They can be recovered manually via the v1 export SQL button.
 - **Single Snackbar** — the notification system shows one message at a time; rapid successive events overwrite each other.
+- **Server-side idempotency** — the sync engine sends `X-Correlation-Id` on every request. For full idempotency, the backend should validate this header and avoid re-processing duplicate requests.
 
 ---
 
 ## Suggested Next Steps
 
-1. **Extend to other modules** — apply the same `enqueue()` + `useConductivityQueue` pattern to DistilledWaterPanel and other panels that write data.
-2. **Precache shell** — add the offline page and critical JS chunks to the SW install cache so the app loads instantly on repeat visits.
-3. **Conflict resolution** — if a record is deleted server-side between enqueue and sync, the sync returns 404 (permanent failure). Add UI to review `failed_permanent` records.
-4. **Export recovery UI** — build an admin view that reads `failed_permanent` entries from IndexedDB and lets supervisors re-submit or dismiss them.
-5. **Push notifications** — use the Push API to notify users on other devices when the queue syncs.
-6. **Periodic Background Sync** — register `periodicSync` for browsers that support it, to sync even when the app is closed.
+1. **Server-side idempotency** — validate `X-Correlation-Id` in the backend to reject duplicate POST requests.
+2. **Extend to other modules** — apply the same `enqueue()` + `useConductivityQueue` pattern to DistilledWaterPanel and other panels that write data.
+3. **Precache shell** — add the offline page and critical JS chunks to the SW install cache so the app loads instantly on repeat visits.
+4. **Push notifications** — use the Push API to notify users on other devices when the queue syncs.
+5. **Periodic Background Sync** — register `periodicSync` for browsers that support it, to sync even when the app is closed.

@@ -100,6 +100,25 @@ export interface CleanupResult {
 }
 
 /**
+ * Describes a change applied by the sync engine after a successful operation.
+ * Used for tempId reconciliation and direct store updates.
+ */
+export interface SyncAppliedChange {
+  localId: number
+  operationType: OperationType
+  resourceId: string | null
+  /** The server-assigned record returned after a successful CREATE. */
+  serverRecord?: Record<string, unknown>
+  localObjectId?: string
+}
+
+/** Result of the queue optimizer — optimized records + IDs to remove from IDB. */
+export interface OptimizeResult {
+  optimized: OutboxRecord[]
+  dropped: number[]
+}
+
+/**
  * Extends ConductivityRecord with local-only fields for optimistic UI.
  * Records with isLocal=true are shown immediately in the table before
  * the server confirms them. They are replaced when fetchRecords runs.

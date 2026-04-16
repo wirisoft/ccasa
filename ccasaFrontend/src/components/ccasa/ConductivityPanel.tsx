@@ -48,15 +48,18 @@ import {
 import {
   enqueue,
   getLogbooksCache,
+  getPendingQueue,
   saveLogbooksCache
 } from '@/lib/ccasa/conductivityOfflineDb'
 import {
   addLocalRecord,
+  getLocalPendingRecords,
   getRecords,
   removeRecord,
-  setRecords as setLocalStoreRecords,
+  setMergedStore,
   updateRecord as updateLocalRecord,
 } from '@/lib/ccasa/conductivityLocalStore'
+import { mergeServerWithLocal } from '@/lib/ccasa/conductivityMerge'
 import { CONDUCTIVITY_TYPE_LABELS } from '@/lib/ccasa/crudDisplay'
 import { formatDateDdMmYyyy } from '@/lib/ccasa/formatters'
 import type {
@@ -342,7 +345,10 @@ return
       const data = await apiFetch<ConductivityRecord[]>(url)
       const list = Array.isArray(data) ? data : []
 
-      setLocalStoreRecords(list)
+      const pendingQueue = await getPendingQueue()
+      const localPending = getLocalPendingRecords()
+      const merged = mergeServerWithLocal(list, localPending, pendingQueue)
+      setMergedStore(merged)
       setRecords(getRecords())
     } catch (e) {
       setRecords([])
@@ -491,10 +497,51 @@ return filteredRecords.slice(start, start + rowsPerPage)
       logbookId: Number(formLogbookId)
     }
 
-    const localObjectId = `create-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`
+    const tempId = `temp-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`
+    const localObjectId = tempId
     const correlationId = newEnqueueCorrelationId()
 
-    const finishQueuedSuccess = async () => {
+    const optimisticRecord = {
+      conductivityId: -Date.now(),
+      entryId: null,
+      displayFolio: null,
+      type: formType,
+      weightGrams: weightNum,
+      referenceUScm: null,
+      referenceMol: null,
+      calculatedMol: null,
+      referenceStandardUScm: null,
+      calculatedValue: null,
+      inRange: null,
+      status: 'Draft' as const,
+      recordedAt: new Date().toISOString(),
+      preparationTime: formPreparationTime.trim() || null,
+      observation: formObservation.trim() || null,
+      createdByUserId: null,
+      createdByName: null,
+      createdByNomenclature: null,
+      reviewerUserId: null,
+      reviewerName: null,
+      reviewerNomenclature: null,
+      reviewedAt: null,
+      isLocal: true as const,
+      tempId,
+    }
+
+    const enqueueCreate = async () => {
+      await enqueue({
+        operationType: 'CREATE',
+        resourceId: null,
+        payload: body,
+        endpoint: CONDUCTIVITY_API,
+        method: 'POST',
+        maxRetries: 5,
+        localObjectId,
+        correlationId,
+      })
+    }
+
+    const finishQueuedSuccess = () => {
       setFormError(null)
       setDialogOpen(false)
       setSnackbarSeverity('success')
@@ -506,48 +553,10 @@ return filteredRecords.slice(start, start + rowsPerPage)
 
     try {
       if (!isOnline) {
-        // Offline path — enqueue + optimistic UI
-        const tempId = `temp-${Date.now()}`
-        addLocalRecord({
-          conductivityId: -Date.now(),
-          entryId: null,
-          displayFolio: null,
-          type: formType,
-          weightGrams: weightNum,
-          referenceUScm: null,
-          referenceMol: null,
-          calculatedMol: null,
-          referenceStandardUScm: null,
-          calculatedValue: null,
-          inRange: null,
-          status: 'Draft',
-          recordedAt: new Date().toISOString(),
-          preparationTime: formPreparationTime.trim() || null,
-          observation: formObservation.trim() || null,
-          createdByUserId: null,
-          createdByName: null,
-          createdByNomenclature: null,
-          reviewerUserId: null,
-          reviewerName: null,
-          reviewerNomenclature: null,
-          reviewedAt: null,
-          isLocal: true,
-          tempId,
-        })
+        addLocalRecord(optimisticRecord)
         setRecords(getRecords())
-
-        await enqueue({
-          operationType: 'CREATE',
-          resourceId: null,
-          payload: body,
-          endpoint: CONDUCTIVITY_API,
-          method: 'POST',
-          maxRetries: 5,
-          localObjectId,
-          correlationId,
-        })
-        await finishQueuedSuccess()
-
+        await enqueueCreate()
+        finishQueuedSuccess()
         return
       }
 
@@ -564,55 +573,17 @@ return filteredRecords.slice(start, start + rowsPerPage)
       void fetchRecords()
     } catch (e) {
       if (isNetworkError(e)) {
-        // Network failure while "online" — enqueue as fallback
         try {
-          const tempId = `temp-${Date.now()}`
-          addLocalRecord({
-            conductivityId: -Date.now(),
-            entryId: null,
-            displayFolio: null,
-            type: formType,
-            weightGrams: weightNum,
-            referenceUScm: null,
-            referenceMol: null,
-            calculatedMol: null,
-            referenceStandardUScm: null,
-            calculatedValue: null,
-            inRange: null,
-            status: 'Draft',
-            recordedAt: new Date().toISOString(),
-            preparationTime: formPreparationTime.trim() || null,
-            observation: formObservation.trim() || null,
-            createdByUserId: null,
-            createdByName: null,
-            createdByNomenclature: null,
-            reviewerUserId: null,
-            reviewerName: null,
-            reviewerNomenclature: null,
-            reviewedAt: null,
-            isLocal: true,
-            tempId,
-          })
+          addLocalRecord(optimisticRecord)
           setRecords(getRecords())
-
-          await enqueue({
-            operationType: 'CREATE',
-            resourceId: null,
-            payload: body,
-            endpoint: CONDUCTIVITY_API,
-            method: 'POST',
-            maxRetries: 5,
-            localObjectId,
-            correlationId,
-          })
-          await finishQueuedSuccess()
+          await enqueueCreate()
+          finishQueuedSuccess()
         } catch (queueErr) {
           setSnackbarSeverity('error')
           setSnackbar(getErrorMessage(queueErr, 'No se pudo guardar en cola local.'))
           log.error('Error al encolar registro tras fallo de red', queueErr)
         }
       } else {
-        // Business error — bubble up to user
         setSnackbarSeverity('error')
         setSnackbar(getErrorMessage(e, 'Error al crear registro'))
         log.error('Error al crear registro (respuesta del servidor)', e)
@@ -670,7 +641,7 @@ return filteredRecords.slice(start, start + rowsPerPage)
     }
 
     const resourceId = String(editRecord.conductivityId)
-    const localObjectId = `update-${resourceId}-${Date.now()}`
+    const localObjectId = `resource-${resourceId}`
     const correlationId = newEnqueueCorrelationId()
     const endpoint = `${CONDUCTIVITY_API}/${resourceId}`
 
@@ -777,7 +748,7 @@ return filteredRecords.slice(start, start + rowsPerPage)
     setDeleteSubmitting(true)
 
     const resourceId = String(deleteRecord.conductivityId)
-    const localObjectId = `delete-${resourceId}-${Date.now()}`
+    const localObjectId = `resource-${resourceId}`
     const correlationId = newEnqueueCorrelationId()
     const endpoint = `${CONDUCTIVITY_API}/${resourceId}`
 
