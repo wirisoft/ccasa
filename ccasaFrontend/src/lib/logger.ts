@@ -40,6 +40,7 @@ const logBuffer: LogEntry[] = []
 
 function addToBuffer(entry: LogEntry): void {
   logBuffer.push(entry)
+
   if (logBuffer.length > MAX_BUFFER_SIZE) {
     logBuffer.shift()
   }
@@ -78,7 +79,8 @@ export function createLogger(module: string): Logger {
 
     if (!isDev) {
       addToBuffer(entry)
-      return
+      
+return
     }
 
     const prefix = `[${level.toUpperCase().padEnd(5)}] [${module}]`

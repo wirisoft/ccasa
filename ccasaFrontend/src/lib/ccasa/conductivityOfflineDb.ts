@@ -46,11 +46,13 @@ export function getDB(): Promise<IDBPDatabase> {
           keyPath: 'localId',
           autoIncrement: true,
         })
+
         outbox.createIndex('by-status', 'status')
         outbox.createIndex('by-createdAt', 'createdAt')
         outbox.createIndex('by-operation', 'operationType')
         log.info('Store conductivity_outbox creado con índices')
       }
+
       if (!db.objectStoreNames.contains(STORE_META)) {
         db.createObjectStore(STORE_META, { keyPath: 'key' })
         log.info('Store meta creado')
@@ -76,6 +78,7 @@ export async function enqueue(
   try {
     const db = await getDB()
     const now = Date.now()
+
     const entry: Omit<OutboxRecord, 'localId'> = {
       ...record,
       status: 'pending',
@@ -84,13 +87,16 @@ export async function enqueue(
       createdAt: now,
       updatedAt: now,
     }
+
     const localId = (await db.add(STORE_OUTBOX, entry)) as number
+
     log.info('Registro encolado', {
       localId,
       operationType: record.operationType,
       endpoint: record.endpoint,
     })
-    return localId
+    
+return localId
   } catch (err) {
     log.error('Error al encolar registro', err)
     throw err
@@ -105,12 +111,15 @@ export async function getPendingQueue(): Promise<OutboxRecord[]> {
   try {
     const db = await getDB()
     const all = (await db.getAll(STORE_OUTBOX)) as OutboxRecord[]
-    return all
+
+    
+return all
       .filter(r => r.status === 'pending' || r.status === 'failed_retryable')
       .sort((a, b) => a.createdAt - b.createdAt)
   } catch (err) {
     log.error('Error al obtener cola pendiente', err)
-    return []
+    
+return []
   }
 }
 
@@ -120,6 +129,7 @@ export async function markSyncing(localId: number): Promise<void> {
     const db = await getDB()
     const tx = db.transaction(STORE_OUTBOX, 'readwrite')
     const record = (await tx.store.get(localId)) as OutboxRecord | undefined
+
     if (!record) return
     await tx.store.put({ ...record, status: 'syncing', updatedAt: Date.now() })
     await tx.done
@@ -135,6 +145,7 @@ export async function markDone(localId: number): Promise<void> {
     const db = await getDB()
     const tx = db.transaction(STORE_OUTBOX, 'readwrite')
     const record = (await tx.store.get(localId)) as OutboxRecord | undefined
+
     if (!record) return
     await tx.store.put({ ...record, status: 'done', updatedAt: Date.now() })
     await tx.done
@@ -153,10 +164,12 @@ export async function markFailedRetryable(localId: number, error: string): Promi
     const db = await getDB()
     const tx = db.transaction(STORE_OUTBOX, 'readwrite')
     const record = (await tx.store.get(localId)) as OutboxRecord | undefined
+
     if (!record) return
     const newRetryCount = record.retryCount + 1
     const isPermanent = newRetryCount >= record.maxRetries
     const newStatus = isPermanent ? 'failed_permanent' : 'failed_retryable'
+
     await tx.store.put({
       ...record,
       status: newStatus,
@@ -165,6 +178,7 @@ export async function markFailedRetryable(localId: number, error: string): Promi
       updatedAt: Date.now(),
     })
     await tx.done
+
     if (isPermanent) {
       log.warn('Registro promovido a fallo permanente (máx reintentos alcanzados)', {
         localId,
@@ -191,6 +205,7 @@ export async function markFailedPermanent(
     const db = await getDB()
     const tx = db.transaction(STORE_OUTBOX, 'readwrite')
     const record = (await tx.store.get(localId)) as OutboxRecord | undefined
+
     if (!record) return
     await tx.store.put({
       ...record,
@@ -211,6 +226,7 @@ export async function getQueueStats(): Promise<QueueStats> {
   try {
     const db = await getDB()
     const all = (await db.getAll(STORE_OUTBOX)) as OutboxRecord[]
+
     const stats: QueueStats = {
       pending: 0,
       syncing: 0,
@@ -219,6 +235,7 @@ export async function getQueueStats(): Promise<QueueStats> {
       done: 0,
       total: all.length,
     }
+
     for (const r of all) {
       if (r.status === 'pending') stats.pending++
       else if (r.status === 'syncing') stats.syncing++
@@ -226,10 +243,13 @@ export async function getQueueStats(): Promise<QueueStats> {
       else if (r.status === 'failed_permanent') stats.failedPermanent++
       else if (r.status === 'done') stats.done++
     }
-    return stats
+
+    
+return stats
   } catch (err) {
     log.error('Error al obtener estadísticas de cola', err)
-    return { pending: 0, syncing: 0, failedRetryable: 0, failedPermanent: 0, done: 0, total: 0 }
+    
+return { pending: 0, syncing: 0, failedRetryable: 0, failedPermanent: 0, done: 0, total: 0 }
   }
 }
 
@@ -243,22 +263,28 @@ export async function clearDoneRecords(olderThanMs?: number): Promise<number> {
     const db = await getDB()
     const all = (await db.getAll(STORE_OUTBOX)) as OutboxRecord[]
     const cutoff = olderThanMs !== undefined ? Date.now() - olderThanMs : null
+
     const toDelete = all.filter(
       r => r.status === 'done' && (cutoff === null || r.updatedAt < cutoff)
     )
+
     if (toDelete.length === 0) return 0
     const tx = db.transaction(STORE_OUTBOX, 'readwrite')
+
     for (const r of toDelete) {
       if (r.localId !== undefined) {
         await tx.store.delete(r.localId)
       }
     }
+
     await tx.done
     log.info('Registros completados eliminados de la cola', { count: toDelete.length })
-    return toDelete.length
+    
+return toDelete.length
   } catch (err) {
     log.error('Error al limpiar registros completados', err)
-    return 0
+    
+return 0
   }
 }
 
@@ -269,12 +295,14 @@ export async function saveLogbooksCache(data: LogbookCache['data']): Promise<voi
   try {
     const db = await getDB()
     const now = Date.now()
+
     const entry = {
       key: META_LOGBOOKS_KEY,
       data: Array.isArray(data) ? data : [],
       fetchedAt: now,
       expiresAt: now + 86_400_000, // 24 hours
     }
+
     await db.put(STORE_META, entry)
     log.debug('Caché de bitácoras guardada', { count: data.length })
   } catch (err) {
@@ -289,18 +317,25 @@ export async function saveLogbooksCache(data: LogbookCache['data']): Promise<voi
 export async function getLogbooksCache(): Promise<LogbookCache | null> {
   try {
     const db = await getDB()
+
     const row = (await db.get(STORE_META, META_LOGBOOKS_KEY)) as
       | ({ key: string } & LogbookCache)
       | undefined
+
     if (!row) return null
+
     if (row.expiresAt < Date.now()) {
       log.debug('Caché de bitácoras expirada')
-      return null
+      
+return null
     }
-    return { data: row.data, fetchedAt: row.fetchedAt, expiresAt: row.expiresAt }
+
+    
+return { data: row.data, fetchedAt: row.fetchedAt, expiresAt: row.expiresAt }
   } catch (err) {
     log.error('Error al leer caché de bitácoras', err)
-    return null
+    
+return null
   }
 }
 
@@ -312,12 +347,15 @@ export async function listFailedPermanent(): Promise<OutboxRecord[]> {
   try {
     const db = await getDB()
     const all = (await db.getAll(STORE_OUTBOX)) as OutboxRecord[]
-    return all
+
+    
+return all
       .filter(r => r.status === 'failed_permanent')
       .sort((a, b) => b.createdAt - a.createdAt)
   } catch (err) {
     log.error('Error al listar registros fallidos permanentes', err)
-    return []
+    
+return []
   }
 }
 
@@ -328,6 +366,7 @@ export async function listFailedPermanent(): Promise<OutboxRecord[]> {
 export async function removeQueueItem(localId: number): Promise<void> {
   try {
     const db = await getDB()
+
     await db.delete(STORE_OUTBOX, localId)
     log.info('Registro eliminado de la cola', { localId })
   } catch (err) {
@@ -345,6 +384,7 @@ export async function resetToRetry(localId: number): Promise<void> {
     const db = await getDB()
     const tx = db.transaction(STORE_OUTBOX, 'readwrite')
     const record = (await tx.store.get(localId)) as OutboxRecord | undefined
+
     if (!record) return
     await tx.store.put({
       ...record,
@@ -385,6 +425,7 @@ export async function cleanupQueue(
 
     for (const r of all) {
       if (r.localId === undefined) continue
+
       if (r.status === 'done' && r.updatedAt < cutoff) {
         toDelete.push(r.localId)
         removedDone++
@@ -396,10 +437,12 @@ export async function cleanupQueue(
 
     // Enforce max queue size: drop oldest pending if needed
     const remaining = all.filter(r => r.localId !== undefined && !toDelete.includes(r.localId!))
+
     if (remaining.length > maxQueueSize) {
       const excess = remaining
         .sort((a, b) => a.createdAt - b.createdAt)
         .slice(0, remaining.length - maxQueueSize)
+
       for (const r of excess) {
         if (r.localId !== undefined) toDelete.push(r.localId)
       }
@@ -407,6 +450,7 @@ export async function cleanupQueue(
 
     if (toDelete.length > 0) {
       const tx = db.transaction(STORE_OUTBOX, 'readwrite')
+
       for (const id of toDelete) await tx.store.delete(id)
       await tx.done
       log.info('Limpieza de cola ejecutada', { removedDone, removedFailedPermanent, total: toDelete.length })
@@ -415,7 +459,8 @@ export async function cleanupQueue(
     return { removedDone, removedFailedPermanent, total: toDelete.length }
   } catch (err) {
     log.error('Error durante limpieza de cola', err)
-    return { removedDone, removedFailedPermanent, total: 0 }
+    
+return { removedDone, removedFailedPermanent, total: 0 }
   }
 }
 
@@ -557,7 +602,9 @@ export async function exportQueueAsSQL(): Promise<string> {
 
     const inserts = rows.map(r => {
       const payloadJson = JSON.stringify(r.payload)
-      return (
+
+      
+return (
         `INSERT INTO conductivity_outbox ` +
         `(local_id, operation_type, resource_id, endpoint, method, status, retry_count, max_retries, last_error, created_at, updated_at, payload_json) VALUES (` +
         `${r.localId ?? 'NULL'}, ` +
@@ -579,7 +626,8 @@ export async function exportQueueAsSQL(): Promise<string> {
     return header + inserts.join('\n') + '\n'
   } catch (err) {
     log.error('Error al exportar cola como SQL', err)
-    return `-- Error al exportar: ${err instanceof Error ? err.message : String(err)}\n`
+    
+return `-- Error al exportar: ${err instanceof Error ? err.message : String(err)}\n`
   }
 }
 
@@ -592,6 +640,7 @@ export async function downloadSQLExport(): Promise<void> {
     const blob = new Blob([sql], { type: 'application/sql' })
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
+
     a.href = url
     a.download = `conductividad-cola-${new Date().toISOString().slice(0, 10)}.sql`
     a.click()

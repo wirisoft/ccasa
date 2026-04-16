@@ -20,34 +20,43 @@ export type OutboxStatus =
   | 'done'
 
 export interface OutboxRecord {
+
   /** IDB auto-increment key. Undefined until persisted. */
   localId?: number
   operationType: OperationType
+
   /** null for CREATE; real server ID for UPDATE/DELETE */
   resourceId: string | null
+
   /** Request body — typed as unknown, cast at usage site */
   payload: unknown
+
   /** e.g. '/api/v1/conductivity-records' */
   endpoint: string
   method: 'POST' | 'PUT' | 'PATCH' | 'DELETE'
   status: OutboxStatus
   retryCount: number
+
   /** Default 5 */
   maxRetries: number
   lastError: string | null
+
   /** Date.now() at enqueue time */
   createdAt: number
   updatedAt: number
+
   /**
    * True when the failure was caused by a 404 or 409 conflict.
    * UI should show a conflict indicator instead of a generic error.
    */
   conflict?: boolean
+
   /**
    * UUID generated at enqueue time.
    * Used to correlate log entries across the DB, sync engine, and UI.
    */
   correlationId?: string
+
   /**
    * Client-side object identifier shared across related operations on the
    * same local (not-yet-synced) record. Enables deduplication:
@@ -75,10 +84,13 @@ export interface SyncResult {
 }
 
 export interface LogbookCache {
+
   /** Cached logbook list */
   data: LogbookDTO[]
+
   /** Unix ms when data was fetched */
   fetchedAt: number
+
   /** fetchedAt + 24h in ms — cache expires after this */
   expiresAt: number
 }
@@ -107,6 +119,7 @@ export interface SyncAppliedChange {
   localId: number
   operationType: OperationType
   resourceId: string | null
+
   /** The server-assigned record returned after a successful CREATE. */
   serverRecord?: Record<string, unknown>
   localObjectId?: string
@@ -124,8 +137,10 @@ export interface OptimizeResult {
  * the server confirms them. They are replaced when fetchRecords runs.
  */
 export interface LocalRecordMeta {
+
   /** True while this record exists only in the local queue (not yet confirmed by server). */
   isLocal?: boolean
+
   /** Client-generated negative ID used as a React key until server ID is known. */
   tempId?: string
 }

@@ -34,6 +34,7 @@ let store: LocalConductivityRecord[] = []
  */
 export function setRecords(serverRecords: ConductivityRecord[]): void {
   const localPending = store.filter(r => r.isLocal === true)
+
   store = [
     ...serverRecords.map(r => ({ ...r, isLocal: false, tempId: undefined })),
     ...localPending,
@@ -108,6 +109,7 @@ export function markLocalFailed(tempId: string): void {
 /** Removes all local (isLocal=true) records from the store. */
 export function clearLocalRecords(): void {
   const before = store.length
+
   store = store.filter(r => !r.isLocal)
   log.debug('Registros locales limpiados', { removed: before - store.length })
 }

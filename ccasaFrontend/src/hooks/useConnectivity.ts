@@ -17,10 +17,13 @@ import { createLogger } from '@/lib/logger'
 const log = createLogger('useConnectivity')
 
 interface ConnectivityState {
+
   /** Current online/offline status */
   isOnline: boolean
+
   /** Becomes true once the user goes offline; stays true for the session */
   wasOffline: boolean
+
   /** Timestamp of the last online ↔ offline transition */
   connectionChangedAt: Date | null
 }
@@ -48,7 +51,7 @@ export function useConnectivity(): ConnectivityState {
 
     const handleOffline = () => {
       log.warn('Red desconectada')
-      setState(prev => ({
+      setState(_prev => ({
         isOnline: false,
         wasOffline: true,
         connectionChangedAt: new Date(),

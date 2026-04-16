@@ -74,9 +74,11 @@ export function deduplicateQueue(queue: OutboxRecord[]): {
 
   // Pass 1: Handle localObjectId-based dedup (CREATE+DELETE → drop both; CREATE+UPDATE → merge)
   const localObjectGroups = new Map<string, OutboxRecord[]>()
+
   for (const r of result) {
     if (!r.localObjectId) continue
     const group = localObjectGroups.get(r.localObjectId) ?? []
+
     group.push(r)
     localObjectGroups.set(r.localObjectId, group)
   }
@@ -99,9 +101,11 @@ export function deduplicateQueue(queue: OutboxRecord[]): {
     } else if (create && update) {
       // CREATE + UPDATE → merge: keep CREATE with UPDATE's payload, drop UPDATE
       const createIdx = result.findIndex(r => r.localId === create.localId)
+
       if (createIdx >= 0) {
         result[createIdx] = { ...create, payload: update.payload }
       }
+
       if (update.localId !== undefined) dropped.push(update.localId)
       log.info('Dedup: CREATE mergeado con UPDATE', {
         localObjectId: create.localObjectId,
@@ -112,11 +116,13 @@ export function deduplicateQueue(queue: OutboxRecord[]): {
 
   // Pass 2: Exact duplicate CREATEs (same endpoint + same payload JSON) → keep oldest
   const createSignatures = new Map<string, number>() // signature → localId of oldest
+
   for (const r of result) {
     if (r.operationType !== 'CREATE' || r.localId === undefined) continue
     if (dropped.includes(r.localId)) continue
     const sig = `${r.endpoint}|${JSON.stringify(r.payload)}`
     const existing = createSignatures.get(sig)
+
     if (existing !== undefined) {
       // Duplicate → drop the newer one (keep oldest for FIFO)
       dropped.push(r.localId)
@@ -127,7 +133,9 @@ export function deduplicateQueue(queue: OutboxRecord[]): {
   }
 
   const deduped = result.filter(r => r.localId === undefined || !dropped.includes(r.localId))
-  return { deduped, dropped }
+
+  
+return { deduped, dropped }
 }
 
 /**
@@ -143,11 +151,13 @@ export async function syncQueue(
 ): Promise<SyncResult> {
   if (isSyncing) {
     log.debug('Sincronización ya en curso — omitida')
-    return { processed: 0, succeeded: 0, failedRetryable: 0, failedPermanent: 0, skipped: 1 }
+    
+return { processed: 0, succeeded: 0, failedRetryable: 0, failedPermanent: 0, skipped: 1 }
   }
 
   isSyncing = true
   const correlationId = newCorrelationId()
+
   log.info('Iniciando sincronización de cola FIFO', { correlationId })
 
   const result: SyncResult = {
@@ -191,6 +201,7 @@ export async function syncQueue(
       }
 
       const localId = record.localId
+
       result.processed++
       log.debug('Procesando registro', {
         correlationId,
@@ -208,8 +219,10 @@ export async function syncQueue(
           body: record.method !== 'DELETE' ? JSON.stringify(record.payload) : undefined,
           headers: {
             'Content-Type': 'application/json',
+
             // Signal to service worker: bypass offline-202 interception
             'X-Sync-Engine': '1',
+
             // Pass correlation ID for server-side tracing if supported
             'X-Correlation-Id': record.correlationId ?? correlationId,
           },
@@ -265,6 +278,7 @@ export async function syncQueue(
         } else if (res.status === 404 || res.status === 409) {
           // Conflict — permanently failed, mark with conflict flag
           const errorText = await res.text().catch(() => `HTTP ${res.status}`)
+
           await markFailedPermanent(localId, `HTTP ${res.status}: ${errorText}`, true)
           result.failedPermanent++
           log.warn('Conflicto detectado (404/409) — marcado permanente con conflict=true', {
@@ -275,6 +289,7 @@ export async function syncQueue(
         } else if (res.status >= 400 && res.status < 500) {
           // Other 4xx → permanent failure (bad request, never retry)
           const errorText = await res.text().catch(() => `HTTP ${res.status}`)
+
           await markFailedPermanent(localId, `HTTP ${res.status}: ${errorText}`, false)
           result.failedPermanent++
           log.warn('Fallo permanente (4xx) — no se reintentará', {
@@ -285,6 +300,7 @@ export async function syncQueue(
         } else {
           // 5xx → retryable server error
           const errorText = await res.text().catch(() => `HTTP ${res.status}`)
+
           await markFailedRetryable(localId, `HTTP ${res.status}: ${errorText}`)
           result.failedRetryable++
           log.warn('Error de servidor (5xx) — se reintentará', {
@@ -296,6 +312,7 @@ export async function syncQueue(
       } catch (err) {
         // TypeError (network failure) or unexpected → retryable
         const errorMsg = err instanceof Error ? err.message : String(err)
+
         await markFailedRetryable(localId, errorMsg)
         result.failedRetryable++
         log.error('Error de red al sincronizar registro', { correlationId, localId, error: errorMsg })
@@ -305,6 +322,7 @@ export async function syncQueue(
       if (onProgress) {
         try {
           const stats = await getQueueStats()
+
           onProgress(stats)
         } catch {
           // Progress callback errors are non-fatal

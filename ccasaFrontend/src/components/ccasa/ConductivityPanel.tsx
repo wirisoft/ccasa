@@ -93,7 +93,9 @@ function isNetworkError(err: unknown): boolean {
 
   if (err instanceof Error) {
     const msg = err.message.toLowerCase()
-    return (
+
+    
+return (
       msg.includes('network') ||
       msg.includes('fetch') ||
       msg.includes('failed to fetch') ||
@@ -156,7 +158,8 @@ function operationTypeLabel(type: string): string {
   if (type === 'CREATE') return 'Creación'
   if (type === 'UPDATE') return 'Actualización'
   if (type === 'DELETE') return 'Eliminación'
-  return type
+  
+return type
 }
 
 function recordMatchesSearch(record: ConductivityRecord, q: string): boolean {
@@ -221,12 +224,15 @@ const ConductivityPanel = () => {
   const syncApiFetch = useMemo((): ApiFetchFn => {
     return async (url, opts) => {
       const fullUrl = url.startsWith('http') ? url : `${getApiBaseUrl()}${url}`
-      return fetch(fullUrl, {
+
+      
+return fetch(fullUrl, {
         ...opts,
         headers: {
           'Content-Type': 'application/json',
           Accept: 'application/json',
           ...(token ? { Authorization: `Bearer ${token}` } : {}),
+
           // Preserve any headers passed by the caller (e.g. X-Sync-Engine: 1)
           ...((opts?.headers as Record<string, string>) ?? {}),
         },
@@ -238,6 +244,7 @@ const ConductivityPanel = () => {
     useConductivityQueue(syncApiFetch)
 
   const outboxPending = stats?.pending ?? 0
+
   // ── end PWA block ────────────────────────────────────────────────────────
 
   const [records, setRecords] = useState<ConductivityRecord[]>([])
@@ -558,7 +565,8 @@ return filteredRecords.slice(start, start + rowsPerPage)
         setRecords(getRecords())
         await enqueueCreate()
         finishQueuedSuccess()
-        return
+        
+return
       }
 
       // Online path — try real API
@@ -626,9 +634,11 @@ return filteredRecords.slice(start, start + rowsPerPage)
     setEditFormError(null)
 
     const weightNum = parseFloat(editFormWeight)
+
     if (!editFormWeight || Number.isNaN(weightNum) || weightNum <= 0) {
       setEditFormError('El peso debe ser un número mayor a cero.')
-      return
+      
+return
     }
 
     setEditSubmitting(true)
@@ -676,7 +686,8 @@ return filteredRecords.slice(start, start + rowsPerPage)
           correlationId,
         })
         finishQueuedUpdate()
-        return
+        
+return
       }
 
       // Online path
@@ -778,7 +789,8 @@ return filteredRecords.slice(start, start + rowsPerPage)
           correlationId,
         })
         finishQueuedDelete()
-        return
+        
+return
       }
 
       // Online path
@@ -919,6 +931,7 @@ return filteredRecords.slice(start, start + rowsPerPage)
     weightNumPreview > 0
 
   const editWeightNumPreview = parseFloat(editFormWeight)
+
   const editFormValid =
     editFormWeight.trim() !== '' &&
     !Number.isNaN(editWeightNumPreview) &&
@@ -1317,6 +1330,7 @@ return filteredRecords.slice(start, start + rowsPerPage)
                       <TableBody>
                         {paginatedRecords.map((row, index) => {
                           const isLocalRow = (row as { isLocal?: boolean }).isLocal === true
+
                           const createdLabel =
                             row.createdByName?.trim() ||
                             (row.createdByNomenclature ? row.createdByNomenclature : '—')

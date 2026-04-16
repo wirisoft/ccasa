@@ -52,15 +52,19 @@ export interface ConductivityQueueState {
   stats: QueueStats | null
   isSyncing: boolean
   lastSyncAt: Date | null
+
   /** Timestamp of the last successful sync — watch this to trigger fetchRecords */
   lastSyncCompletedAt: Date | null
   syncError: string | null
+
   /** failed_permanent records — shown in the Failed Operations UI section */
   failedRecords: OutboxRecord[]
   triggerSync: () => Promise<void>
   exportSQL: () => Promise<void>
+
   /** Resets a failed record to 'pending' and triggers an immediate sync */
   retryFailed: (localId: number) => Promise<void>
+
   /** Permanently removes a failed record from the queue */
   dismissFailed: (localId: number) => Promise<void>
 }
@@ -91,6 +95,7 @@ export function useConductivityQueue(apiFetch: ApiFetchFn): ConductivityQueueSta
   const refreshStats = useCallback(async () => {
     try {
       const [s, failed] = await Promise.all([getQueueStats(), listFailedPermanent()])
+
       setStats(s)
       setFailedRecords(failed)
     } catch (err) {
@@ -101,7 +106,8 @@ export function useConductivityQueue(apiFetch: ApiFetchFn): ConductivityQueueSta
   const triggerSync = useCallback(async () => {
     if (getIsSyncing()) {
       log.debug('Sync ya en curso — omitido')
-      return
+      
+return
     }
 
     setSyncingState(true)
@@ -114,9 +120,11 @@ export function useConductivityQueue(apiFetch: ApiFetchFn): ConductivityQueueSta
       })
 
       const [finalStats, failed] = await Promise.all([getQueueStats(), listFailedPermanent()])
+
       setStats(finalStats)
       setFailedRecords(failed)
       const now = new Date()
+
       setLastSyncAt(now)
       setLastSyncCompletedAt(now) // signal for panel to call fetchRecords
       log.info('Sincronización completada', finalStats)
@@ -130,9 +138,11 @@ export function useConductivityQueue(apiFetch: ApiFetchFn): ConductivityQueueSta
 
       // Register Background Sync if records still remain
       const remaining = finalStats.pending + finalStats.failedRetryable
+
       if (remaining > 0 && 'serviceWorker' in navigator) {
         try {
           const reg = (await navigator.serviceWorker.ready) as ServiceWorkerRegistrationWithSync
+
           if ('sync' in reg) {
             await reg.sync.register('ccasa-conductivity-sync')
             log.info('Background sync registrado para registros pendientes', { remaining })
@@ -143,6 +153,7 @@ export function useConductivityQueue(apiFetch: ApiFetchFn): ConductivityQueueSta
       }
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err)
+
       setSyncError(msg)
       log.error('Error en triggerSync', err)
     } finally {
@@ -166,6 +177,7 @@ export function useConductivityQueue(apiFetch: ApiFetchFn): ConductivityQueueSta
         await resetToRetry(localId)
         await refreshStats()
         log.info('Registro reseteado para reintento', { localId })
+
         // Attempt immediate sync
         void triggerSync()
       } catch (err) {
@@ -204,6 +216,7 @@ export function useConductivityQueue(apiFetch: ApiFetchFn): ConductivityQueueSta
       autoSyncTimerRef.current = setTimeout(() => {
         void (async () => {
           const current = await getQueueStats()
+
           if (current.pending + current.failedRetryable > 0) {
             log.info('Auto-sincronizando al reconectar')
             void triggerSync()
@@ -211,6 +224,7 @@ export function useConductivityQueue(apiFetch: ApiFetchFn): ConductivityQueueSta
         })()
       }, AUTO_SYNC_DEBOUNCE_MS)
     }
+
     prevIsOnlineRef.current = isOnline
   }, [isOnline, triggerSync])
 
@@ -218,7 +232,9 @@ export function useConductivityQueue(apiFetch: ApiFetchFn): ConductivityQueueSta
   useEffect(() => {
     if (!isOnline) return
     const interval = setInterval(() => void refreshStats(), POLL_INTERVAL_MS)
-    return () => clearInterval(interval)
+
+    
+return () => clearInterval(interval)
   }, [isOnline, refreshStats])
 
   // BroadcastChannel: receive sync notifications from other tabs
@@ -226,12 +242,14 @@ export function useConductivityQueue(apiFetch: ApiFetchFn): ConductivityQueueSta
     if (typeof BroadcastChannel === 'undefined') return
 
     const channel = new BroadcastChannel(BROADCAST_CHANNEL)
+
     channelRef.current = channel
 
     channel.onmessage = (event: MessageEvent<{ type: string }>) => {
       if (event.data?.type === 'SYNC_COMPLETE') {
         log.debug('Sincronización detectada en otra pestaña — actualizando estadísticas')
         void refreshStats()
+
         // Also signal the panel to refresh its records
         setLastSyncCompletedAt(new Date())
       }
