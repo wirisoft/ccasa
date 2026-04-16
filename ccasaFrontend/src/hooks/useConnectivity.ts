@@ -51,7 +51,7 @@ export function useConnectivity(): ConnectivityState {
 
     const handleOffline = () => {
       log.warn('Red desconectada')
-      setState(_prev => ({
+      setState(() => ({
         isOnline: false,
         wasOffline: true,
         connectionChangedAt: new Date(),
