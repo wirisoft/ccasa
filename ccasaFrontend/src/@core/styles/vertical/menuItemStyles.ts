@@ -8,12 +8,14 @@ import type { MenuItemStyles } from '@menu/types'
 import { menuClasses } from '@menu/utils/menuClasses'
 
 const menuItemStyles = (theme: Theme): MenuItemStyles => {
+  const isLight = theme.palette.mode === 'light'
+
   return {
     root: {
       marginBlockStart: theme.spacing(0.25),
       [`&.${menuClasses.subMenuRoot}.${menuClasses.open} > .${menuClasses.button}, &.${menuClasses.subMenuRoot} > .${menuClasses.button}.${menuClasses.active}`]:
         {
-          backgroundColor: 'rgba(0, 0, 0, 0.04) !important'
+          backgroundColor: isLight ? 'rgba(0, 0, 0, 0.04) !important' : 'rgba(255, 255, 255, 0.06) !important'
         },
       [`&.${menuClasses.disabled} > .${menuClasses.button}`]: {
         color: 'var(--mui-palette-text-disabled)',
@@ -34,12 +36,12 @@ const menuItemStyles = (theme: Theme): MenuItemStyles => {
       whiteSpace: 'nowrap',
       borderRadius: 0,
       ...(!active && {
-        color: '#475569',
+        color: isLight ? '#475569' : 'rgba(255, 255, 255, 0.72)',
         '&:hover, &:focus-visible': {
-          backgroundColor: 'rgba(0, 0, 0, 0.04)'
+          backgroundColor: isLight ? 'rgba(0, 0, 0, 0.04)' : 'rgba(255, 255, 255, 0.06)'
         },
         '&[aria-expanded="true"]': {
-          backgroundColor: 'rgba(0, 0, 0, 0.06)'
+          backgroundColor: isLight ? 'rgba(0, 0, 0, 0.06)' : 'rgba(255, 255, 255, 0.08)'
         }
       }),
       ...(active && {
@@ -63,7 +65,7 @@ const menuItemStyles = (theme: Theme): MenuItemStyles => {
       ...(level === 0 && {
         fontSize: '1.375rem',
         marginInlineEnd: theme.spacing(2),
-        color: '#94A3B8',
+        color: isLight ? '#94A3B8' : 'rgba(255, 255, 255, 0.5)',
         flexShrink: 0
       }),
       ...(level > 0 && {

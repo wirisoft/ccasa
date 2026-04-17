@@ -5,12 +5,14 @@ import type { Theme } from '@mui/material/styles'
 import { menuClasses, verticalNavClasses } from '@menu/utils/menuClasses'
 
 const navigationCustomStyles = (theme: Theme) => {
+  const isLight = theme.palette.mode === 'light'
+
   return {
-    color: '#475569',
+    color: isLight ? '#475569' : '#CBD5E1',
     zIndex: 'var(--drawer-z-index) !important',
     [`& .${verticalNavClasses.bgColorContainer}`]: {
-      backgroundColor: '#F8FAFC',
-      borderRight: '1px solid #E2E8F0'
+      backgroundColor: isLight ? '#F8FAFC' : '#1E293B',
+      borderRight: isLight ? '1px solid #E2E8F0' : '1px solid rgba(255,255,255,0.08)'
     },
     [`& .${verticalNavClasses.header}`]: {
       paddingBlock: theme.spacing(5),

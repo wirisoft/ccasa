@@ -8,11 +8,13 @@ import type { MenuProps } from '@menu/vertical-menu'
 import { menuClasses } from '@menu/utils/menuClasses'
 
 const menuSectionStyles = (theme: Theme): MenuProps['menuSectionStyles'] => {
+  const isLight = theme.palette.mode === 'light'
+
   return {
     root: {
       marginBlockStart: theme.spacing(5),
       [`& .${menuClasses.menuSectionContent}`]: {
-        color: '#94A3B8',
+        color: isLight ? '#94A3B8' : 'rgba(255, 255, 255, 0.38)',
         paddingInline: '0 !important',
         paddingBlock: `${theme.spacing(1.5)} !important`,
         gap: 0,

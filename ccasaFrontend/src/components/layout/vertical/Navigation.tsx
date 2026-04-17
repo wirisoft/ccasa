@@ -21,29 +21,35 @@ import useVerticalNav from '@menu/hooks/useVerticalNav'
 // Style Imports
 import navigationCustomStyles from '@core/styles/vertical/navigationCustomStyles'
 
-const StyledBoxForShadow = styled('div')(({ theme }) => ({
-  top: 60,
-  left: -8,
-  zIndex: 2,
-  opacity: 0,
-  position: 'absolute',
-  pointerEvents: 'none',
-  width: 'calc(100% + 15px)',
-  height: theme.mixins.toolbar.minHeight,
-  transition: 'opacity .15s ease-in-out',
-  background:
-    'linear-gradient(#F8FAFC 5%, rgba(248, 250, 252, 0.85) 30%, rgba(248, 250, 252, 0.5) 65%, rgba(248, 250, 252, 0.3) 75%, transparent)',
-  '&.scrolled': {
-    opacity: 1
+const StyledBoxForShadow = styled('div')<{ ownerState: { isLight: boolean } }>(
+  ({ theme, ownerState }) => {
+    const bg = ownerState.isLight
+      ? 'linear-gradient(#F8FAFC 5%, rgba(248, 250, 252, 0.85) 30%, rgba(248, 250, 252, 0.5) 65%, rgba(248, 250, 252, 0.3) 75%, transparent)'
+      : 'linear-gradient(#1E293B 5%, rgba(30, 41, 59, 0.85) 30%, rgba(30, 41, 59, 0.5) 65%, rgba(30, 41, 59, 0.3) 75%, transparent)'
+
+    return {
+      top: 60,
+      left: -8,
+      zIndex: 2,
+      opacity: 0,
+      position: 'absolute' as const,
+      pointerEvents: 'none' as const,
+      width: 'calc(100% + 15px)',
+      height: theme.mixins.toolbar.minHeight,
+      transition: 'opacity .15s ease-in-out',
+      background: bg,
+      '&.scrolled': {
+        opacity: 1,
+      },
+    }
   }
-}))
+)
 
 const Navigation = () => {
-  // Hooks
   const theme = useTheme()
   const { isBreakpointReached, toggleVerticalNav } = useVerticalNav()
+  const isLight = theme.palette.mode === 'light'
 
-  // Refs
   const shadowRef = useRef<HTMLDivElement | null>(null)
 
   const scrollMenu = (container: UIEvent<HTMLElement> | HTMLElement, isPerfectScrollbar: boolean) => {
@@ -73,11 +79,11 @@ const Navigation = () => {
       {/* Nav Header including Logo & nav toggle icons  */}
       <NavHeader>
         <Link href='/'>
-          <Logo variant='dark' />
+          <Logo variant={isLight ? 'dark' : 'light'} />
         </Link>
         {isBreakpointReached && <i className='ri-close-line text-xl' onClick={() => toggleVerticalNav(false)} />}
       </NavHeader>
-      <StyledBoxForShadow ref={shadowRef} />
+      <StyledBoxForShadow ref={shadowRef} ownerState={{ isLight }} />
       <VerticalMenu scrollMenu={scrollMenu} />
     </VerticalNav>
   )
