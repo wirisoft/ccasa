@@ -2,7 +2,7 @@
 
 // React Imports
 import type { FormEvent, ReactNode } from 'react'
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 // MUI Imports
 import Alert from '@mui/material/Alert'
@@ -129,15 +129,21 @@ function acceptableValueCell(v: boolean | null): ReactNode {
   return <span>—</span>
 }
 
-function responseToTableRows(d: DistilledWaterResponseDTO): { label: string; value: ReactNode }[] {
+function responseToTableRows(
+  d: DistilledWaterResponseDTO,
+  batchLookup?: Map<number, string>
+): { label: string; value: ReactNode }[] {
+  const batchLabel = d.waterBatchId != null && batchLookup?.has(d.waterBatchId)
+    ? batchLookup.get(d.waterBatchId)
+    : d.waterBatchId
+
   return [
-    { label: 'Entrada', value: formatCell(d.entryId) },
+    { label: 'Entrada', value: formatCell(`#${d.entryId}`) },
     { label: 'Bitácora', value: formatCell(d.logbookName) },
     { label: 'Analista (entrada)', value: formatCell(d.analystName) },
     { label: 'Muestreador', value: formatCell(d.samplerName?.trim() ? d.samplerName : null) },
     { label: 'Folio', value: formatCell(d.folio) },
     { label: 'Fecha registro', value: formatCell(d.recordedAt) },
-    { label: 'ID registro', value: formatCell(d.distilledWaterEntryId) },
     { label: 'pH Lectura 1', value: formatCell(d.phReading1) },
     { label: 'pH Lectura 2', value: formatCell(d.phReading2) },
     { label: 'pH Lectura 3', value: formatCell(d.phReading3) },
@@ -149,7 +155,7 @@ function responseToTableRows(d: DistilledWaterResponseDTO): { label: string; val
     { label: 'Diferencia referencia', value: formatCell(d.referenceDifference) },
     { label: 'Estándar control %', value: formatCell(d.controlStandardPct) },
     { label: '¿Aceptable?', value: acceptableValueCell(d.isAcceptable) },
-    { label: 'Lote de agua', value: formatCell(d.waterBatchId) },
+    { label: 'Lote de agua', value: formatCell(batchLabel) },
     { label: 'Estado', value: formatEntryStatus(d.entryStatus) }
   ]
 }
@@ -237,8 +243,8 @@ function buildCreateDto(form: Record<string, string>): { ok: true; dto: Distille
   return { ok: true, dto }
 }
 
-function DistilledWaterResultTable({ data }: { data: DistilledWaterResponseDTO }) {
-  const rows = responseToTableRows(data)
+function DistilledWaterResultTable({ data, batchLookup }: { data: DistilledWaterResponseDTO; batchLookup?: Map<number, string> }) {
+  const rows = responseToTableRows(data, batchLookup)
 
   return (
     <TableContainer sx={{ overflowX: 'auto' }}>
@@ -272,6 +278,11 @@ const DistilledWaterPanel = () => {
   const [userOptions, setUserOptions] = useState<Option[]>([])
   const [samplerUserOptions, setSamplerUserOptions] = useState<Option[]>([])
   const [batchOptions, setBatchOptions] = useState<Option[]>([])
+
+  const batchLookup = useMemo(
+    () => new Map(batchOptions.map(b => [b.value, b.label])),
+    [batchOptions]
+  )
 
   const [formState, setFormState] = useState<Record<string, string>>(() => ({ ...EMPTY_FORM }))
 
@@ -710,7 +721,7 @@ const DistilledWaterPanel = () => {
                     </span>
                   </Tooltip>
                 </Stack>
-                <DistilledWaterResultTable data={result} />
+                <DistilledWaterResultTable data={result} batchLookup={batchLookup} />
               </Stack>
             ) : null}
 
@@ -1073,7 +1084,7 @@ const DistilledWaterPanel = () => {
                   </span>
                 </Tooltip>
               </Stack>
-              <DistilledWaterResultTable data={createResult} />
+              <DistilledWaterResultTable data={createResult} batchLookup={batchLookup} />
             </Box>
           ) : null}
         </CardContent>
