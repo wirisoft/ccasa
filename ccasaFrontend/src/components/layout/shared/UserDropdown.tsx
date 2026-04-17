@@ -56,6 +56,7 @@ const UserDropdown = () => {
 
   const avatarSx = {
     bgcolor: '#1565C0',
+    color: '#FFFFFF',
     width: 38,
     height: 38,
     fontSize: 15,
@@ -112,7 +113,7 @@ const UserDropdown = () => {
                   <div className='flex items-center plb-2 pli-4 gap-2' tabIndex={-1}>
                     <Avatar
                       alt={displayName}
-                      sx={{ bgcolor: '#1565C0', width: 40, height: 40, fontSize: 15, fontWeight: 600 }}
+                      sx={{ bgcolor: '#1565C0', color: '#FFFFFF', width: 40, height: 40, fontSize: 15, fontWeight: 600 }}
                     >
                       {initials}
                     </Avatar>
