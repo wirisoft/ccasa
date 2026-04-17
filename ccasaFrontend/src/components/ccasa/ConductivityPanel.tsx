@@ -1299,8 +1299,28 @@ return
               ) : null}
               <Tooltip title='Actualizar registros y verificar conexión'>
                 <span>
-                  <IconButton
+                  <Chip
                     size='small'
+                    label={loading ? 'Actualizando…' : 'Actualizar'}
+                    icon={
+                      <Box
+                        component='i'
+                        className='ri-refresh-line'
+                        sx={{
+                          fontSize: 16,
+                          ...(loading
+                            ? {
+                                '@keyframes spin': {
+                                  '0%': { transform: 'rotate(0deg)' },
+                                  '100%': { transform: 'rotate(360deg)' },
+                                },
+                                animation: 'spin 1s linear infinite',
+                              }
+                            : {}),
+                        }}
+                      />
+                    }
+                    variant='outlined'
                     color='primary'
                     disabled={loading}
                     onClick={() => {
@@ -1308,25 +1328,8 @@ return
                       void fetchRecords()
                       void fetchLogbooks()
                     }}
-                    sx={{ height: 32, width: 32 }}
-                  >
-                    <Box
-                      component='i'
-                      className='ri-refresh-line'
-                      sx={{
-                        fontSize: 18,
-                        ...(loading
-                          ? {
-                              '@keyframes spin': {
-                                '0%': { transform: 'rotate(0deg)' },
-                                '100%': { transform: 'rotate(360deg)' },
-                              },
-                              animation: 'spin 1s linear infinite',
-                            }
-                          : {}),
-                      }}
-                    />
-                  </IconButton>
+                    sx={{ height: 32, cursor: 'pointer' }}
+                  />
                 </span>
               </Tooltip>
               {/* ── end status bar ─────────────────────────────────────────── */}
