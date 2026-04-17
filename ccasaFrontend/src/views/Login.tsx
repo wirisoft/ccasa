@@ -15,6 +15,8 @@ import Button from '@mui/material/Button'
 import Alert from '@mui/material/Alert'
 import Fade from '@mui/material/Fade'
 
+import { useTheme } from '@mui/material/styles'
+
 import Logo from '@components/layout/shared/Logo'
 import LabAnimation from '@components/ccasa/LabAnimation'
 import LoadingScreen from '@components/ccasa/LoadingScreen'
@@ -46,6 +48,8 @@ const Login = () => {
 
   const router = useRouter()
   const searchParams = useSearchParams()
+  const theme = useTheme()
+  const isDark = theme.palette.mode === 'dark'
   const sessionExpired = searchParams.get('expired') === 'true'
   const afterAuthPath = safeInternalPath(searchParams.get('next'))
   const { login } = useAuth()
@@ -123,7 +127,9 @@ const Login = () => {
           justifyContent: 'center',
           alignItems: 'center',
           alignSelf: 'stretch',
-          background: 'linear-gradient(160deg, #0D2137 0%, #132F4C 50%, #1565C0 100%)',
+          background: isDark
+            ? 'linear-gradient(160deg, #0F1922 0%, #1A2027 50%, #0D47A1 100%)'
+            : 'linear-gradient(160deg, #0D2137 0%, #132F4C 50%, #1565C0 100%)',
           color: '#fff',
           px: 8,
           py: { md: 8 },
@@ -187,7 +193,7 @@ const Login = () => {
           flexDirection: 'column',
           justifyContent: 'center',
           alignItems: 'center',
-          backgroundColor: '#FFFFFF',
+          backgroundColor: isDark ? '#1E272E' : '#FFFFFF',
           px: { xs: 3, sm: 6 },
           py: 4
         }}
