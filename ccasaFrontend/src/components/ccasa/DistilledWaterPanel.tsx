@@ -328,13 +328,30 @@ const DistilledWaterPanel = () => {
         const logbookNameById = new Map(lbArr.map(l => [l.id, (l.name ?? '').trim() || `#${l.id}`]))
 
         try {
-          const entRows = await apiFetch<CrudResponseDTO[]>('/api/v1/entries', opts)
+          const [entRows, dwRows] = await Promise.all([
+            apiFetch<CrudResponseDTO[]>('/api/v1/entries', opts),
+            apiFetch<CrudResponseDTO[]>('/api/v1/entry-distilled-water', opts).catch(() => [] as CrudResponseDTO[]),
+          ])
+
+          const entryIdsWithDW = new Set(
+            (Array.isArray(dwRows) ? dwRows : [])
+              .map(r => {
+                const eid = r.values?.entryId
+
+                return eid != null ? Number(eid) : NaN
+              })
+              .filter(n => Number.isFinite(n))
+          )
+
+          const allEntries = Array.isArray(entRows) ? entRows : []
 
           setEntryOptions(
-            (Array.isArray(entRows) ? entRows : []).map(item => ({
-              value: item.id,
-              label: buildEntrySearchLabel(item, logbookNameById)
-            }))
+            allEntries
+              .filter(item => entryIdsWithDW.has(item.id))
+              .map(item => ({
+                value: item.id,
+                label: buildEntrySearchLabel(item, logbookNameById)
+              }))
           )
         } catch {
           setEntryOptions([])
