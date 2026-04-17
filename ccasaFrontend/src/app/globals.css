@@ -146,7 +146,7 @@ html {
 
 /* Backdrop dark mode fix para nuevo tema */
 [data-mui-color-scheme='dark'] {
-  --backdrop-color: rgb(30 41 59 / 0.7);
+  --backdrop-color: rgb(0 0 0 / 0.5);
 }
 
 /* Cards hover sutil en listas */

@@ -6,11 +6,11 @@ import { menuClasses, verticalNavClasses } from '@menu/utils/menuClasses'
 
 const navigationCustomStyles = (theme: Theme) => {
   return {
-    color: '#CBD5E1',
+    color: '#475569',
     zIndex: 'var(--drawer-z-index) !important',
     [`& .${verticalNavClasses.bgColorContainer}`]: {
-      backgroundColor: '#1E293B',
-      borderRight: '1px solid rgba(255,255,255,0.08)'
+      backgroundColor: '#F8FAFC',
+      borderRight: '1px solid #E2E8F0'
     },
     [`& .${verticalNavClasses.header}`]: {
       paddingBlock: theme.spacing(5),

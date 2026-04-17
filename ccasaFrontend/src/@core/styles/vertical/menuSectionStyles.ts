@@ -12,7 +12,7 @@ const menuSectionStyles = (theme: Theme): MenuProps['menuSectionStyles'] => {
     root: {
       marginBlockStart: theme.spacing(5),
       [`& .${menuClasses.menuSectionContent}`]: {
-        color: 'rgba(255, 255, 255, 0.38)',
+        color: '#94A3B8',
         paddingInline: '0 !important',
         paddingBlock: `${theme.spacing(1.5)} !important`,
         gap: 0,

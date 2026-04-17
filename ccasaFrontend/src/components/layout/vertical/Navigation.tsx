@@ -32,7 +32,7 @@ const StyledBoxForShadow = styled('div')(({ theme }) => ({
   height: theme.mixins.toolbar.minHeight,
   transition: 'opacity .15s ease-in-out',
   background:
-    'linear-gradient(#1E293B 5%, rgba(30, 41, 59, 0.85) 30%, rgba(30, 41, 59, 0.5) 65%, rgba(30, 41, 59, 0.3) 75%, transparent)',
+    'linear-gradient(#F8FAFC 5%, rgba(248, 250, 252, 0.85) 30%, rgba(248, 250, 252, 0.5) 65%, rgba(248, 250, 252, 0.3) 75%, transparent)',
   '&.scrolled': {
     opacity: 1
   }
@@ -73,7 +73,7 @@ const Navigation = () => {
       {/* Nav Header including Logo & nav toggle icons  */}
       <NavHeader>
         <Link href='/'>
-          <Logo variant='light' />
+          <Logo variant='dark' />
         </Link>
         {isBreakpointReached && <i className='ri-close-line text-xl' onClick={() => toggleVerticalNav(false)} />}
       </NavHeader>

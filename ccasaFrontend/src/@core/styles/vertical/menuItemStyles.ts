@@ -13,7 +13,7 @@ const menuItemStyles = (theme: Theme): MenuItemStyles => {
       marginBlockStart: theme.spacing(0.25),
       [`&.${menuClasses.subMenuRoot}.${menuClasses.open} > .${menuClasses.button}, &.${menuClasses.subMenuRoot} > .${menuClasses.button}.${menuClasses.active}`]:
         {
-          backgroundColor: 'rgba(255, 255, 255, 0.06) !important'
+          backgroundColor: 'rgba(0, 0, 0, 0.04) !important'
         },
       [`&.${menuClasses.disabled} > .${menuClasses.button}`]: {
         color: 'var(--mui-palette-text-disabled)',
@@ -34,24 +34,24 @@ const menuItemStyles = (theme: Theme): MenuItemStyles => {
       whiteSpace: 'nowrap',
       borderRadius: 0,
       ...(!active && {
-        color: 'rgba(255, 255, 255, 0.72)',
+        color: '#475569',
         '&:hover, &:focus-visible': {
-          backgroundColor: 'rgba(255, 255, 255, 0.06)'
+          backgroundColor: 'rgba(0, 0, 0, 0.04)'
         },
         '&[aria-expanded="true"]': {
-          backgroundColor: 'rgba(255, 255, 255, 0.08)'
+          backgroundColor: 'rgba(0, 0, 0, 0.06)'
         }
       }),
       ...(active && {
         [`&.${menuClasses.active}`]: {
-          backgroundColor: 'rgba(21, 101, 192, 0.12)',
+          backgroundColor: 'rgba(21, 101, 192, 0.08)',
           color: '#1565C0',
           fontWeight: 600,
           borderLeft: '3px solid #1565C0',
           borderRadius: '0 8px 8px 0',
           boxShadow: 'none',
           '&:hover, &:focus-visible, &[aria-expanded="true"]': {
-            backgroundColor: 'rgba(21, 101, 192, 0.16)'
+            backgroundColor: 'rgba(21, 101, 192, 0.12)'
           },
           [`& .${menuClasses.icon}`]: {
             color: '#1565C0'
@@ -63,7 +63,7 @@ const menuItemStyles = (theme: Theme): MenuItemStyles => {
       ...(level === 0 && {
         fontSize: '1.375rem',
         marginInlineEnd: theme.spacing(2),
-        color: 'rgba(255, 255, 255, 0.5)',
+        color: '#94A3B8',
         flexShrink: 0
       }),
       ...(level > 0 && {
