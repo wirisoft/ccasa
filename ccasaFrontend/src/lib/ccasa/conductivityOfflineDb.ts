@@ -340,6 +340,46 @@ return null
 }
 
 /**
+ * Removes all pending and failed_retryable records from the outbox.
+ * Used when the user wants to discard all unsent offline records.
+ *
+ * @returns Number of records removed
+ */
+export async function clearPendingQueue(): Promise<number> {
+  try {
+    const db = await getDB()
+    const all = (await db.getAll(STORE_OUTBOX)) as OutboxRecord[]
+
+    const toDelete = all.filter(
+      r => r.status === 'pending' || r.status === 'failed_retryable'
+    )
+
+    if (toDelete.length === 0) {
+
+      return 0
+    }
+
+    const tx = db.transaction(STORE_OUTBOX, 'readwrite')
+
+    for (const r of toDelete) {
+      if (r.localId !== undefined) {
+        await tx.store.delete(r.localId)
+      }
+    }
+
+    await tx.done
+
+    log.info('Cola pendiente limpiada', { removed: toDelete.length })
+
+    return toDelete.length
+  } catch (err) {
+    log.error('Error al limpiar cola pendiente', err)
+
+    return 0
+  }
+}
+
+/**
  * Returns all records with status 'failed_permanent', ordered by createdAt DESC.
  * Used by the Failed Operations UI section.
  */

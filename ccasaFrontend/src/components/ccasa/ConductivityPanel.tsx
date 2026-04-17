@@ -46,6 +46,7 @@ import {
   PDF_DOWNLOAD_ERROR
 } from '@/lib/ccasa/api'
 import {
+  clearPendingQueue,
   enqueue,
   getLogbooksCache,
   getPendingQueue,
@@ -53,6 +54,7 @@ import {
 } from '@/lib/ccasa/conductivityOfflineDb'
 import {
   addLocalRecord,
+  clearLocalRecords,
   getLocalPendingRecords,
   getRecords,
   removeRecord,
@@ -314,6 +316,8 @@ return fetch(fullUrl, {
 
   // ── Failed ops section collapse ──────────────────────────────────────────
   const [failedSectionOpen, setFailedSectionOpen] = useState(true)
+  const [confirmClearQueueOpen, setConfirmClearQueueOpen] = useState(false)
+  const [clearingQueue, setClearingQueue] = useState(false)
 
   /** Filtros en la barra (UI); se aplican al servidor solo al pulsar Buscar. */
   const [filterType, setFilterType] = useState('')
@@ -532,6 +536,14 @@ return filteredRecords.slice(start, start + rowsPerPage)
   const handleCreate = useCallback(async () => {
     setFormError(null)
 
+    if (effectiveOnline && outboxPending > 0) {
+      setFormError(
+        `Tienes ${outboxPending} registro${outboxPending === 1 ? '' : 's'} pendiente${outboxPending === 1 ? '' : 's'} de envío. Sincroniza primero antes de crear uno nuevo.`
+      )
+
+      return
+    }
+
     if (formType !== 'High' && formType !== 'Low') {
       setFormError('Debes seleccionar el tipo.')
 
@@ -664,7 +676,8 @@ return
     formPreparationTime,
     formType,
     formWeight,
-    effectiveOnline
+    effectiveOnline,
+    outboxPending
   ])
 
   // ── Edit handlers ─────────────────────────────────────────────────────────
@@ -1076,6 +1089,14 @@ return
                     }}
                   >
                     Descargar respaldo
+                  </Button>
+                  <Button
+                    color='error'
+                    size='small'
+                    disabled={isSyncing}
+                    onClick={() => setConfirmClearQueueOpen(true)}
+                  >
+                    Limpiar pendientes
                   </Button>
                 </Stack>
               }
@@ -1833,6 +1854,63 @@ return (
             }}
           >
             Confirmar
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* ── Clear queue confirm dialog ───────────────────────────────────── */}
+      <Dialog
+        open={confirmClearQueueOpen}
+        onClose={() => {
+          if (clearingQueue) return
+
+          setConfirmClearQueueOpen(false)
+        }}
+        maxWidth='xs'
+        fullWidth
+      >
+        <DialogTitle>Limpiar registros pendientes</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            ¿Estás seguro de que deseas eliminar todos los registros pendientes de envío?
+            Esta acción no se puede deshacer — los registros que no se hayan enviado al servidor se perderán.
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button
+            onClick={() => setConfirmClearQueueOpen(false)}
+            disabled={clearingQueue}
+          >
+            Cancelar
+          </Button>
+          <Button
+            variant='contained'
+            color='error'
+            disabled={clearingQueue}
+            startIcon={clearingQueue ? <CircularProgress size={16} color='inherit' /> : null}
+            onClick={() => {
+              setClearingQueue(true)
+              void (async () => {
+                try {
+                  const removed = await clearPendingQueue()
+
+                  clearLocalRecords()
+                  setRecords(getRecords())
+                  setConfirmClearQueueOpen(false)
+                  setSnackbarSeverity('success')
+                  setSnackbar(`${removed} registro${removed === 1 ? '' : 's'} pendiente${removed === 1 ? '' : 's'} eliminado${removed === 1 ? '' : 's'}.`)
+                  log.info('Cola pendiente limpiada por el usuario', { removed })
+                } catch (e) {
+                  setSnackbarSeverity('error')
+                  setSnackbar(getErrorMessage(e, 'No se pudieron limpiar los pendientes.'))
+                  log.error('Error al limpiar cola pendiente', e)
+                } finally {
+                  setClearingQueue(false)
+                }
+              })()
+            }}
+          >
+            {clearingQueue ? 'Limpiando…' : 'Sí, eliminar todo'}
           </Button>
         </DialogActions>
       </Dialog>
