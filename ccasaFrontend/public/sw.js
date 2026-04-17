@@ -25,20 +25,42 @@ const OFFLINE_HTML = `<!DOCTYPE html>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Sin conexión — BSA Lab</title>
   <style>
-    body { font-family: sans-serif; display: flex; align-items: center;
-           justify-content: center; height: 100vh; margin: 0;
-           background: #f5f5f5; color: #333; text-align: center; }
-    h1 { font-size: 1.5rem; margin-bottom: 0.5rem; }
-    p { color: #666; max-width: 400px; margin: 0 auto 1rem; }
-    a { color: #1565C0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+           display: flex; align-items: center; justify-content: center;
+           height: 100vh; margin: 0; background: #F8FAFC; color: #334155;
+           text-align: center; }
+    .card { background: #fff; border-radius: 12px; padding: 2.5rem 2rem;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.08); max-width: 400px; width: 90%; }
+    h1 { font-size: 1.4rem; margin: 0 0 0.5rem; color: #1E293B; }
+    p { color: #64748B; margin: 0 0 1.5rem; line-height: 1.6; font-size: 0.95rem; }
+    .icon { font-size: 3rem; margin-bottom: 1rem; }
+    .btn { display: inline-block; padding: 10px 24px; border-radius: 8px;
+           font-size: 0.9rem; font-weight: 600; cursor: pointer; text-decoration: none;
+           border: none; margin: 0 6px; }
+    .btn-primary { background: #1565C0; color: #fff; }
+    .btn-primary:hover { background: #0D47A1; }
+    .btn-outline { background: transparent; color: #1565C0; border: 1px solid #1565C0; }
+    .btn-outline:hover { background: rgba(21,101,192,0.06); }
+    .status { margin-top: 1rem; font-size: 0.8rem; color: #94A3B8; }
   </style>
 </head>
 <body>
-  <div>
+  <div class="card">
+    <div class="icon">📡</div>
     <h1>Sin conexión</h1>
-    <p>Tus cambios se guardan localmente y se enviarán al reconectar.</p>
-    <p><a href="/">Volver al inicio</a></p>
+    <p>No se pudo conectar al servidor. Tus cambios se guardan en el dispositivo y se enviarán automáticamente al reconectar.</p>
+    <div>
+      <button class="btn btn-primary" onclick="window.location.reload()">Reintentar</button>
+      <button class="btn btn-outline" onclick="window.history.back()">Volver</button>
+    </div>
+    <p class="status" id="status">Esperando conexión…</p>
   </div>
+  <script>
+    window.addEventListener('online', function() {
+      document.getElementById('status').textContent = 'Conexión detectada — recargando…';
+      setTimeout(function() { window.location.reload(); }, 1500);
+    });
+  </script>
 </body>
 </html>`
 
