@@ -1588,7 +1588,7 @@ return (
                 ) : null}
                 {logbooks.map(lb => (
                   <MenuItem key={lb.id} value={String(lb.id)}>
-                    {lb.name} (ID {lb.id})
+                    {lb.name}
                   </MenuItem>
                 ))}
               </Select>
@@ -1698,7 +1698,7 @@ return (
                 >
                   {logbooks.map(lb => (
                     <MenuItem key={lb.id} value={String(lb.id)}>
-                      {lb.name} (ID {lb.id})
+                      {lb.name}
                     </MenuItem>
                   ))}
                 </Select>
