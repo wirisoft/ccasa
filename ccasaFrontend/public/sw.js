@@ -12,7 +12,7 @@
  * Bump CACHE_VERSION when cache-busting is required.
  */
 
-const CACHE_VERSION = 'ccasa-lab-v5'
+const CACHE_VERSION = 'ccasa-lab-v6'
 const STATIC_CACHE = 'ccasa-static-v1'
 const API_CACHE = 'ccasa-api-v1'
 
@@ -50,8 +50,8 @@ const OFFLINE_HTML = `<!DOCTYPE html>
     <h1>Sin conexión</h1>
     <p>No se pudo conectar al servidor. Tus cambios se guardan en el dispositivo y se enviarán automáticamente al reconectar.</p>
     <div>
-      <button class="btn btn-primary" onclick="window.location.reload()">Reintentar</button>
-      <button class="btn btn-outline" onclick="window.history.back()">Volver</button>
+      <button class="btn btn-primary" onclick="window.location.href='/entradas/conductividad'">Ir a Conductividad</button>
+      <button class="btn btn-outline" onclick="window.location.reload()">Reintentar conexión</button>
     </div>
     <p class="status" id="status">Esperando conexión…</p>
   </div>
@@ -237,14 +237,26 @@ self.addEventListener('fetch', event => {
         return response
       })
       .catch(() =>
-        caches.match(request).then(
-          cached =>
-            cached ||
-            new Response(OFFLINE_HTML, {
-              status: 503,
-              headers: { 'Content-Type': 'text/html; charset=utf-8' },
+        caches.match(request).then(cached => {
+          if (cached) return cached
+
+          // Offline navigation: redirect to conductivity (the only offline-ready module)
+          if (isNavigation) {
+            return caches.match('/entradas/conductividad').then(conductivityCached => {
+              if (conductivityCached) return conductivityCached
+
+              return new Response(OFFLINE_HTML, {
+                status: 503,
+                headers: { 'Content-Type': 'text/html; charset=utf-8' },
+              })
             })
-        )
+          }
+
+          return new Response(OFFLINE_HTML, {
+            status: 503,
+            headers: { 'Content-Type': 'text/html; charset=utf-8' },
+          })
+        })
       )
   )
 })
