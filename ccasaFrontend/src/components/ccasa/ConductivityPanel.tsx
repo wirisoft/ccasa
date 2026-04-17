@@ -1896,11 +1896,13 @@ return (
                   const removed = await clearPendingQueue()
 
                   clearLocalRecords()
-                  setRecords(getRecords())
                   setConfirmClearQueueOpen(false)
                   setSnackbarSeverity('success')
                   setSnackbar(`${removed} registro${removed === 1 ? '' : 's'} pendiente${removed === 1 ? '' : 's'} eliminado${removed === 1 ? '' : 's'}.`)
                   log.info('Cola pendiente limpiada por el usuario', { removed })
+
+                  setServerReachable(true)
+                  await fetchRecords()
                 } catch (e) {
                   setSnackbarSeverity('error')
                   setSnackbar(getErrorMessage(e, 'No se pudieron limpiar los pendientes.'))
