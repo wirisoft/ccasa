@@ -1297,6 +1297,38 @@ return
                   sx={{ height: 32 }}
                 />
               ) : null}
+              <Tooltip title='Actualizar registros y verificar conexión'>
+                <span>
+                  <IconButton
+                    size='small'
+                    color='primary'
+                    disabled={loading}
+                    onClick={() => {
+                      setServerReachable(true)
+                      void fetchRecords()
+                      void fetchLogbooks()
+                    }}
+                    sx={{ height: 32, width: 32 }}
+                  >
+                    <Box
+                      component='i'
+                      className='ri-refresh-line'
+                      sx={{
+                        fontSize: 18,
+                        ...(loading
+                          ? {
+                              '@keyframes spin': {
+                                '0%': { transform: 'rotate(0deg)' },
+                                '100%': { transform: 'rotate(360deg)' },
+                              },
+                              animation: 'spin 1s linear infinite',
+                            }
+                          : {}),
+                      }}
+                    />
+                  </IconButton>
+                </span>
+              </Tooltip>
               {/* ── end status bar ─────────────────────────────────────────── */}
 
               <Tooltip
