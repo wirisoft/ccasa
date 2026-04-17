@@ -32,7 +32,7 @@ const StyledBoxForShadow = styled('div')(({ theme }) => ({
   height: theme.mixins.toolbar.minHeight,
   transition: 'opacity .15s ease-in-out',
   background:
-    'linear-gradient(#0D2137 5%, rgba(13, 33, 55, 0.85) 30%, rgba(13, 33, 55, 0.5) 65%, rgba(13, 33, 55, 0.3) 75%, transparent)',
+    'linear-gradient(#1E293B 5%, rgba(30, 41, 59, 0.85) 30%, rgba(30, 41, 59, 0.5) 65%, rgba(30, 41, 59, 0.3) 75%, transparent)',
   '&.scrolled': {
     opacity: 1
   }
