@@ -8,13 +8,60 @@ Plan de pruebas para validar que el sistema offline **no genera duplicados**, **
 
 ## Prerrequisitos
 
-1. Frontend en **modo producción** (`npm run build && npm run start`) o en `next dev` para pruebas rápidas (sin service worker pero con cola funcional).
-2. Usuario autenticado con permisos de conductividad y al menos **una bitácora activa**.
-3. **Chrome DevTools** abierto:
-   - **Application → IndexedDB → `ccasa_conductivity_offline_v2` → `conductivity_outbox`** (para inspeccionar la cola).
-   - **Network** (para toggle Offline).
-   - **Console** (para ver logs del sistema: `[INFO] [conductivitySyncEngine]`, `[INFO] [conductivityQueueOptimizer]`, etc.).
+1. Frontend en **modo producción** (`npm run build && npm run start`).
+2. Abrir la aplicación en **Google Chrome** (recomendado versión 120+).
+3. Usuario autenticado con permisos de conductividad y al menos **una bitácora activa**.
 4. Al menos **un registro de conductividad existente** en el servidor (creado con red) para los tests de UPDATE y DELETE.
+
+---
+
+## Cómo abrir las herramientas en Chrome
+
+### Abrir DevTools
+
+- **Windows/Linux:** `F12` o `Ctrl + Shift + I`
+- **Mac:** `Cmd + Option + I`
+
+### Pestaña Network (para simular Offline)
+
+1. En DevTools, click en la pestaña **Network** (Red).
+2. Marcar la casilla **Offline** que aparece en la barra superior de la pestaña.
+3. Cuando la casilla está marcada, Chrome simula que no hay red.
+4. Para volver online: desmarcar la casilla **Offline**.
+
+![Network Offline toggle](https://developer.chrome.com/static/docs/devtools/network/imgs/offline.png)
+
+### Pestaña Application → IndexedDB (para inspeccionar la cola)
+
+1. En DevTools, click en la pestaña **Application** (Aplicación).
+2. En el panel izquierdo, expandir **IndexedDB**.
+3. Expandir **`ccasa_conductivity_offline_v2`**.
+4. Click en **`conductivity_outbox`** para ver los registros de la cola.
+5. Para refrescar los datos: click derecho → **Refresh database** o el botón de recarga ↻.
+
+> **Tip:** Si no ves la base de datos, recarga la página con red y vuelve a revisar.
+
+### Pestaña Console (para ver logs)
+
+1. En DevTools, click en la pestaña **Console** (Consola).
+2. En el campo de filtro, escribe alguno de estos para filtrar logs relevantes:
+   - `conductivitySyncEngine` — logs del motor de sincronización
+   - `conductivityQueueOptimizer` — logs de optimización de cola
+   - `conductivityMerge` — logs de la estrategia de merge
+   - `TempId` — logs de reconciliación de IDs
+3. Los logs tienen colores por nivel:
+   - 🔵 **INFO** — operaciones normales (sync completado, registro encolado)
+   - 🟡 **WARN** — advertencias (retry limit, registros recuperados)
+   - 🔴 **ERROR** — errores (fallo de red, error al parsear)
+
+> **En producción** los logs no se imprimen en console. Para verlos, escribir en la consola: `getLogBuffer()` y presionar Enter — muestra las últimas 200 entradas.
+
+### Pestaña Network — ver peticiones reales al servidor
+
+1. En la pestaña **Network**, asegurarse de que **Offline NO está marcado**.
+2. En el filtro, seleccionar **Fetch/XHR** para ver solo las llamadas al API.
+3. Aquí puedes contar cuántos POST, PUT o DELETE reales se enviaron.
+4. Click en cualquier petición para ver el status code, body, headers, etc.
 
 ---
 
@@ -24,16 +71,17 @@ Plan de pruebas para validar que el sistema offline **no genera duplicados**, **
 
 | Paso | Acción | Resultado esperado |
 |------|--------|---------------------|
-| 1 | Con red, anotar cuántos registros hay en la tabla. | Ej: 5 registros. |
-| 2 | Activar **Offline** en DevTools → Network. | Chip cambia a **Sin conexión** (rojo). |
-| 3 | Pulsar **Nuevo registro**, completar tipo=Alta, peso=0.7456, bitácora, y **Guardar**. | Diálogo se cierra. Toast: "Guardado en cola local". Tabla muestra **6 registros** (el nuevo tiene chip **Local** y opacidad reducida). |
-| 4 | En IndexedDB → `conductivity_outbox`: verificar que hay 1 registro con `operationType: "CREATE"`, `status: "pending"`. | El campo `localObjectId` debe empezar con `temp-` (ej: `temp-1713225600000-a3f2k`). |
-| 5 | Desactivar Offline → restaurar red. | Chip cambia a **En línea** (verde). Auto-sync inicia en ~1.5s. |
-| 6 | Esperar a que el chip deje de pulsar (sync terminó). Verificar la tabla. | **6 registros totales** (NO 7). La fila que antes decía "Local" ahora tiene datos reales del servidor (folio, conductor calculado, etc.). |
-| 7 | En Console: buscar log `TempId reconciliado con servidor`. | Debe existir con el `localObjectId` y `serverId` correcto. |
-| 8 | En IndexedDB → `conductivity_outbox`: verificar que el registro ahora tiene `status: "done"`. | No debe quedar en `pending`. |
+| 1 | **Con red** (Offline desmarcado), abrir la vista de Conductividad. Contar cuántos registros hay en la tabla. | Ej: 5 registros. |
+| 2 | En DevTools → pestaña **Network** → marcar casilla **Offline**. | El chip en la barra del panel cambia a **Sin conexión** (rojo). |
+| 3 | Pulsar **Nuevo registro**, completar tipo=Alta, peso=0.7456, seleccionar bitácora, y pulsar **Guardar**. | El diálogo se cierra. Aparece toast: "Guardado en cola local…". La tabla ahora muestra **6 registros** — el nuevo tiene un chip **Local** azul y se ve con opacidad reducida. |
+| 4 | En DevTools → pestaña **Application** → **IndexedDB** → `ccasa_conductivity_offline_v2` → `conductivity_outbox`. Click en el registro. | Debe haber 1 registro con `operationType: "CREATE"`, `status: "pending"`. El campo `localObjectId` debe empezar con `temp-` (ej: `temp-1713225600000-a3f2k`). |
+| 5 | En DevTools → pestaña **Network** → **desmarcar** casilla **Offline**. | El chip cambia a **En línea** (verde) y empieza a pulsar (amarillo = sincronizando). El auto-sync inicia en ~1.5 segundos. |
+| 6 | Esperar a que el chip deje de pulsar y quede verde fijo. Mirar la tabla. | La tabla sigue mostrando **6 registros totales** (NO 7). La fila que antes decía "Local" ahora muestra datos reales del servidor (folio, conductividad calculada, etc.). |
+| 7 | En DevTools → pestaña **Console** → escribir `TempId` en el filtro. | Debe aparecer un log: `TempId reconciliado con servidor` con el `localObjectId` y `serverId` correcto. |
+| 8 | En DevTools → pestaña **Application** → **IndexedDB** → `conductivity_outbox` → refrescar (↻). | El registro ahora tiene `status: "done"`. No debe quedar en `pending`. |
 
-**Criterio de fallo:** Si la tabla muestra 7 registros (duplicado: fila local + fila servidor), el test FALLA.
+**✅ Pasa si:** la tabla muestra 6 registros (el nuevo solo una vez).
+**❌ Falla si:** la tabla muestra 7 registros (duplicado: fila local + fila del servidor).
 
 ---
 
@@ -41,10 +89,10 @@ Plan de pruebas para validar que el sistema offline **no genera duplicados**, **
 
 | Paso | Acción | Resultado esperado |
 |------|--------|---------------------|
-| 1 | Con red real, **apagar el backend** (o bloquear el puerto del API) pero mantener WiFi activo. | El navegador sigue reportando `navigator.onLine = true`. |
-| 2 | Crear un registro. | El POST falla con TypeError (network error). El sistema detecta error de red y encola. Toast: "Guardado en cola local". |
-| 3 | Verificar IndexedDB: `conductivity_outbox` tiene 1 registro `pending`. | `localObjectId` empieza con `temp-`. |
-| 4 | Encender el backend de nuevo. Pulsar **Sincronizar ahora**. | Sync exitoso. Tabla muestra el registro **sin duplicar**. |
+| 1 | Con red real activa, **apagar el backend** en el servidor (`sudo systemctl stop ccasa-backend`) pero mantener WiFi activo. | El navegador sigue diciendo `navigator.onLine = true` (tiene WiFi). |
+| 2 | En la app, crear un nuevo registro de conductividad. | El POST falla con error de red (TypeError). El sistema detecta que es error de red y automáticamente encola. Toast: "Guardado en cola local…". |
+| 3 | En DevTools → Application → IndexedDB → `conductivity_outbox`. | Hay 1 registro con `status: "pending"`, `localObjectId` que empieza con `temp-`. |
+| 4 | Encender el backend de nuevo (`sudo systemctl start ccasa-backend`). Pulsar botón **Sincronizar ahora** en la barra del panel. | Sync exitoso. La tabla muestra el registro **sin duplicar**. |
 
 ---
 
@@ -52,12 +100,12 @@ Plan de pruebas para validar que el sistema offline **no genera duplicados**, **
 
 | Paso | Acción | Resultado esperado |
 |------|--------|---------------------|
-| 1 | Ir Offline. | Chip rojo. |
-| 2 | Crear **3 registros distintos** (variar peso: 0.7400, 0.7500, 0.7600). | Tabla muestra 3 filas locales. Cola = 3. |
-| 3 | En IndexedDB: verificar 3 registros `pending`, cada uno con `localObjectId` distinto. | Los `tempId` son únicos. |
-| 4 | Restaurar red. Esperar auto-sync. | Los 3 se sincronizan FIFO. |
-| 5 | Verificar tabla. | **Exactamente 3 registros nuevos** (no 6). Cada uno con datos reales del servidor. Ninguna fila con chip "Local". |
-| 6 | Console: buscar 3 logs `TempId reconciliado con servidor`. | Cada uno con un `serverId` distinto. |
+| 1 | Network → marcar **Offline**. | Chip rojo: "Sin conexión". |
+| 2 | Crear **3 registros distintos**: peso=0.7400, peso=0.7500, peso=0.7600. | La tabla muestra 3 filas nuevas con chip "Local". En la barra: "3 pendientes". |
+| 3 | Application → IndexedDB → `conductivity_outbox`: verificar 3 registros `pending`. | Cada uno tiene un `localObjectId` distinto (todos empiezan con `temp-`). |
+| 4 | Network → desmarcar **Offline**. Esperar auto-sync (~1.5s). | El chip pulsa amarillo. Los 3 se sincronizan en orden FIFO. |
+| 5 | Verificar la tabla cuando el chip queda verde. | **Exactamente 3 registros nuevos** del servidor (no 6). Ninguna fila con chip "Local". |
+| 6 | Console → filtrar por `TempId`. | 3 logs `TempId reconciliado con servidor`, cada uno con un `serverId` distinto. |
 
 ---
 
@@ -67,15 +115,15 @@ Plan de pruebas para validar que el sistema offline **no genera duplicados**, **
 
 | Paso | Acción | Resultado esperado |
 |------|--------|---------------------|
-| 1 | Con red, verificar que existe un registro Draft (ej: id=42, peso=0.7400). | Registro visible en tabla. |
-| 2 | Ir Offline. | Chip rojo. |
-| 3 | Editar el registro: cambiar peso a **0.7500**. Guardar. | Toast: "Actualización guardada en cola local". |
-| 4 | Editar el **mismo registro** de nuevo: cambiar peso a **0.7600**. Guardar. | Toast: "Actualización guardada en cola local". Cola = 2. |
-| 5 | En IndexedDB: verificar 2 registros `pending` de tipo `UPDATE`, ambos con `localObjectId: "resource-42"`. | Ambos comparten el mismo `localObjectId`. |
-| 6 | Restaurar red. Esperar sync o pulsar **Sincronizar ahora**. | Console: `múltiples UPDATE reducidos a uno`. **Solo 1 PUT** enviado al servidor. |
-| 7 | Verificar tabla: el registro muestra peso **0.7600** (el último valor). | El valor intermedio (0.7500) nunca llegó al servidor. |
+| 1 | **Con red**, verificar que existe un registro en estado Draft (ej: id=42, peso=0.7400). | Registro visible en tabla con botones Editar y Eliminar. |
+| 2 | Network → marcar **Offline**. | Chip rojo. |
+| 3 | Editar el registro: cambiar peso a **0.7500**. Guardar. | Toast: "Actualización guardada en cola local". Barra: "1 pendiente". |
+| 4 | Editar el **mismo registro** otra vez: cambiar peso a **0.7600**. Guardar. | Toast: "Actualización guardada en cola local". Barra: "2 pendientes". |
+| 5 | Application → IndexedDB → `conductivity_outbox`: verificar 2 registros. | Ambos son `UPDATE`, ambos tienen el mismo `localObjectId` (ej: `resource-42`). |
+| 6 | Network → desmarcar **Offline**. Esperar sync o pulsar **Sincronizar ahora**. | Console: log `múltiples UPDATE reducidos a uno`. En Network → Fetch/XHR: **solo 1 PUT** enviado. |
+| 7 | Verificar tabla: el registro muestra peso **0.7600**. | El valor intermedio (0.7500) nunca llegó al servidor. |
 
-**Criterio de fallo:** Si la Console muestra 2 llamadas PUT al API, la optimización no funcionó.
+**❌ Falla si:** en la pestaña Network aparecen 2 llamadas PUT al API.
 
 ---
 
@@ -83,13 +131,13 @@ Plan de pruebas para validar que el sistema offline **no genera duplicados**, **
 
 | Paso | Acción | Resultado esperado |
 |------|--------|---------------------|
-| 1 | Con red, verificar un registro Draft existente (ej: id=50). | Visible en tabla. |
-| 2 | Ir Offline. | Chip rojo. |
-| 3 | Editar el registro (cambiar peso). Guardar. | Cola = 1 (UPDATE). |
-| 4 | Eliminar el **mismo registro**. Confirmar. | Cola = 2 (UPDATE + DELETE). Registro desaparece de la tabla. |
-| 5 | En IndexedDB: 2 registros, ambos con `localObjectId: "resource-50"`. | 1 UPDATE + 1 DELETE. |
-| 6 | Restaurar red. Sync. | Console: `UPDATE(s)+DELETE reducidos a DELETE`. **Solo 1 DELETE** enviado. |
-| 7 | Verificar tabla: registro eliminado del servidor. | No reaparece. |
+| 1 | **Con red**, verificar un registro Draft existente (ej: id=50). | Visible en tabla. |
+| 2 | Network → marcar **Offline**. | Chip rojo. |
+| 3 | Editar el registro (cambiar peso). Guardar. | Barra: "1 pendiente" (UPDATE). |
+| 4 | Eliminar el **mismo registro**. Confirmar. | Barra: "2 pendientes" (UPDATE + DELETE). Registro desaparece de la tabla. |
+| 5 | Application → IndexedDB → `conductivity_outbox`: verificar 2 registros. | Ambos con `localObjectId: "resource-50"`. Uno es UPDATE, otro DELETE. |
+| 6 | Network → desmarcar **Offline**. Sync. | Console: `UPDATE(s)+DELETE reducidos a DELETE`. Network: **solo 1 DELETE** enviado. |
+| 7 | Verificar tabla: registro eliminado. | No reaparece al recargar. |
 
 ---
 
@@ -97,11 +145,11 @@ Plan de pruebas para validar que el sistema offline **no genera duplicados**, **
 
 | Paso | Acción | Resultado esperado |
 |------|--------|---------------------|
-| 1 | Ir Offline. | Chip rojo. |
-| 2 | Crear un registro con datos exactamente iguales **dos veces** (mismo tipo, mismo peso, misma bitácora). | Cola muestra 2. Tabla muestra 2 filas locales. |
-| 3 | En IndexedDB: 2 CREATEs con `endpoint` y `payload` idénticos. | `localObjectId` distinto (son dos enqueue separados), pero payload igual. |
-| 4 | Restaurar red. Sync. | Console: `CREATE duplicado eliminado`. **Solo 1 POST** enviado. |
-| 5 | Verificar tabla: **1 registro** nuevo, no 2. | Solo aparece una fila real. |
+| 1 | Network → marcar **Offline**. | Chip rojo. |
+| 2 | Crear un registro. Luego crear **otro registro con exactamente los mismos datos** (mismo tipo, peso, bitácora). | Barra: "2 pendientes". Tabla: 2 filas locales. |
+| 3 | Application → IndexedDB → `conductivity_outbox`: 2 CREATEs. | Mismos `endpoint` y `payload`, pero `localObjectId` distinto. |
+| 4 | Network → desmarcar **Offline**. Sync. | Console: `CREATE duplicado eliminado`. Network: **solo 1 POST** enviado. |
+| 5 | Verificar tabla: **1 registro** nuevo, no 2. | Solo una fila real del servidor. |
 
 ---
 
@@ -111,14 +159,14 @@ Plan de pruebas para validar que el sistema offline **no genera duplicados**, **
 
 | Paso | Acción | Resultado esperado |
 |------|--------|---------------------|
-| 1 | Con red, verificar que existe un registro Draft (ej: id=60). Anotar cantidad total. | Ej: 8 registros. |
-| 2 | Ir Offline. | Chip rojo. |
-| 3 | Eliminar el registro id=60. | Tabla: 7 registros. Cola = 1 (DELETE). |
-| 4 | Restaurar red **brevemente** pero **NO esperar** a que el sync termine (o desactivar sync manual). | `fetchRecords()` se ejecuta (trae datos del servidor). |
-| 5 | Verificar tabla: el registro id=60 **NO debe reaparecer**. | Sigue sin mostrarse. La merge strategy lo excluye porque hay un DELETE pendiente. |
-| 6 | Esperar sync completo. | DELETE se ejecuta. Registro eliminado del servidor definitivamente. |
+| 1 | **Con red**, anotar cantidad de registros en tabla (ej: 8) y que hay un Draft (ej: id=60). | 8 registros visibles. |
+| 2 | Network → marcar **Offline**. | Chip rojo. |
+| 3 | Eliminar el registro id=60. Confirmar. | Tabla: 7 registros. Barra: "1 pendiente" (DELETE). |
+| 4 | Network → desmarcar **Offline**. La tabla se actualiza (fetchRecords trae datos del servidor). | El servidor aún tiene el registro (el DELETE no se ejecutó todavía). |
+| 5 | Verificar tabla: el registro id=60 **NO debe reaparecer**. | Sigue sin mostrarse. La merge strategy lo excluye porque hay un DELETE pendiente en la cola. |
+| 6 | Esperar que el sync termine. | DELETE se ejecuta en servidor. Registro eliminado definitivamente. |
 
-**Criterio de fallo:** Si al restaurar red el registro vuelve a la tabla momentáneamente, la merge strategy no funciona.
+**❌ Falla si:** al restaurar red el registro reaparece momentáneamente en la tabla.
 
 ---
 
@@ -126,11 +174,11 @@ Plan de pruebas para validar que el sistema offline **no genera duplicados**, **
 
 | Paso | Acción | Resultado esperado |
 |------|--------|---------------------|
-| 1 | Con red, verificar un registro Draft (ej: id=70, peso=0.7400). | Visible en tabla. |
-| 2 | Ir Offline. | Chip rojo. |
-| 3 | Editar el registro: cambiar peso a **0.9999**. Guardar. | Tabla muestra peso 0.9999. Cola = 1 (UPDATE). |
-| 4 | Restaurar red. El `fetchRecords` trae datos del servidor (peso original 0.7400). | La merge strategy aplica el UPDATE local sobre los datos del servidor. |
-| 5 | Verificar tabla: el registro muestra peso **0.9999** (no 0.7400). | El cambio local no se perdió. |
+| 1 | **Con red**, verificar un registro Draft (ej: id=70, peso=0.7400). | Visible en tabla. |
+| 2 | Network → marcar **Offline**. | Chip rojo. |
+| 3 | Editar el registro: cambiar peso a **0.9999**. Guardar. | Tabla muestra peso 0.9999. Barra: "1 pendiente". |
+| 4 | Network → desmarcar **Offline**. `fetchRecords` trae datos del servidor (con peso original 0.7400). | La merge strategy detecta el UPDATE pendiente y aplica los cambios locales sobre los datos del servidor. |
+| 5 | Verificar tabla: peso = **0.9999** (no 0.7400). | El cambio local no se perdió por el refetch. |
 | 6 | Esperar sync completo. | PUT se ejecuta. Servidor actualizado a 0.9999. |
 
 ---
@@ -139,10 +187,10 @@ Plan de pruebas para validar que el sistema offline **no genera duplicados**, **
 
 | Paso | Acción | Resultado esperado |
 |------|--------|---------------------|
-| 1 | Ir Offline. Crear un registro (tipo=Baja, peso=0.5000). | Tabla muestra fila local. Cola = 1. |
-| 2 | Restaurar red **brevemente** (fetchRecords se dispara). | `mergeServerWithLocal` ejecuta. |
+| 1 | Network → marcar **Offline**. Crear un registro (tipo=Baja, peso=0.5000). | Tabla muestra fila con chip "Local". Barra: "1 pendiente". |
+| 2 | Network → desmarcar **Offline** (fetchRecords se dispara automáticamente). | La tabla se actualiza con datos del servidor. |
 | 3 | Verificar tabla: la fila local (chip "Local") **sigue visible**. | No desapareció con el refetch. |
-| 4 | Esperar sync. | CREATE se ejecuta. Fila local se reemplaza por fila real. |
+| 4 | Esperar sync. | CREATE se ejecuta. Fila local se reemplaza por fila real del servidor. |
 
 ---
 
@@ -150,14 +198,14 @@ Plan de pruebas para validar que el sistema offline **no genera duplicados**, **
 
 ### TC-H10 — Registro en syncing se recupera tras restart
 
+> **Nota:** Este test requiere editar valores manualmente en IndexedDB. Es un test de resiliencia avanzado.
+
 | Paso | Acción | Resultado esperado |
 |------|--------|---------------------|
-| 1 | Ir Offline. Crear un registro. Cola = 1. | Registro `pending` en IndexedDB. |
-| 2 | En IndexedDB: **manualmente** editar el registro y cambiar `status` a `"syncing"` y `updatedAt` a un valor de hace 2 minutos (`Date.now() - 120000`). | Simula un crash mid-sync. |
-| 3 | Restaurar red. Pulsar **Sincronizar ahora**. | Console: `Recuperados 1 registro(s) atascados en syncing`. |
-| 4 | El registro se procesa normalmente. | Sync exitoso. Registro en servidor. |
-
-**Nota:** Este paso requiere edición manual de IndexedDB, es un test de resiliencia.
+| 1 | Network → marcar **Offline**. Crear un registro. | Barra: "1 pendiente". |
+| 2 | En Application → IndexedDB → `conductivity_outbox`: hacer **doble click** en el campo `status` del registro y cambiarlo a `syncing`. Cambiar `updatedAt` a `Date.now() - 120000` (un valor de hace 2 min). Presionar Enter para confirmar. | Simula un crash a mitad de sincronización. |
+| 3 | Network → desmarcar **Offline**. Pulsar **Sincronizar ahora**. | Console: `Recuperados 1 registro(s) atascados en syncing`. |
+| 4 | El registro se procesa normalmente y aparece en la tabla. | Sync exitoso. Registro creado en servidor. |
 
 ---
 
@@ -167,10 +215,10 @@ Plan de pruebas para validar que el sistema offline **no genera duplicados**, **
 
 | Paso | Acción | Resultado esperado |
 |------|--------|---------------------|
-| 1 | Ir Offline. Crear **2 registros** (A y B). Cola = 2. | Ambos `pending`. |
-| 2 | En IndexedDB: editar el registro A → cambiar `endpoint` a una URL inválida (ej: `/api/v1/conductivity-records-INVALID`). | Esto forzará un 404 al sincronizar A. |
-| 3 | Restaurar red. Sync. | A falla con 404 → `failed_permanent`. B se envía correctamente → `done`. |
-| 4 | Verificar: sección **Errores de sincronización** muestra A. B aparece en la tabla como registro real. | A no bloqueó a B. |
+| 1 | Network → marcar **Offline**. Crear **2 registros** (A y B con pesos distintos). | Barra: "2 pendientes". |
+| 2 | En Application → IndexedDB → `conductivity_outbox`: cambiar el `endpoint` del registro A a `/api/v1/conductivity-records-INVALID`. | Esto forzará un error 404 cuando intente sincronizar A. |
+| 3 | Network → desmarcar **Offline**. Sync. | A falla con 404 → `failed_permanent`. B se envía correctamente → `done`. |
+| 4 | Verificar: aparece sección **Errores de sincronización** con registro A. B aparece en la tabla como registro real del servidor. | A no bloqueó a B. |
 
 ---
 
@@ -178,10 +226,10 @@ Plan de pruebas para validar que el sistema offline **no genera duplicados**, **
 
 | Paso | Acción | Resultado esperado |
 |------|--------|---------------------|
-| 1 | Tras TC-H11, hay un registro `failed_permanent` en errores de sincronización. | Visible con botones **Reintentar** y **Eliminar**. |
-| 2 | Corregir la URL en IndexedDB (volver a `/api/v1/conductivity-records`). | Preparación para retry. |
-| 3 | Pulsar **Reintentar**. | Console: `Registro reseteado para reintento`. Se dispara sync. |
-| 4 | Verificar: registro se sincroniza exitosamente. Desaparece de errores. | Status en IndexedDB: `done`. |
+| 1 | Tras TC-H11, hay un registro en la sección **Errores de sincronización**. | Visible con botones **Reintentar** y **Eliminar**. |
+| 2 | En Application → IndexedDB: corregir la URL del registro fallido, cambiarla de vuelta a `/api/v1/conductivity-records`. | Preparación para retry exitoso. |
+| 3 | Pulsar botón **Reintentar** en la sección de errores. | Console: `Registro reseteado para reintento`. Se dispara sync automáticamente. |
+| 4 | Verificar: registro se sincroniza exitosamente. Desaparece de la sección de errores y aparece en la tabla. | En IndexedDB: status cambió a `done`. |
 
 ---
 
@@ -189,9 +237,9 @@ Plan de pruebas para validar que el sistema offline **no genera duplicados**, **
 
 | Paso | Acción | Resultado esperado |
 |------|--------|---------------------|
-| 1 | Tener un registro `failed_permanent` en la sección de errores. | Visible. |
-| 2 | Pulsar **Eliminar**. | La operación desaparece de la sección de errores. |
-| 3 | Verificar IndexedDB: el registro fue eliminado del outbox. | No queda rastro. |
+| 1 | Tener un registro `failed_permanent` visible en la sección **Errores de sincronización**. | Visible con botón **Eliminar**. |
+| 2 | Pulsar botón **Eliminar**. | La operación desaparece de la sección de errores. |
+| 3 | En Application → IndexedDB → `conductivity_outbox` → refrescar (↻). | El registro fue eliminado del outbox. No queda rastro. |
 
 ---
 
@@ -201,11 +249,11 @@ Plan de pruebas para validar que el sistema offline **no genera duplicados**, **
 
 | Paso | Acción | Resultado esperado |
 |------|--------|---------------------|
-| 1 | Ir Offline. Crear un registro. Cola = 1. | `pending`. |
-| 2 | Restaurar red. Inmediatamente **cerrar la pestaña** antes de que el sync termine. | El sync se interrumpe. |
-| 3 | Reabrir la pestaña de conductividad. | El registro puede estar en `syncing` (atascado) o `pending`. |
-| 4 | Esperar sync automático o pulsar **Sincronizar ahora**. | Si estaba en `syncing`, `recoverStuckSyncing` lo resetea a `pending`. Se procesa normalmente. |
-| 5 | Verificar: **solo 1 registro** creado en el servidor. | No hay duplicado. |
+| 1 | Network → marcar **Offline**. Crear un registro. | Barra: "1 pendiente". |
+| 2 | Network → desmarcar **Offline**. Inmediatamente **cerrar la pestaña** (Ctrl+W) antes de que el sync termine. | El sync se interrumpe a mitad. |
+| 3 | Reabrir la pestaña de conductividad (Ctrl+Shift+T o navegar de nuevo). | El sistema carga. El registro puede estar en `syncing` (atascado) o `pending` en IndexedDB. |
+| 4 | Esperar sync automático (~1.5s) o pulsar **Sincronizar ahora**. | Si estaba en `syncing`, `recoverStuckSyncing` lo resetea a `pending` y lo procesa. |
+| 5 | Verificar tabla: **solo 1 registro** creado en el servidor. | No hay duplicado. |
 
 ---
 
@@ -213,11 +261,11 @@ Plan de pruebas para validar que el sistema offline **no genera duplicados**, **
 
 | Paso | Acción | Resultado esperado |
 |------|--------|---------------------|
-| 1 | Ir Offline en pestaña A. Crear un registro. Cola = 1. | `pending`. |
-| 2 | Abrir **pestaña B** con la misma vista de conductividad. | Pestaña B carga la tabla. |
-| 3 | Restaurar red. Ambas pestañas detectan `online`. | Solo UNA pestaña ejecuta el sync (lock `isSyncing`). La otra recibe `skipped`. |
-| 4 | Verificar en ambas pestañas: la tabla muestra el registro sin duplicar. | BroadcastChannel sincroniza el estado entre tabs. |
-| 5 | Verificar en servidor: **solo 1 registro** creado. | El lock a nivel módulo previene doble ejecución. |
+| 1 | En pestaña A: Network → marcar **Offline**. Crear un registro. | Barra: "1 pendiente". |
+| 2 | Abrir **pestaña B** (Ctrl+T) y navegar a la misma vista de conductividad. | Pestaña B carga la tabla normalmente. |
+| 3 | En pestaña A: Network → desmarcar **Offline**. Ambas pestañas detectan `online`. | Solo **UNA** pestaña ejecuta el sync (lock `isSyncing`). La otra recibe `skipped`. |
+| 4 | Verificar en **ambas** pestañas: la tabla muestra el registro una sola vez. | BroadcastChannel sincroniza el estado entre tabs. |
+| 5 | Verificar en servidor (o en Network de cualquier pestaña): **solo 1 POST** enviado. | El lock a nivel módulo previene doble ejecución. |
 
 ---
 
@@ -225,9 +273,9 @@ Plan de pruebas para validar que el sistema offline **no genera duplicados**, **
 
 | Paso | Acción | Resultado esperado |
 |------|--------|---------------------|
-| 1 | Ir Offline. Crear **3 registros**. Cola = 3. | 3 `pending`. |
-| 2 | Restaurar red. Cuando el sync procesa el 2do registro, cortar red de nuevo (toggle Offline rápido). | Registro 1: `done`. Registro 2: puede ser `failed_retryable` o `syncing`. Registro 3: `pending`. |
-| 3 | Restaurar red de nuevo. Auto-sync tras 1.5s. | Registros 2 y 3 se procesan. Si 2 estaba `syncing` + viejo → `recoverStuckSyncing` lo rescata. |
+| 1 | Network → marcar **Offline**. Crear **3 registros** con pesos distintos. | Barra: "3 pendientes". |
+| 2 | Network → desmarcar **Offline**. Cuando veas en Network que el primer POST sale, inmediatamente volver a marcar **Offline**. | Registro 1: probablemente `done`. Registro 2: puede quedar `failed_retryable` o `syncing`. Registro 3: `pending`. |
+| 3 | Network → desmarcar **Offline** de nuevo. Esperar auto-sync (~1.5s). | Registros 2 y 3 se procesan. Si 2 estaba `syncing` + viejo → se recupera automáticamente. |
 | 4 | Verificar tabla: **exactamente 3 registros** nuevos en el servidor. | Ningún duplicado, ninguno perdido. |
 
 ---
@@ -236,18 +284,20 @@ Plan de pruebas para validar que el sistema offline **no genera duplicados**, **
 
 ### TC-H17 — Verificar que los logs clave aparecen en Console
 
-| Escenario | Log esperado en Console | Nivel |
-|-----------|------------------------|-------|
-| Sync inicia | `Iniciando sincronización de cola FIFO` | INFO |
-| Optimización ejecuta | `Cola optimizada { before: N, after: M, dropped: X }` | INFO |
-| CREATE+DELETE cancelados | `Optimización: CREATE+DELETE cancelados` | INFO |
-| UPDATE reducido | `Optimización: múltiples UPDATE reducidos a uno` | INFO |
-| TempId reconciliado | `TempId reconciliado con servidor { localObjectId, serverId }` | INFO |
-| Merge ejecuta | `Merge completado { server, localPending, pendingDeletes, pendingUpdates, result }` | DEBUG |
-| Stuck recovery | `Recuperados N registro(s) atascados en syncing` | WARN |
-| Retry limit | `Registro promovido a fallo permanente (máx reintentos alcanzados)` | WARN |
+Ejecutar los tests anteriores y verificar que estos logs aparecen en la pestaña Console de DevTools:
 
-Para ver logs DEBUG en producción: los logs se almacenan en buffer interno. Usar `getLogBuffer()` desde Console.
+| Escenario | Qué buscar en Console (filtro) | Nivel |
+|-----------|-------------------------------|-------|
+| Sync inicia | `Iniciando sincronización de cola FIFO` | INFO |
+| Optimización ejecuta | `Cola optimizada` | INFO |
+| CREATE+DELETE cancelados | `CREATE+DELETE cancelados` | INFO |
+| UPDATE reducido | `múltiples UPDATE reducidos a uno` | INFO |
+| TempId reconciliado | `TempId reconciliado con servidor` | INFO |
+| Merge ejecuta | `Merge completado` | DEBUG |
+| Stuck recovery | `Recuperados` + `atascados en syncing` | WARN |
+| Retry limit | `promovido a fallo permanente` | WARN |
+
+> **Tip para producción:** Los logs DEBUG no se imprimen en la consola en producción. Para verlos, abrir Console y escribir: `getLogBuffer()` + Enter. Muestra las últimas 200 entradas con timestamp, nivel, módulo y mensaje.
 
 ---
 
@@ -268,15 +318,20 @@ Para ver logs DEBUG en producción: los logs se almacenan en buffer interno. Usa
 
 ---
 
-## Herramientas de depuración
+## Resumen rápido de atajos Chrome
 
-| Herramienta | Cómo usarla |
-|-------------|-------------|
-| IndexedDB inspector | DevTools → Application → IndexedDB → `ccasa_conductivity_offline_v2` |
-| Logs en producción | Console: `getLogBuffer()` (últimas 200 entradas) |
-| Exportar cola | Botón **Exportar cola (.sql)** en el banner de pendientes |
-| Network tab | Verificar cuántos POST/PUT/DELETE reales se enviaron al servidor |
-| Console filter | Filtrar por `[conductivitySyncEngine]`, `[conductivityQueueOptimizer]`, `[conductivityMerge]` |
+| Acción | Atajo |
+|--------|-------|
+| Abrir DevTools | `F12` o `Ctrl + Shift + I` |
+| Ir a pestaña Console | `Ctrl + Shift + J` |
+| Ir a pestaña Network | Dentro de DevTools, click en **Network** |
+| Ir a pestaña Application | Dentro de DevTools, click en **Application** |
+| Recargar página | `F5` o `Ctrl + R` |
+| Recargar sin caché | `Ctrl + Shift + R` |
+| Abrir nueva pestaña | `Ctrl + T` |
+| Cerrar pestaña actual | `Ctrl + W` |
+| Reabrir última pestaña | `Ctrl + Shift + T` |
+| Limpiar Console | `Ctrl + L` (dentro de Console) |
 
 ---
 
