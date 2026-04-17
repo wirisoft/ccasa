@@ -359,8 +359,16 @@ return
       setMergedStore(merged)
       setRecords(getRecords())
     } catch (e) {
-      setRecords([])
-      setError(getErrorMessage(e, 'Error al cargar registros'))
+      const currentRecords = getRecords()
+
+      if (currentRecords.length > 0) {
+        setRecords(currentRecords)
+        log.warn('Fetch falló — conservando registros en memoria', { count: currentRecords.length })
+      } else {
+        setRecords([])
+        setError(getErrorMessage(e, 'Sin conexión al servidor'))
+      }
+
       log.error('Error al cargar registros', e)
     } finally {
       setLoading(false)
