@@ -245,6 +245,10 @@ return fetch(fullUrl, {
 
   const outboxPending = stats?.pending ?? 0
 
+  /** Tracks real connectivity to the API server (navigator.onLine can lie in PWAs). */
+  const [serverReachable, setServerReachable] = useState(true)
+  const effectiveOnline = isOnline && serverReachable
+
   // ── end PWA block ────────────────────────────────────────────────────────
 
   const [records, setRecords] = useState<ConductivityRecord[]>([])
@@ -358,8 +362,13 @@ return
 
       setMergedStore(merged)
       setRecords(getRecords())
+      setServerReachable(true)
     } catch (e) {
       const currentRecords = getRecords()
+
+      if (isNetworkError(e)) {
+        setServerReachable(false)
+      }
 
       if (currentRecords.length > 0) {
         setRecords(currentRecords)
@@ -413,6 +422,13 @@ return
     void fetchRecords()
   }, [fetchRecords])
 
+  // ── Reset serverReachable when browser detects online again ──────────────
+  useEffect(() => {
+    if (isOnline) {
+      setServerReachable(true)
+    }
+  }, [isOnline])
+
   // ── Watch lastSyncCompletedAt: refresh records after every sync ──────────
   useEffect(() => {
     if (
@@ -421,6 +437,7 @@ return
     ) {
       prevSyncCompletedAtRef.current = lastSyncCompletedAt
       log.info('Sincronización completada — actualizando lista de registros')
+      setServerReachable(true)
       void fetchRecords()
     }
   }, [lastSyncCompletedAt, fetchRecords])
@@ -568,7 +585,7 @@ return filteredRecords.slice(start, start + rowsPerPage)
     }
 
     try {
-      if (!isOnline) {
+      if (!effectiveOnline) {
         addLocalRecord(optimisticRecord)
         setRecords(getRecords())
         await enqueueCreate()
@@ -615,7 +632,7 @@ return
     formPreparationTime,
     formType,
     formWeight,
-    isOnline
+    effectiveOnline
   ])
 
   // ── Edit handlers ─────────────────────────────────────────────────────────
@@ -673,7 +690,7 @@ return
     }
 
     try {
-      if (!isOnline) {
+      if (!effectiveOnline) {
         // Offline path — optimistic UI + enqueue
         updateLocalRecord(editRecord.conductivityId, {
           ...(editFormType ? { type: editFormType as ConductivityType } : {}),
@@ -753,7 +770,7 @@ return
     editFormObservation,
     editFormLogbookId,
     fetchRecords,
-    isOnline,
+    effectiveOnline,
     token,
   ])
 
@@ -781,7 +798,7 @@ return
     }
 
     try {
-      if (!isOnline) {
+      if (!effectiveOnline) {
         // Optimistic: remove from UI immediately
         removeRecord(deleteRecord.conductivityId)
         setRecords(getRecords())
@@ -842,7 +859,7 @@ return
     } finally {
       setDeleteSubmitting(false)
     }
-  }, [deleteRecord, fetchRecords, isOnline, token])
+  }, [deleteRecord, fetchRecords, effectiveOnline, token])
 
   const handleDownloadPdf = useCallback(
     async (id: number) => {
@@ -976,7 +993,7 @@ return
         </Box>
 
         {/* ── Offline warning ──────────────────────────────────────────────── */}
-        {!isOnline ? (
+        {!effectiveOnline ? (
           <Box sx={{ px: 2.5, pb: 1 }}>
             <Alert severity='warning' sx={{ fontSize: '0.85rem' }}>
               Sin conexión: puedes usar &quot;Nuevo registro&quot; si tienes bitácoras en caché (última sesión con
@@ -1005,7 +1022,7 @@ return
                   <Button
                     color='inherit'
                     size='small'
-                    disabled={!isOnline || isSyncing || !token}
+                    disabled={!effectiveOnline || isSyncing || !token}
                     onClick={() => void triggerSync()}
                   >
                     {isSyncing ? 'Sincronizando…' : 'Sincronizar ahora'}
@@ -1116,7 +1133,7 @@ return
                               size='small'
                               variant='outlined'
                               color='primary'
-                              disabled={!isOnline || isSyncing}
+                              disabled={!effectiveOnline || isSyncing}
                               onClick={() => {
                                 if (rec.localId !== undefined) {
                                   void retryFailed(rec.localId).catch(err => {
@@ -1240,11 +1257,11 @@ return
                 label={
                   isSyncing
                     ? 'Sincronizando…'
-                    : isOnline
+                    : effectiveOnline
                       ? 'En línea'
                       : 'Sin conexión'
                 }
-                color={isSyncing ? 'warning' : isOnline ? 'success' : 'error'}
+                color={isSyncing ? 'warning' : effectiveOnline ? 'success' : 'error'}
                 variant='filled'
                 sx={{
                   height: 32,
@@ -1681,7 +1698,7 @@ return (
           <DialogContentText>
             ¿Estás seguro de que deseas eliminar este registro de conductividad
             {deleteRecord?.displayFolio ? ` (${deleteRecord.displayFolio})` : ''}?
-            {!isOnline
+            {!effectiveOnline
               ? ' Sin conexión, la eliminación se guardará en cola y se ejecutará al reconectar.'
               : ' Esta acción no se puede deshacer.'}
           </DialogContentText>
