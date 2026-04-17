@@ -108,6 +108,21 @@ return (
   return false
 }
 
+function humanizeSyncError(error: string | null): string {
+  if (!error) return 'Error desconocido'
+  const lower = error.toLowerCase()
+
+  if (lower.includes('404')) return 'El registro ya no existe en el servidor'
+  if (lower.includes('409')) return 'Conflicto: el registro fue modificado por otro usuario'
+  if (lower.includes('401') || lower.includes('sesión')) return 'Tu sesión expiró — inicia sesión de nuevo'
+  if (lower.includes('403')) return 'No tienes permisos para esta operación'
+  if (lower.includes('400') || lower.includes('422')) return 'Datos inválidos — revisa los campos'
+  if (lower.includes('500') || lower.includes('502') || lower.includes('503')) return 'Error del servidor — se reintentará automáticamente'
+  if (lower.includes('typeerror') || lower.includes('network') || lower.includes('fetch')) return 'Sin conexión al servidor'
+
+  return error.length > 80 ? `${error.slice(0, 80)}…` : error
+}
+
 function isServerUnreachableError(err: unknown): boolean {
   if (!(err instanceof Error)) return false
   const msg = err.message.toLowerCase()
@@ -147,7 +162,12 @@ return <Chip size='small' variant='outlined' label='—' />
 
 function statusChip(status: ConductivityRecordStatus | null | undefined, isLocal?: boolean) {
   if (isLocal) {
-    return <Chip size='small' color='info' label='Local' variant='outlined' />
+
+    return (
+      <Tooltip title='Este registro está guardado en tu dispositivo y se enviará al servidor cuando haya conexión'>
+        <Chip size='small' color='warning' label='Pendiente de envío' variant='filled' />
+      </Tooltip>
+    )
   }
 
   if (status === 'Draft') {
@@ -591,7 +611,7 @@ return filteredRecords.slice(start, start + rowsPerPage)
       setDialogOpen(false)
       setSnackbarSeverity('success')
       setSnackbar(
-        'Guardado en cola local. Se enviará al servidor cuando haya conexión (orden FIFO).'
+        'Registro guardado en tu dispositivo. Se enviará automáticamente al reconectar.'
       )
       log.info('Registro encolado localmente (offline)', { operationType: 'CREATE', localObjectId })
     }
@@ -626,7 +646,7 @@ return
           finishQueuedSuccess()
         } catch (queueErr) {
           setSnackbarSeverity('error')
-          setSnackbar(getErrorMessage(queueErr, 'No se pudo guardar en cola local.'))
+          setSnackbar(getErrorMessage(queueErr, 'No se pudo guardar en el dispositivo.'))
           log.error('Error al encolar registro tras fallo de red', queueErr)
         }
       } else {
@@ -697,7 +717,7 @@ return
       setEditDialogOpen(false)
       setEditRecord(null)
       setSnackbarSeverity('success')
-      setSnackbar('Actualización guardada en cola local. Se enviará al reconectar.')
+      setSnackbar('Cambios guardados en tu dispositivo. Se enviarán al reconectar.')
       log.info('UPDATE encolado localmente', { resourceId, localObjectId })
     }
 
@@ -763,7 +783,7 @@ return
           finishQueuedUpdate()
         } catch (queueErr) {
           setSnackbarSeverity('error')
-          setSnackbar(getErrorMessage(queueErr, 'No se pudo guardar actualización en cola local.'))
+          setSnackbar(getErrorMessage(queueErr, 'No se pudieron guardar los cambios en el dispositivo.'))
           log.error('Error al encolar UPDATE tras fallo de red', queueErr)
         }
       } else {
@@ -805,7 +825,7 @@ return
       setDeleteConfirmOpen(false)
       setDeleteRecord(null)
       setSnackbarSeverity('success')
-      setSnackbar('Eliminación guardada en cola local. Se enviará al reconectar.')
+      setSnackbar('Eliminación programada. Se ejecutará al reconectar.')
       log.info('DELETE encolado localmente', { resourceId, localObjectId })
     }
 
@@ -860,7 +880,7 @@ return
           finishQueuedDelete()
         } catch (queueErr) {
           setSnackbarSeverity('error')
-          setSnackbar(getErrorMessage(queueErr, 'No se pudo guardar eliminación en cola local.'))
+          setSnackbar(getErrorMessage(queueErr, 'No se pudo programar la eliminación en el dispositivo.'))
           log.error('Error al encolar DELETE tras fallo de red', queueErr)
         }
       } else {
@@ -998,8 +1018,8 @@ return
             <Typography variant='body2' sx={{ color: '#01579b', fontSize: '0.82rem' }}>
               Registros de conductividad KCl (RF-05). El sistema calcula automáticamente la conductividad teórica y
               verifica si está en el rango de aceptación (~1400–1420 µS/cm para Alta). Requiere una bitácora activa.
-              Para aprobar un registro, debe existir un usuario con nomenclatura TCM o TMC. Sin conexión, los nuevos
-              registros se guardan en una cola local (IndexedDB) y se envían en orden al reconectar.
+              Para aprobar un registro, debe existir un usuario con nomenclatura TCM o TMC. Sin conexión, los registros
+              se guardan en tu dispositivo y se envían automáticamente al reconectar.
             </Typography>
           </Box>
         </Box>
@@ -1008,8 +1028,8 @@ return
         {!effectiveOnline ? (
           <Box sx={{ px: 2.5, pb: 1 }}>
             <Alert severity='warning' sx={{ fontSize: '0.85rem' }}>
-              Sin conexión: puedes usar &quot;Nuevo registro&quot; si tienes bitácoras en caché (última sesión con
-              red). Los guardados quedan en cola y se suben solos al volver en línea.
+              Estás trabajando sin conexión. Puedes seguir creando registros normalmente — se guardarán en tu
+              dispositivo y se enviarán automáticamente cuando vuelva la conexión.
             </Alert>
           </Box>
         ) : null}
@@ -1018,7 +1038,7 @@ return
         {syncError ? (
           <Box sx={{ px: 2.5, pb: 1 }}>
             <Alert severity='error' sx={{ fontSize: '0.85rem' }}>
-              Error de sincronización: {syncError}
+              Error al enviar datos: {syncError}
             </Alert>
           </Box>
         ) : null}
@@ -1037,7 +1057,7 @@ return
                     disabled={!effectiveOnline || isSyncing || !token}
                     onClick={() => void triggerSync()}
                   >
-                    {isSyncing ? 'Sincronizando…' : 'Sincronizar ahora'}
+                    {isSyncing ? 'Enviando…' : 'Enviar ahora'}
                   </Button>
                   <Button
                     color='inherit'
@@ -1047,21 +1067,21 @@ return
                         try {
                           await exportSQL()
                           setSnackbarSeverity('success')
-                          setSnackbar('Archivo .sql de la cola descargado.')
+                          setSnackbar('Respaldo descargado correctamente.')
                         } catch (e) {
                           setSnackbarSeverity('error')
-                          setSnackbar(getErrorMessage(e, 'No se pudo exportar la cola.'))
+                          setSnackbar(getErrorMessage(e, 'No se pudo descargar el respaldo.'))
                         }
                       })()
                     }}
                   >
-                    Exportar cola (.sql)
+                    Descargar respaldo
                   </Button>
                 </Stack>
               }
             >
-              Hay {outboxPending} registro{outboxPending === 1 ? '' : 's'} pendiente{outboxPending === 1 ? '' : 's'} de
-              sincronizar (cola FIFO en este dispositivo).
+              Tienes {outboxPending} registro{outboxPending === 1 ? '' : 's'} guardado{outboxPending === 1 ? '' : 's'} en
+              este dispositivo. {effectiveOnline ? 'Se enviarán automáticamente al servidor.' : 'Se enviarán cuando vuelva la conexión.'}
             </Alert>
           </Box>
         ) : null}
@@ -1093,7 +1113,7 @@ return
                 <Stack direction='row' spacing={1} alignItems='center'>
                   <Box component='i' className='ri-error-warning-line' sx={{ color: 'error.main', fontSize: 18 }} />
                   <Typography variant='body2' fontWeight={600} color='error.main'>
-                    Errores de sincronización ({failedRecords.length})
+                    Registros con problemas de envío ({failedRecords.length})
                   </Typography>
                 </Stack>
                 <Box component='i'
@@ -1128,18 +1148,15 @@ return
                           {rec.conflict ? (
                             <Chip size='small' label='Conflicto' color='warning' />
                           ) : null}
-                          <Typography variant='caption' color='text.secondary' noWrap>
-                            {rec.endpoint}
-                          </Typography>
                         </Stack>
-                        {rec.lastError ? (
-                          <Typography variant='caption' color='error' sx={{ wordBreak: 'break-word' }}>
-                            {rec.lastError}
-                          </Typography>
-                        ) : null}
+
+                        <Typography variant='caption' color='error' sx={{ wordBreak: 'break-word' }}>
+                          {humanizeSyncError(rec.lastError)}
+                        </Typography>
                       </Stack>
+
                       <Stack direction='row' spacing={0.5} flexShrink={0}>
-                        <Tooltip title='Reintentar sincronización'>
+                        <Tooltip title='Reintentar el envío de este registro'>
                           <span>
                             <Button
                               size='small'
@@ -1150,16 +1167,16 @@ return
                                 if (rec.localId !== undefined) {
                                   void retryFailed(rec.localId).catch(err => {
                                     setSnackbarSeverity('error')
-                                    setSnackbar(getErrorMessage(err, 'No se pudo reintentar.'))
+                                    setSnackbar(getErrorMessage(err, 'No se pudo reintentar el envío.'))
                                   })
                                 }
                               }}
                             >
-                              Reintentar
+                              Reintentar envío
                             </Button>
                           </span>
                         </Tooltip>
-                        <Tooltip title='Eliminar de la cola (no se podrá recuperar)'>
+                        <Tooltip title='Descartar este registro (no se podrá recuperar)'>
                           <Button
                             size='small'
                             variant='outlined'
@@ -1168,12 +1185,12 @@ return
                               if (rec.localId !== undefined) {
                                 void dismissFailed(rec.localId).catch(err => {
                                   setSnackbarSeverity('error')
-                                  setSnackbar(getErrorMessage(err, 'No se pudo eliminar.'))
+                                  setSnackbar(getErrorMessage(err, 'No se pudo descartar.'))
                                 })
                               }
                             }}
                           >
-                            Eliminar
+                            Descartar
                           </Button>
                         </Tooltip>
                       </Stack>
@@ -1268,9 +1285,9 @@ return
                 size='small'
                 label={
                   isSyncing
-                    ? 'Sincronizando…'
+                    ? 'Enviando datos…'
                     : effectiveOnline
-                      ? 'En línea'
+                      ? 'Conectado'
                       : 'Sin conexión'
                 }
                 color={isSyncing ? 'warning' : effectiveOnline ? 'success' : 'error'}
@@ -1297,11 +1314,11 @@ return
                   sx={{ height: 32 }}
                 />
               ) : null}
-              <Tooltip title='Actualizar registros y verificar conexión'>
+              <Tooltip title='Refrescar datos y verificar conexión'>
                 <span>
                   <Chip
                     size='small'
-                    label={loading ? 'Actualizando…' : 'Actualizar'}
+                    label={loading ? 'Cargando…' : 'Refrescar'}
                     icon={
                       <Box
                         component='i'
@@ -1412,7 +1429,7 @@ return (
                             <TableRow
                               key={(row as { tempId?: string }).tempId ?? row.conductivityId}
                               hover
-                              sx={isLocalRow ? { opacity: 0.7 } : undefined}
+                              sx={isLocalRow ? { opacity: 0.85 } : undefined}
                             >
                               <TableCell sx={{ color: 'text.secondary' }}>
                                 {page * rowsPerPage + index + 1}
@@ -1423,7 +1440,7 @@ return (
                               <TableCell>{formatConductivityZero(row.calculatedValue)}</TableCell>
                               <TableCell>{inRangeChip(row.inRange)}</TableCell>
                               <TableCell>{statusChip(row.status, isLocalRow)}</TableCell>
-                              <TableCell>{isLocalRow ? '—' : createdLabel}</TableCell>
+                              <TableCell>{isLocalRow ? 'Tú (pendiente)' : createdLabel}</TableCell>
                               <TableCell>{row.reviewerName ?? '—'}</TableCell>
                               <TableCell>{formatDateDdMmYyyy(row.recordedAt)}</TableCell>
                               <TableCell align='center'>
@@ -1518,7 +1535,7 @@ return (
           <Stack spacing={2} sx={{ mt: 1 }}>
             {logbooksFromCache ? (
               <Alert severity='warning' sx={{ fontSize: '0.82rem' }}>
-                Usando lista de bitácoras guardada. Sin conexión al servidor.
+                Sin conexión — usando datos guardados de la última sesión.
               </Alert>
             ) : null}
             <FormControl fullWidth required size='small'>
@@ -1746,7 +1763,7 @@ return (
             ¿Estás seguro de que deseas eliminar este registro de conductividad
             {deleteRecord?.displayFolio ? ` (${deleteRecord.displayFolio})` : ''}?
             {!effectiveOnline
-              ? ' Sin conexión, la eliminación se guardará en cola y se ejecutará al reconectar.'
+              ? ' Sin conexión — la eliminación se realizará automáticamente cuando vuelva la conexión.'
               : ' Esta acción no se puede deshacer.'}
           </DialogContentText>
         </DialogContent>
