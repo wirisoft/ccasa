@@ -1890,6 +1890,7 @@ return (
             startIcon={clearingQueue ? <CircularProgress size={16} color='inherit' /> : null}
             onClick={() => {
               setClearingQueue(true)
+
               void (async () => {
                 try {
                   const removed = await clearPendingQueue()
