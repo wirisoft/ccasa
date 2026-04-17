@@ -108,6 +108,18 @@ return (
   return false
 }
 
+function isServerUnreachableError(err: unknown): boolean {
+  if (!(err instanceof Error)) return false
+  const msg = err.message.toLowerCase()
+
+  return (
+    msg.includes('sin conexión') ||
+    msg.includes('503') ||
+    msg.includes('service unavailable') ||
+    msg.includes('offline')
+  )
+}
+
 function formatWeight(v: number | null | undefined): string {
   if (v == null || Number.isNaN(Number(v))) return '—'
 
@@ -366,7 +378,7 @@ return
     } catch (e) {
       const currentRecords = getRecords()
 
-      if (isNetworkError(e)) {
+      if (isNetworkError(e) || isServerUnreachableError(e)) {
         setServerReachable(false)
       }
 
